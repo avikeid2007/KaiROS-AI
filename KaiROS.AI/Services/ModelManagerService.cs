@@ -2,6 +2,7 @@ using KaiROS.AI.Models;
 using Microsoft.Extensions.Configuration;
 using LLama;
 using LLama.Common;
+using LLama.Native;
 using System.IO;
 
 namespace KaiROS.AI.Services;
@@ -15,6 +16,7 @@ public class ModelManagerService : IModelManagerService
     private readonly List<LLMModelInfo> _models = new();
     private string _modelsDirectory;
     private LLamaWeights? _loadedWeights;
+    private MtmdWeights? _loadedLlavaWeights;
     private LLMModelInfo? _activeModel;
     private int _currentGpuLayers;
 
@@ -22,6 +24,7 @@ public class ModelManagerService : IModelManagerService
     public LLMModelInfo? ActiveModel => _activeModel;
     public string ModelsDirectory => _modelsDirectory;
     public int CurrentGpuLayers => _currentGpuLayers;
+    public bool IsVisionModelLoaded => _loadedLlavaWeights is not null;
 
     public event EventHandler<LLMModelInfo>? ModelDownloadStarted;
     public event EventHandler<LLMModelInfo>? ModelDownloadCompleted;
@@ -65,6 +68,17 @@ public class ModelManagerService : IModelManagerService
             {
                 model.DownloadState = DownloadState.Completed;
                 model.DownloadProgress = 100;
+
+                // Reconstruct MmProjLocalPath for vision models if the file exists
+                if (model.IsVisionModel && !string.IsNullOrEmpty(model.MmProjDownloadUrl))
+                {
+                    var mmProjName = Path.GetFileName(new Uri(model.MmProjDownloadUrl).LocalPath);
+                    var mmProjPath = Path.Combine(_modelsDirectory, mmProjName);
+                    if (File.Exists(mmProjPath))
+                    {
+                        model.MmProjLocalPath = mmProjPath;
+                    }
+                }
             }
             else if (_downloadService.HasPartialDownload(model.Name))
             {
@@ -146,10 +160,13 @@ public class ModelManagerService : IModelManagerService
 
         try
         {
+            // For vision models, split progress: 90% for main model, 10% for mm-proj
+            double mainModelShare = model.IsVisionModel && !string.IsNullOrEmpty(model.MmProjDownloadUrl) ? 0.9 : 1.0;
+
             var wrappedProgress = new Progress<double>(p =>
             {
-                model.DownloadProgress = p;
-                progress?.Report(p);
+                model.DownloadProgress = p * mainModelShare;
+                progress?.Report(p * mainModelShare);
             });
 
             var success = await _downloadService.DownloadFileAsync(
@@ -167,6 +184,31 @@ public class ModelManagerService : IModelManagerService
                 {
                     model.IsDownloaded = true;
                     model.LocalPath = localPath;
+
+                    // Download mm-proj for vision models
+                    if (model.IsVisionModel && !string.IsNullOrEmpty(model.MmProjDownloadUrl))
+                    {
+                        var mmProjName = Path.GetFileName(new Uri(model.MmProjDownloadUrl).LocalPath);
+                        var mmProjPath = Path.Combine(_modelsDirectory, mmProjName);
+                        var mmProjProgress = new Progress<double>(p =>
+                        {
+                            var overall = 90 + p * 0.1;
+                            model.DownloadProgress = overall;
+                            progress?.Report(overall);
+                        });
+                        var mmSuccess = await _downloadService.DownloadFileAsync(
+                            model.MmProjDownloadUrl, mmProjPath, mmProjProgress, cancellationToken);
+                        if (mmSuccess)
+                        {
+                            model.MmProjLocalPath = mmProjPath;
+                            System.Diagnostics.Debug.WriteLine($"[KaiROS] mm-proj downloaded: {mmProjPath}");
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[KaiROS] mm-proj download failed for {model.Name}. Vision disabled.");
+                        }
+                    }
+
                     model.DownloadState = DownloadState.Completed;
                     model.DownloadProgress = 100;
                     ModelDownloadCompleted?.Invoke(this, model);
@@ -309,10 +351,22 @@ public class ModelManagerService : IModelManagerService
                         ModelLoadProgress?.Invoke(this, 30);
 
                         // This is the heavy operation - loading weights
-                        // We run this on a separate thread but if it hangs, we can't easily kill it 
-                        // without process termination, but we can at least stop waiting and fallback.
-                        // The hung thread will eventually be cleaned up by the OS or when app closes.
                         _loadedWeights = LLamaWeights.LoadFromFile(parameters);
+
+                        // Load LLava mmproj if this is a vision model
+                        if (model.IsVisionModel && !string.IsNullOrEmpty(model.MmProjLocalPath) && File.Exists(model.MmProjLocalPath))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[KaiROS] Loading MTMD mm-proj: {model.MmProjLocalPath}");
+                            _loadedLlavaWeights = MtmdWeights.LoadFromFile(
+                                model.MmProjLocalPath,
+                                _loadedWeights,
+                                MtmdContextParams.Default());
+                            System.Diagnostics.Debug.WriteLine($"[KaiROS] Vision model ready. Supports vision: {_loadedLlavaWeights.SupportsVision}");
+                        }
+                        else
+                        {
+                            _loadedLlavaWeights = null;
+                        }
 
                         progress?.Report(90);
                         ModelLoadProgress?.Invoke(this, 90);
@@ -375,6 +429,8 @@ public class ModelManagerService : IModelManagerService
         {
             await Task.Run(() =>
             {
+                _loadedLlavaWeights?.Dispose();
+                _loadedLlavaWeights = null;
                 _loadedWeights.Dispose();
                 _loadedWeights = null;
             });
@@ -402,7 +458,8 @@ public class ModelManagerService : IModelManagerService
         Directory.CreateDirectory(_modelsDirectory);
     }
 
-    internal LLamaWeights? GetLoadedWeights() => _loadedWeights;
+    public LLamaWeights? GetLoadedWeights() => _loadedWeights;
+    public MtmdWeights? GetLoadedLlavaWeights() => _loadedLlavaWeights;
 
     /// <summary>
     /// Calculate optimal GPU layers based on available VRAM and model size.

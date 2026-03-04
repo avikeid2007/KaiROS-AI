@@ -195,6 +195,13 @@
                                         CornerRadius="16,16,4,16" 
                                         Padding="16,12">
                                     <StackPanel>
+                                        <!-- Attached Image Display -->
+                                        <Image Source="{Binding AttachedImagePath}"
+                                               MaxWidth="400" MaxHeight="300"
+                                               Margin="0,0,0,8"
+                                               Stretch="Uniform"
+                                               Visibility="{Binding HasImage, Converter={StaticResource BoolToVis}}"/>
+
                                         <TextBlock Text="{Binding Content}" 
                                                    Foreground="White"
                                                    TextWrapping="Wrap"/>
@@ -335,9 +342,10 @@
                              Padding="8,4" 
                              BorderBrush="{StaticResource BorderBrush}"
                              BorderThickness="1"
+                             Margin="0,0,8,0"
                              Visibility="{Binding CurrentDocumentName, Converter={StaticResource BoolToVis}}">
                          <StackPanel Orientation="Horizontal">
-                             <TextBlock Text="📎" Margin="0,0,6,0"/>
+                             <TextBlock Text="📄" Margin="0,0,6,0"/>
                              <TextBlock Text="{Binding CurrentDocumentName}" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Medium"/>
                              <Button Content="✕" 
                                      Command="{Binding RemoveDocumentCommand}"
@@ -347,6 +355,28 @@
                                      FontSize="11"
                                      Height="16"
                                      ToolTip="Remove attached document"/>
+                         </StackPanel>
+                     </Border>
+
+                     <!-- Attached Image Indicator -->
+                     <Border HorizontalAlignment="Left" 
+                             Background="{StaticResource SurfaceBrush}" 
+                             CornerRadius="4" 
+                             Padding="8,4" 
+                             BorderBrush="{StaticResource BorderBrush}"
+                             BorderThickness="1"
+                             Visibility="{Binding HasAttachedImage, Converter={StaticResource BoolToVis}}">
+                         <StackPanel Orientation="Horizontal">
+                             <TextBlock Text="🖼" Margin="0,0,6,0"/>
+                             <TextBlock Text="Image Attached" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Medium"/>
+                             <Button Content="✕" 
+                                     Command="{Binding RemoveAttachedImageCommand}"
+                                     Style="{StaticResource SecondaryButton}"
+                                     Padding="4,0"
+                                     Margin="8,0,0,0"
+                                     FontSize="11"
+                                     Height="16"
+                                     ToolTip="Remove attached image"/>
                          </StackPanel>
                      </Border>
                 </Grid>
@@ -370,11 +400,20 @@
                 </TextBox>
                 
                 <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Bottom">
-                    <!-- Upload Button -->
+                    <!-- Upload Image Button -->
+                    <Button Command="{Binding AttachImageCommand}"
+                            Style="{StaticResource SecondaryButton}"
+                            Content="🖼"
+                            ToolTip="Attach Image (Vision Model Required)"
+                            Margin="0,0,8,0"
+                            Padding="10,6"
+                            Visibility="{Binding ModelManager.IsVisionModelLoaded, Converter={StaticResource BoolToVis}}"/>
+
+                    <!-- Upload Document Button -->
                     <Button Command="{Binding UploadDocumentCommand}"
                             Style="{StaticResource SecondaryButton}"
-                            Content="📎"
-                            ToolTip="Attach document"
+                            Content="📄"
+                            ToolTip="Attach text document"
                             Margin="0,0,8,0"
                             Padding="10,6"/>
 

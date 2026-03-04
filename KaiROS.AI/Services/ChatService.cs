@@ -63,7 +63,17 @@ public class ChatService : IChatService
             ContextSize = _currentContextSize
         });
 
-        _executor = new InteractiveExecutor(_context);
+        // Use vision weights if available
+        var visionWeights = _modelManager.GetLoadedLlavaWeights();
+        if (visionWeights != null)
+        {
+            _executor = new InteractiveExecutor(_context, visionWeights);
+        }
+        else
+        {
+            _executor = new InteractiveExecutor(_context);
+        }
+        
         _isSystemPromptSent = false;
 
         // Detect whether this model has an embedded chat template
@@ -124,24 +134,25 @@ public class ChatService : IChatService
     public async Task<string> GenerateResponseAsync(IEnumerable<ChatMessage> messages, bool useWebSearch, CancellationToken cancellationToken = default)
     {
         var sb = new StringBuilder();
-        await foreach (var token in GenerateResponseStreamAsync(messages, useWebSearch, null, null, cancellationToken))
+        await foreach (var token in GenerateResponseStreamAsync(messages, useWebSearch, null, null, null, cancellationToken))
         {
             sb.Append(token);
         }
         return sb.ToString();
     }
 
-    public IAsyncEnumerable<string> GenerateResponseStreamAsync(IEnumerable<ChatMessage> messages, CancellationToken cancellationToken = default)
-        => GenerateResponseStreamAsync(messages, false, null, null, cancellationToken);
+    public IAsyncEnumerable<string> GenerateResponseStreamAsync(IEnumerable<ChatMessage> messages, string? imagePath = null, CancellationToken cancellationToken = default)
+        => GenerateResponseStreamAsync(messages, false, null, null, imagePath, cancellationToken);
 
-    public IAsyncEnumerable<string> GenerateResponseStreamAsync(IEnumerable<ChatMessage> messages, bool useWebSearch, CancellationToken cancellationToken = default)
-        => GenerateResponseStreamAsync(messages, useWebSearch, null, null, cancellationToken);
+    public IAsyncEnumerable<string> GenerateResponseStreamAsync(IEnumerable<ChatMessage> messages, bool useWebSearch, string? imagePath = null, CancellationToken cancellationToken = default)
+        => GenerateResponseStreamAsync(messages, useWebSearch, null, null, imagePath, cancellationToken);
 
     public async IAsyncEnumerable<string> GenerateResponseStreamAsync(
         IEnumerable<ChatMessage> messages,
         bool useWebSearch,
         string? sessionContext,
         string? ragContext,
+        string? imagePath = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (_executor == null || _context == null)
@@ -166,16 +177,29 @@ public class ChatService : IChatService
         }
 
         string prompt;
-        if (!_isSystemPromptSent)
+        var messagesList = messages.ToList();
+
+        // Inject image path for vision models
+        if (!string.IsNullOrEmpty(imagePath) && _modelManager.IsVisionModelLoaded)
+        {
+            var lastUser = messagesList.LastOrDefault(m => m.Role == ChatRole.User);
+            if (lastUser != null)
+            {
+                // Mtmd uses {path/to/image.jpg} as the default marker inside the prompt
+                lastUser.Content = $"{{{imagePath}}}\n{lastUser.Content}";
+            }
+        }
+
+        if (!_isSystemPromptSent || _context == null)
         {
             // First turn: include system prompt + context + first user message
-            prompt = BuildPrompt(messages, isFirstTurn: true, webContext, sessionContext, ragContext);
+            prompt = BuildPrompt(messagesList, isFirstTurn: true, webContext, sessionContext, ragContext);
             _isSystemPromptSent = true;
         }
         else
         {
             // Follow-up turn: only the new user message (the executor maintains running context)
-            prompt = BuildPrompt(messages, isFirstTurn: false, webContext);
+            prompt = BuildPrompt(messagesList, isFirstTurn: false, webContext);
         }
 
         // Build anti-prompts based on active template mode

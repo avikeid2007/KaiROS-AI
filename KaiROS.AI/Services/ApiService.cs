@@ -425,7 +425,7 @@ Content-Type: application/json
         
         using var writer = new StreamWriter(response.OutputStream, Encoding.UTF8);
         
-        await foreach (var token in _chatService.GenerateResponseStreamAsync(messages, ct))
+        await foreach (var token in _chatService.GenerateResponseStreamAsync(messages, imagePath: null, cancellationToken: ct))
         {
             var chunk = new { content = token };
             var json = JsonSerializer.Serialize(chunk, JsonOptions);

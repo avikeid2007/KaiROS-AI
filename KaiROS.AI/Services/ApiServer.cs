@@ -190,7 +190,7 @@ public class ApiServer : IDisposable
 
         using var writer = new StreamWriter(response.OutputStream, Encoding.UTF8);
 
-        await foreach (var token in _chatService.GenerateResponseStreamAsync(messages, false, null, context, ct))
+        await foreach (var token in _chatService.GenerateResponseStreamAsync(messages, false, null, context, null, ct))
         {
             var chunk = new { content = token };
             var json = JsonSerializer.Serialize(chunk, JsonOptions);
@@ -253,7 +253,7 @@ public class ApiServer : IDisposable
         var fullResponse = new StringBuilder();
         
         // Using streaming internal method to get the semaphore safety
-        await foreach (var token in _chatService.GenerateResponseStreamAsync(messages, false, null, context, ct))
+        await foreach (var token in _chatService.GenerateResponseStreamAsync(messages, false, null, context, null, ct))
         {
             fullResponse.Append(token);
         }
