@@ -1,0 +1,134 @@
+# Multi-Modal Vision Model Support
+
+KaiROS.AI already uses LLamaSharp v0.26.0 which introduced the `LLavaWeights` class and multi-modal `InteractiveExecutor` overloads. This plan adds end-to-end vision support: catalog vision models, load a companion mm-proj file alongside the main GGUF, let users attach images in chat, and stream a vision-aware response.
+
+## Proposed Changes
+
+---
+
+### 1. Models
+
+#### [MODIFY] [LLMModelInfo.cs](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Models/LLMModelInfo.cs)
+- Add `bool IsVisionModel` — marks models that support image input.
+- Add `string? MmProjDownloadUrl` — URL for the companion mm-proj GGUF.
+- Add `string? MmProjLocalPath` — resolved local path once downloaded.
+
+#### [MODIFY] [ChatMessage.cs](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Models/ChatMessage.cs)
+- Add `string? AttachedImagePath` — stores the path of an attached image on user messages.
+
+---
+
+### 2. Model Catalog ([appsettings.json](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/appsettings.json))
+
+#### [MODIFY] [appsettings.json](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/appsettings.json)
+Add vision-capable models:
+- **LLaVA 1.6 Mistral 7B** (main + mm-proj)
+- **LLaVA 1.5 7B** (smaller, accessible)
+- **Gemma 3 4B** (already in catalog — add `IsVisionModel: true` + its mm-proj URL)
+
+Each entry gets `"IsVisionModel": true` and `"MmProjDownloadUrl": "https://..."`.
+
+---
+
+### 3. Services
+
+#### [MODIFY] [IModelManagerService.cs](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Services/IModelManagerService.cs)
+- Add `bool IsVisionModel` property.
+- Add `string? MmProjLocalPath` property.
+
+#### [MODIFY] [ModelManagerService.cs](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Services/ModelManagerService.cs)
+- In [DownloadModelAsync](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Services/ModelManagerService.cs#139-196): if `IsVisionModel` is true, also download the mm-proj GGUF alongside the main model.
+- In [SetActiveModelAsync](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Services/ModelManagerService.cs#239-371): also load `LLavaWeights` from mm-proj path if present, and expose it.
+- Add `GetLoadedLlavaWeights()` method.
+
+#### [MODIFY] [IChatService.cs](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Services/IChatService.cs)
+- Add `bool IsVisionReady` property (true when LLavaWeights loaded).
+- Add overloads of [GenerateResponseStreamAsync](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Services/ChatService.cs#137-139) that accept `string? imagePath`.
+
+#### [MODIFY] [ChatService.cs](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Services/ChatService.cs)
+- On [InitializeContext](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Services/ChatService.cs#54-74): if `_modelManager.GetLoadedLlavaWeights()` is non-null, create `InteractiveExecutor(context, llavaWeights)` (multi-modal overload).
+- In [GenerateResponseStreamAsync](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Services/ChatService.cs#137-139): if an imagePath is provided, embed the image reference `{imagePath}` into the user message text before passing to `_executor.InferAsync`. LLamaSharp parses `{path}` tokens, calls `LLavaWeights.CreateImageEmbeddings`, and processes them.
+- Expose `IsVisionReady` from model manager state.
+
+---
+
+### 4. ViewModels
+
+#### [MODIFY] [ChatViewModel.cs](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/ViewModels/ChatViewModel.cs)
+- Add `string? AttachedImagePath` observable property.
+- Add `string? AttachedImageName` observable property (for display).
+- Add `bool HasAttachedImage` computed property.
+- Add `bool IsVisionReady` property (forwarded from [IChatService](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Services/IChatService.cs#5-20)).
+- Add `AttachImageCommand` — opens an image file picker (PNG/JPG/BMP/GIF).
+- Add `RemoveImageCommand` — clears the attached image.
+- In [SendMessage](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/ViewModels/ChatViewModel.cs#253-360): if `HasAttachedImage`, include the `AttachedImagePath` in the user message and pass it to the streaming call; clear after sending.
+- Update [UploadDocument](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/ViewModels/ChatViewModel.cs#201-245) — keep as-is (document context).
+
+#### [MODIFY] [ChatMessageViewModel.cs](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/ViewModels/ChatViewModel.cs) _(inner class)_
+- Add `string? ImagePath` property displayed in the user bubble.
+
+---
+
+### 5. UI
+
+#### [MODIFY] [ChatView.xaml](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Views/ChatView.xaml)
+- **Input toolbar**: Add `🖼 Image` attach button (next to the 📎 Doc button), only enabled when `IsVisionReady`.
+- **Image preview strip**: A horizontal strip above the text box showing a thumbnail of the attached image and a `✕` remove button, visible when `HasAttachedImage`.
+- **User message bubble**: If `ImagePath` is set on a user [ChatMessageViewModel](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/ViewModels/ChatViewModel.cs#508-514), show the image thumbnail above the text content using an `Image` element.
+- **Drag & Drop**: Handle `Drop` on the chat area to detect `.png/.jpg/.jpeg/.bmp` files and set `AttachedImagePath`.
+- **Clipboard paste**: Handle `Ctrl+V` in the text box — if clipboard contains an image, save it to a temp file and set `AttachedImagePath`.
+
+#### [MODIFY] [ChatView.xaml.cs](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Views/ChatView.xaml.cs)
+- Wire up drag-and-drop event handlers (`DragEnter`, `Drop`).
+- Wire up clipboard paste handler (`PreviewKeyDown` for `Ctrl+V`).
+
+#### [MODIFY] [ModelCatalogView.xaml](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Views/ModelCatalogView.xaml)
+- Add a `👁 Vision` badge on model cards where `IsVisionModel == true`.
+
+---
+
+## Verification Plan
+
+> [!NOTE]
+> No automated test project exists in this solution. Verification is manual.
+
+### Manual Verification Steps
+
+#### Step 1 — Vision Model Downloads with mm-proj
+1. Build and run the app.
+2. Go to **Model Catalog**.
+3. Find a vision model (e.g., "LLaVA 1.6 Mistral 7B").
+4. Click **Download**.
+5. **Expected**: Both the main `.gguf` and the `mmproj.gguf` files appear in the Models directory. Progress tracking should work for both.
+
+#### Step 2 — Vision Badge in Catalog
+1. After adding models to catalog, open the Model Catalog view.
+2. **Expected**: Vision models show a `👁 Vision` badge on their card.
+
+#### Step 3 — Load Vision Model
+1. Click **Set Active** on a downloaded vision model.
+2. **Expected**: `IsVisionReady = true` in [ChatService](file:///c:/Users/User/source/repos/avikeid2007/Kairos.local/KaiROS.AI/Services/ChatService.cs#35-43). The "🖼 Image" button in Chat becomes enabled.
+
+#### Step 4 — Attach Image via Button
+1. With the model loaded, click the **🖼 Image** button in the chat input bar.
+2. Browse to a `.jpg` or `.png` image.
+3. **Expected**: Thumbnail appears in the preview strip above the text input.
+
+#### Step 5 — Drag & Drop
+1. Drag a `.png` file from Windows Explorer and drop it onto the chat area.
+2. **Expected**: Same thumbnail preview appears.
+
+#### Step 6 — Clipboard Paste
+1. Copy an image to clipboard (e.g., Snip & Sketch or `Win+Shift+S`).
+2. Click in the chat text box, press `Ctrl+V`.
+3. **Expected**: Image is saved to temp and the thumbnail preview appears.
+
+#### Step 7 — Send Message with Image
+1. With an image attached and text "What is in this image?", click **Send**.
+2. **Expected**: 
+   - The user bubble shows the image thumbnail above the text.
+   - The assistant responds with a description of the image.
+
+#### Step 8 — Non-Vision Model Graceful Degradation  
+1. Switch to a non-vision model (e.g., Gemma 3 4B without mm-proj).
+2. **Expected**: The "🖼 Image" button is **disabled/hidden**. Normal chat still works.

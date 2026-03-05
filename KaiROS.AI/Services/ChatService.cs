@@ -1,6 +1,7 @@
 using KaiROS.AI.Models;
 using LLama;
 using LLama.Common;
+using LLama.Native;
 using LLama.Transformers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -185,9 +186,47 @@ public class ChatService : IChatService
             var lastUser = messagesList.LastOrDefault(m => m.Role == ChatRole.User);
             if (lastUser != null)
             {
-                // Mtmd uses {path/to/image.jpg} as the default marker inside the prompt
-                lastUser.Content = $"{{{imagePath}}}\n{lastUser.Content}";
+                var visionWeights = _modelManager.GetLoadedLlavaWeights();
+                if (visionWeights != null && _executor is InteractiveExecutor interactiveExecutor)
+                {
+                    try 
+                    {
+                        var embed = visionWeights.LoadMedia(imagePath);
+                        // Give it an explicit ID just in case
+                        embed.Id = imagePath;
+                        interactiveExecutor.Embeds.Add(embed);
+                        Debug.WriteLine($"[KaiROS] Multimodal: Created image embedding for {imagePath}");
+                        
+                        // Intercept visual grounding triggers globally for all vision models
+                        var userText = lastUser.Content.Trim();
+                        string lowerText = userText.ToLower();
+                        if (lowerText.Contains("what are object") || 
+                            lowerText.Contains("what is object") ||
+                            lowerText.Contains("what object") ||
+                            lowerText.Contains("explain")) // Added 'explain'
+                        {
+                            userText = "Describe this image in detail. Do not output coordinates.";
+                        }
+
+                        // Qwen-VL and similar models handle image tags better when they are inline 
+                        // and not separated by newlines, which can break the chat template formatting.
+                        lastUser.Content = $"[Image: {{{embed.Id}}}] {userText}";
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[KaiROS] Multimodal Error: Failed to load media. {ex.Message}");
+                        lastUser.Content = $"{{{imagePath}}}\n{lastUser.Content}"; // fallback
+                    }
+                }
+                else
+                {
+                    lastUser.Content = $"{{{imagePath}}}\n{lastUser.Content}"; // fallback
+                }
             }
+        }
+        else if (!string.IsNullOrEmpty(imagePath))
+        {
+            Debug.WriteLine($"[KaiROS] Warning: Image attached but vision model is not loaded or ready. Vision loaded: {_modelManager.IsVisionModelLoaded}");
         }
 
         if (!_isSystemPromptSent || _context == null)
@@ -400,6 +439,11 @@ public class ChatService : IChatService
             var systemMsg = messageList.FirstOrDefault(m => m.Role == ChatRole.System);
             var systemContent = systemMsg?.Content ?? "You are a helpful assistant. Be concise and direct.";
             systemContent = AppendContexts(systemContent, webContext, sessionContext, ragContext);
+
+            if (_modelManager.IsVisionModelLoaded)
+            {
+                systemContent += "\nWhen analyzing images, always provide descriptive text responses rather than raw bounding box coordinates unless the user explicitly asks for coordinates.";
+            }
 
             template.Add("system", systemContent);
 
