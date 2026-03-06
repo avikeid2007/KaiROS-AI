@@ -76,6 +76,24 @@ public class DatabaseService : IDatabaseService
                 );";
 
             await command.ExecuteNonQueryAsync();
+
+            // Migration: Add Vision Properties if they don't exist
+            try 
+            {
+                var migrationCmd = connection.CreateCommand();
+                migrationCmd.CommandText = "ALTER TABLE CustomModels ADD COLUMN IsVisionModel INTEGER DEFAULT 0;";
+                await migrationCmd.ExecuteNonQueryAsync();
+                
+                migrationCmd.CommandText = "ALTER TABLE CustomModels ADD COLUMN MmProjFilePath TEXT;";
+                await migrationCmd.ExecuteNonQueryAsync();
+                
+                migrationCmd.CommandText = "ALTER TABLE CustomModels ADD COLUMN MmProjDownloadUrl TEXT;";
+                await migrationCmd.ExecuteNonQueryAsync();
+            }
+            catch (SqliteException) 
+            {
+                // Columns likely already exist, ignore. SQLite does not have "ADD COLUMN IF NOT EXISTS"
+            }
         }
         catch (SqliteException ex)
         {
@@ -100,7 +118,7 @@ public class DatabaseService : IDatabaseService
             await using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                models.Add(new CustomModelEntity
+                var entity = new CustomModelEntity
                 {
                     Id = reader.GetInt32(0),
                     Name = reader.GetString(1),
@@ -111,7 +129,17 @@ public class DatabaseService : IDatabaseService
                     SizeBytes = reader.IsDBNull(6) ? 0 : reader.GetInt64(6),
                     AddedDate = DateTime.Parse(reader.GetString(7)),
                     IsLocal = reader.GetInt32(8) == 1
-                });
+                };
+                
+                // Handle new columns added in migration safely
+                if (reader.FieldCount > 9)
+                {
+                    entity.IsVisionModel = !reader.IsDBNull(9) && reader.GetInt32(9) == 1;
+                    entity.MmProjFilePath = reader.IsDBNull(10) ? string.Empty : reader.GetString(10);
+                    entity.MmProjDownloadUrl = reader.IsDBNull(11) ? string.Empty : reader.GetString(11);
+                }
+                
+                models.Add(entity);
             }
         }
         catch (SqliteException ex)
@@ -131,8 +159,8 @@ public class DatabaseService : IDatabaseService
 
             var command = connection.CreateCommand();
             command.CommandText = @"
-                INSERT INTO CustomModels (Name, DisplayName, Description, FilePath, DownloadUrl, SizeBytes, AddedDate, IsLocal)
-                VALUES ($name, $displayName, $description, $filePath, $downloadUrl, $sizeBytes, $addedDate, $isLocal)";
+                INSERT INTO CustomModels (Name, DisplayName, Description, FilePath, DownloadUrl, SizeBytes, AddedDate, IsLocal, IsVisionModel, MmProjFilePath, MmProjDownloadUrl)
+                VALUES ($name, $displayName, $description, $filePath, $downloadUrl, $sizeBytes, $addedDate, $isLocal, $isVisionModel, $mmProjFilePath, $mmProjDownloadUrl)";
 
             command.Parameters.AddWithValue("$name", model.Name);
             command.Parameters.AddWithValue("$displayName", model.DisplayName);
@@ -142,6 +170,9 @@ public class DatabaseService : IDatabaseService
             command.Parameters.AddWithValue("$sizeBytes", model.SizeBytes);
             command.Parameters.AddWithValue("$addedDate", model.AddedDate.ToString("O"));
             command.Parameters.AddWithValue("$isLocal", model.IsLocal ? 1 : 0);
+            command.Parameters.AddWithValue("$isVisionModel", model.IsVisionModel ? 1 : 0);
+            command.Parameters.AddWithValue("$mmProjFilePath", model.MmProjFilePath ?? string.Empty);
+            command.Parameters.AddWithValue("$mmProjDownloadUrl", model.MmProjDownloadUrl ?? string.Empty);
 
             await command.ExecuteNonQueryAsync();
         }

@@ -390,6 +390,9 @@
                          MaxHeight="150"
                          VerticalScrollBarVisibility="Auto"
                          ToolTip="Ctrl+Enter to send (or Enter if enabled)"
+                         AllowDrop="True"
+                         PreviewDragOver="MessageInput_PreviewDragOver"
+                         PreviewDrop="MessageInput_PreviewDrop"
                          PreviewKeyDown="MessageInput_PreviewKeyDown">
                     <TextBox.InputBindings>
                         <KeyBinding Gesture="Ctrl+Enter" Command="{Binding SendMessageCommand}"/>

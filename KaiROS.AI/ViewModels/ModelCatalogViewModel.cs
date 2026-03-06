@@ -55,10 +55,14 @@ public partial class ModelCatalogViewModel : ViewModelBase
     [ObservableProperty]
     private string _selectedVariant = "all";
 
+    [ObservableProperty]
+    private string _selectedVisionOption = "All";
+
     // Filter dropdown collections
     public ObservableCollection<string> Organizations { get; } = new() { "all" };
     public ObservableCollection<string> Families { get; } = new() { "all" };
     public ObservableCollection<string> Variants { get; } = new() { "all", "All", "CPU-Only", "GPU-Recommended" };
+    public ObservableCollection<string> VisionOptions { get; } = new() { "All", "Vision Only", "Text Only" };
 
     public ModelCatalogViewModel(IModelManagerService modelManager, IDatabaseService databaseService, IHardwareDetectionService hardwareService)
     {
@@ -107,6 +111,7 @@ public partial class ModelCatalogViewModel : ViewModelBase
     partial void OnSelectedOrganizationChanged(string value) => ApplyFilters();
     partial void OnSelectedFamilyChanged(string value) => ApplyFilters();
     partial void OnSelectedVariantChanged(string value) => ApplyFilters();
+    partial void OnSelectedVisionOptionChanged(string value) => ApplyFilters();
 
     private void ApplyFilters()
     {
@@ -130,6 +135,15 @@ public partial class ModelCatalogViewModel : ViewModelBase
         if (SelectedVariant != "all")
         {
             filtered = filtered.Where(m => m.Model.Variant.Equals(SelectedVariant, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (SelectedVisionOption == "Vision Only")
+        {
+            filtered = filtered.Where(m => m.Model.IsVisionModel);
+        }
+        else if (SelectedVisionOption == "Text Only")
+        {
+            filtered = filtered.Where(m => !m.Model.IsVisionModel);
         }
 
         if (ShowRecommendedOnly)
