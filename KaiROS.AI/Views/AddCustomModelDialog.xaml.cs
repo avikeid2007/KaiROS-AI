@@ -24,7 +24,47 @@ public partial class AddCustomModelDialog : Window
         {
             LocalFilePanel.Visibility = Visibility.Collapsed;
             DownloadUrlPanel.Visibility = Visibility.Visible;
+            
+            // Sync vision panels
+            if (IsVisionModelCheck.IsChecked == true)
+            {
+                LocalMmProjPanel.Visibility = Visibility.Collapsed;
+                RemoteMmProjPanel.Visibility = Visibility.Visible;
+            }
         };
+
+        LocalFileRadio.Checked += (s, e) => 
+        {
+            LocalFilePanel.Visibility = Visibility.Visible;
+            DownloadUrlPanel.Visibility = Visibility.Collapsed;
+            
+            // Sync vision panels
+            if (IsVisionModelCheck.IsChecked == true)
+            {
+                LocalMmProjPanel.Visibility = Visibility.Visible;
+                RemoteMmProjPanel.Visibility = Visibility.Collapsed;
+            }
+        };
+    }
+
+    private void IsVisionModelCheck_Changed(object sender, RoutedEventArgs e)
+    {
+        if (VisionModelPanel == null) return;
+
+        bool isVision = IsVisionModelCheck.IsChecked == true;
+        VisionModelPanel.Visibility = isVision ? Visibility.Visible : Visibility.Collapsed;
+        
+        if (isVision)
+        {
+            bool isLocal = LocalFileRadio.IsChecked == true;
+            LocalMmProjPanel.Visibility = isLocal ? Visibility.Visible : Visibility.Collapsed;
+            RemoteMmProjPanel.Visibility = !isLocal ? Visibility.Visible : Visibility.Collapsed;
+        }
+        else
+        {
+            MmProjFilePathBox.Clear();
+            MmProjDownloadUrlBox.Clear();
+        }
     }
     
     private void BrowseFile_Click(object sender, RoutedEventArgs e)
@@ -44,6 +84,20 @@ public partial class AddCustomModelDialog : Window
             {
                 DisplayNameBox.Text = Path.GetFileNameWithoutExtension(dialog.FileName);
             }
+        }
+    }
+
+    private void BrowseMmProjFile_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = "GGUF Model Files (*.gguf)|*.gguf|All Files (*.*)|*.*",
+            Title = "Select Multi-Modal Projector File"
+        };
+        
+        if (dialog.ShowDialog() == true)
+        {
+            MmProjFilePathBox.Text = dialog.FileName;
         }
     }
     
@@ -81,6 +135,26 @@ public partial class AddCustomModelDialog : Window
             WpfMessageBox.Show("The selected file does not exist.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
+
+        bool isVision = IsVisionModelCheck.IsChecked == true;
+        if (isVision)
+        {
+            if (isLocal && string.IsNullOrWhiteSpace(MmProjFilePathBox.Text))
+            {
+                WpfMessageBox.Show("Please select a Multi-Modal Projector file for the Vision Model.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (!isLocal && string.IsNullOrWhiteSpace(MmProjDownloadUrlBox.Text))
+            {
+                WpfMessageBox.Show("Please enter a Multi-Modal Projector URL for the Vision Model.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (isLocal && !File.Exists(MmProjFilePathBox.Text))
+            {
+                WpfMessageBox.Show("The selected Multi-Modal Projector file does not exist.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
         
         // Create result
         var fileName = isLocal 
@@ -102,7 +176,10 @@ public partial class AddCustomModelDialog : Window
             DownloadUrl = isLocal ? string.Empty : DownloadUrlBox.Text.Trim(),
             SizeBytes = fileSize,
             IsLocal = isLocal,
-            AddedDate = DateTime.UtcNow
+            AddedDate = DateTime.UtcNow,
+            IsVisionModel = isVision,
+            MmProjFilePath = isVision && isLocal ? MmProjFilePathBox.Text : string.Empty,
+            MmProjDownloadUrl = isVision && !isLocal ? MmProjDownloadUrlBox.Text.Trim() : string.Empty
         };
         
         DialogResult = true;

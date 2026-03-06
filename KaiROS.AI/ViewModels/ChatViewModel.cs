@@ -81,6 +81,12 @@ public partial class ChatViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _currentDocumentName = string.Empty;
+
+    [ObservableProperty]
+    private string? _attachedImagePath;
+
+    [ObservableProperty]
+    private bool _hasAttachedImage;
     
     // --- RAG Selection ---
     
@@ -97,6 +103,8 @@ public partial class ChatViewModel : ViewModelBase
     private int _globalRagDocumentCount;
 
     private string _currentDocumentContext = string.Empty;
+
+    public IModelManagerService ModelManager => _modelManager;
 
     public ChatViewModel(IChatService chatService, IModelManagerService modelManager, ISessionService sessionService, IExportService exportService, IDocumentService documentService, IRaasService raasService)
     {
@@ -251,6 +259,36 @@ public partial class ChatViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void AttachImage()
+    {
+        try
+        {
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp|All Files|*.*",
+                Title = "Select an image to attach"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                AttachedImagePath = openFileDialog.FileName;
+                HasAttachedImage = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to attach image: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void RemoveAttachedImage()
+    {
+        AttachedImagePath = null;
+        HasAttachedImage = false;
+    }
+
+    [RelayCommand]
     private async Task SendMessage()
     {
         if (string.IsNullOrWhiteSpace(UserInput) || IsGenerating)
@@ -269,7 +307,16 @@ public partial class ChatViewModel : ViewModelBase
             Sessions.Insert(0, CurrentSession);
         }
 
-        var userMessage = ChatMessage.User(UserInput);
+        ChatMessage userMessage;
+        if (HasAttachedImage && !string.IsNullOrEmpty(AttachedImagePath))
+        {
+            userMessage = ChatMessage.UserWithImage(UserInput, AttachedImagePath);
+        }
+        else
+        {
+            userMessage = ChatMessage.User(UserInput);
+        }
+        
         Messages.Add(new ChatMessageViewModel(userMessage));
         await _sessionService.AddMessageAsync(CurrentSession.Id, userMessage);
         CurrentSession.MessageCount++;
@@ -305,7 +352,11 @@ public partial class ChatViewModel : ViewModelBase
              }
         }
         
+        // Capture image path before clearing
+        string? imagePathToSend = AttachedImagePath;
+
         UserInput = string.Empty;
+        RemoveAttachedImage(); // Clear selection after sending
 
         var allMessages = new List<ChatMessage>();
         if (!string.IsNullOrWhiteSpace(SystemPrompt))
@@ -325,11 +376,12 @@ public partial class ChatViewModel : ViewModelBase
         try
         {
             await foreach (var token in _chatService.GenerateResponseStreamAsync(
-                allMessages,
-                IsWebSearchEnabled,
-                _currentDocumentContext, 
-                ragContext,      // Pass resolved context!
-                _currentInferenceCts.Token))
+                messages: allMessages,
+                useWebSearch: IsWebSearchEnabled,
+                sessionContext: _currentDocumentContext, 
+                ragContext: ragContext,
+                imagePath: imagePathToSend,
+                cancellationToken: _currentInferenceCts.Token))
             {
                 assistantVm.AppendContent(token);
             }
@@ -498,6 +550,9 @@ public partial class ChatMessageViewModel : ObservableObject
     public bool IsAssistant => Message.Role == ChatRole.Assistant;
     public bool IsSystem => Message.Role == ChatRole.System;
     public string Timestamp => Message.Timestamp.ToString("HH:mm");
+
+    public bool HasImage => !string.IsNullOrEmpty(Message.AttachedImagePath);
+    public string? AttachedImagePath => Message.AttachedImagePath;
 
     private readonly System.Text.StringBuilder _tokenBuffer = new();
     private System.Windows.Threading.DispatcherTimer? _flushTimer;

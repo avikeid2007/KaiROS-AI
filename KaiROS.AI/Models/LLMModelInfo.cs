@@ -33,6 +33,11 @@ public class LLMModelInfo
     // Custom model properties
     public bool IsCustomModel { get; set; }
     public int CustomModelId { get; set; }
+
+    // Vision / Multi-modal properties
+    public bool IsVisionModel { get; set; }
+    public string? MmProjDownloadUrl { get; set; }  // URL for the companion mm-proj GGUF
+    public string? MmProjLocalPath { get; set; }    // Resolved local path after download
 }
 
 public enum DownloadState

@@ -1,0 +1,1 @@
+     2>C:\Users\User\source\repos\avikeid2007\Kairos.local\KaiROS.AI\Services\ApiServer.cs(256,110): error CS1503: Argument 5: cannot convert from 'System.Threading.CancellationToken' to 'string?' [C:\Users\User\source\repos\avikeid2007\Kairos.local\KaiROS.AI\KaiROS.AI_fuhjhdr1_wpftmp.csproj]

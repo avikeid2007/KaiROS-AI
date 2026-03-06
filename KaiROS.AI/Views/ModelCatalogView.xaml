@@ -43,114 +43,170 @@
                     VerticalAlignment="Center"/>
         </Grid>
         
-        <!-- Filters -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20" HorizontalAlignment="Left">
-            <!-- Category Buttons -->
-            <Button Content="All" 
-                    Command="{Binding FilterByCategoryCommand}" 
-                    CommandParameter="all"
-                    Style="{StaticResource SecondaryButton}"
-                    Margin="0,0,8,0"/>
-            <Button Content="Small" 
-                    Command="{Binding FilterByCategoryCommand}" 
-                    CommandParameter="small"
-                    Style="{StaticResource SecondaryButton}"
-                    Margin="0,0,8,0"/>
-            <Button Content="Medium" 
-                    Command="{Binding FilterByCategoryCommand}" 
-                    CommandParameter="medium"
-                    Style="{StaticResource SecondaryButton}"
-                    Margin="0,0,8,0"/>
-            <Button Content="Large" 
-                    Command="{Binding FilterByCategoryCommand}" 
-                    CommandParameter="large"
-                    Style="{StaticResource SecondaryButton}"
-                    Margin="0,0,8,0"/>
+        <!-- Premium Filter Bar -->
+        <Border Grid.Row="1" 
+                Background="{StaticResource SurfaceLightBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="16,12"
+                Margin="0,0,0,24"
+                HorizontalAlignment="Stretch">
             
-            <Border Width="1" Background="{StaticResource BorderBrush}" Margin="8,4"/>
-            
-            <!-- Organization Filter -->
-            <StackPanel Orientation="Horizontal" Margin="8,0,0,0">
-                <TextBlock Text="Org:" 
-                           Foreground="{StaticResource TextSecondaryBrush}" 
-                           VerticalAlignment="Center" 
-                           Margin="0,0,6,0"/>
-                <ComboBox ItemsSource="{Binding Organizations}" 
-                          SelectedItem="{Binding SelectedOrganization}"
-                          Width="100"
-                          Style="{StaticResource ModernComboBox}"/>
-            </StackPanel>
-            
-            <!-- Family Filter -->
-            <StackPanel Orientation="Horizontal" Margin="12,0,0,0">
-                <TextBlock Text="Family:" 
-                           Foreground="{StaticResource TextSecondaryBrush}" 
-                           VerticalAlignment="Center" 
-                           Margin="0,0,6,0"/>
-                <ComboBox ItemsSource="{Binding Families}" 
-                          SelectedItem="{Binding SelectedFamily}"
-                          Width="90"
-                          Style="{StaticResource ModernComboBox}"/>
-            </StackPanel>
-            
-            <!-- Variant Filter -->
-            <StackPanel Orientation="Horizontal" Margin="12,0,0,0">
-                <TextBlock Text="Variant:" 
-                           Foreground="{StaticResource TextSecondaryBrush}" 
-                           VerticalAlignment="Center" 
-                           Margin="0,0,6,0"/>
-                <ComboBox ItemsSource="{Binding Variants}" 
-                          SelectedItem="{Binding SelectedVariant}"
-                          Width="120"
-                          Style="{StaticResource ModernComboBox}"/>
-            </StackPanel>
-            
-            <Border Width="1" Background="{StaticResource BorderBrush}" Margin="12,4"/>
-            
-            <ToggleButton x:Name="RecommendedToggle" 
-                          Content="★ Recommended Only" 
-                          IsChecked="{Binding ShowRecommendedOnly}"
-                          Margin="8,0,0,0">
-                <ToggleButton.Style>
-                    <Style TargetType="ToggleButton">
-                        <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
-                        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-                        <Setter Property="BorderThickness" Value="1"/>
-                        <Setter Property="Padding" Value="16,10"/>
-                        <Setter Property="Cursor" Value="Hand"/>
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ToggleButton">
-                                    <Border x:Name="border" 
-                                            Background="{TemplateBinding Background}" 
-                                            BorderBrush="{TemplateBinding BorderBrush}"
-                                            BorderThickness="{TemplateBinding BorderThickness}"
-                                            CornerRadius="8"
-                                            Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsChecked" Value="True">
-                                            <Setter TargetName="border" Property="Background" Value="{StaticResource AccentBrush}"/>
-                                            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-                                        </Trigger>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </ToggleButton.Style>
-            </ToggleButton>
-            
-            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                     Style="{StaticResource ModernTextBox}"
-                     Width="200"
-                     Margin="16,0,0,0"/>
-        </StackPanel>
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                
+                <!-- Category Buttons as Segmented Control -->
+                <Border Background="{StaticResource SurfaceBrush}" 
+                        BorderBrush="{StaticResource BorderBrush}" 
+                        BorderThickness="1" 
+                        CornerRadius="8" 
+                        Padding="4"
+                        Margin="0,0,16,6">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="All" 
+                                Command="{Binding FilterByCategoryCommand}" 
+                                CommandParameter="all"
+                                Style="{StaticResource SecondaryButton}"
+                                BorderThickness="0"
+                                Padding="16,8"
+                                Margin="0,0,4,0"/>
+                        <Button Content="Small" 
+                                Command="{Binding FilterByCategoryCommand}" 
+                                CommandParameter="small"
+                                Style="{StaticResource SecondaryButton}"
+                                BorderThickness="0"
+                                Padding="16,8"
+                                Margin="0,0,4,0"/>
+                        <Button Content="Medium" 
+                                Command="{Binding FilterByCategoryCommand}" 
+                                CommandParameter="medium"
+                                Style="{StaticResource SecondaryButton}"
+                                BorderThickness="0"
+                                Padding="16,8"
+                                Margin="0,0,4,0"/>
+                        <Button Content="Large" 
+                                Command="{Binding FilterByCategoryCommand}" 
+                                CommandParameter="large"
+                                Style="{StaticResource SecondaryButton}"
+                                BorderThickness="0"
+                                Padding="16,8"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Dropdown Filters -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
+                    <TextBlock Text="🏢 Org:" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" 
+                               Margin="0,0,6,0"/>
+                    <ComboBox ItemsSource="{Binding Organizations}" 
+                              SelectedItem="{Binding SelectedOrganization}"
+                              Width="105"
+                              Style="{StaticResource ModernComboBox}"/>
+                </StackPanel>
+                
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
+                    <TextBlock Text="🧬 Family:" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" 
+                               Margin="0,0,6,0"/>
+                    <ComboBox ItemsSource="{Binding Families}" 
+                              SelectedItem="{Binding SelectedFamily}"
+                              Width="105"
+                              Style="{StaticResource ModernComboBox}"/>
+                </StackPanel>
+                
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
+                    <TextBlock Text="⚙️ Variant:" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" 
+                               Margin="0,0,6,0"/>
+                    <ComboBox ItemsSource="{Binding Variants}" 
+                              SelectedItem="{Binding SelectedVariant}"
+                              Width="130"
+                              Style="{StaticResource ModernComboBox}"/>
+                </StackPanel>
+
+                <!-- NEW: Vision Filter -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
+                    <TextBlock Text="👁️ Vision:" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" 
+                               Margin="0,0,6,0"/>
+                    <ComboBox ItemsSource="{Binding VisionOptions}" 
+                              SelectedItem="{Binding SelectedVisionOption}"
+                              Width="120"
+                              Style="{StaticResource ModernComboBox}"/>
+                </StackPanel>
+                
+                <!-- Right Side Actions -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,6" HorizontalAlignment="Right">
+                    <ToggleButton x:Name="RecommendedToggle" 
+                                  Content="★ Recommended" 
+                                  IsChecked="{Binding ShowRecommendedOnly}"
+                                  Margin="0,0,12,0">
+                        <ToggleButton.Style>
+                            <Style TargetType="ToggleButton">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="Padding" Value="14,8"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border x:Name="border" 
+                                                    Background="{TemplateBinding Background}" 
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="8"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ToggleButton.Style>
+                    </ToggleButton>
+                    
+                    <!-- Search Box with Icon -->
+                    <Border Background="{StaticResource SurfaceBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="12,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🔍" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0"/>
+                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     Width="150"
+                                     Padding="0,8"
+                                     VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                
+            </WrapPanel>
+        </Border>
         
         <!-- Model List -->
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">

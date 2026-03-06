@@ -14,4 +14,9 @@ public class CustomModelEntity
     public long SizeBytes { get; set; }
     public DateTime AddedDate { get; set; } = DateTime.UtcNow;
     public bool IsLocal { get; set; } // true = local file, false = download URL
+    
+    // Vision Model Properties
+    public bool IsVisionModel { get; set; }
+    public string MmProjFilePath { get; set; } = string.Empty;
+    public string MmProjDownloadUrl { get; set; } = string.Empty;
 }
