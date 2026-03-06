@@ -5,14 +5,12 @@
     <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
-    <UseWindowsForms>true</UseWindowsForms>
+    <UseWinUI>true</UseWinUI>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <AssemblyName>KaiROS.AI</AssemblyName>
     <RootNamespace>KaiROS.AI</RootNamespace>
     
-    <!-- Allow duplicate native libs from multiple LLamaSharp backends -->
-    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+
     
     <!-- MSIX Packaging for MS Store -->
     <WindowsPackageType>MSIX</WindowsPackageType>
@@ -34,12 +32,16 @@
     <Description>Local AI Assistant powered by LLamaSharp - Run LLMs privately on your own hardware</Description>
     <PackageCertificateThumbprint>1E4D5886C5D7447BF5538D92527A6AB19463FB5A</PackageCertificateThumbprint>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+    <!-- Suppress duplicate native lib warning from multiple LLamaSharp backends -->
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.251219" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="3.4.1" />
-    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
+    <PackageReference Include="H.NotifyIcon.WinUI" Version="2.1.5" />
     <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageReference Include="itext7" Version="9.5.0" />
     <PackageReference Include="LLamaSharp" Version="0.26.0" />
@@ -50,6 +52,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250401001" />
     <PackageReference Include="System.Management" Version="10.0.3" />
   </ItemGroup>
 

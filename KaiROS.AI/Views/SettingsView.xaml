@@ -2,8 +2,8 @@
     x:Class="KaiROS.AI.Views.SettingsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:converters="clr-namespace:KaiROS.AI.Converters"
-    xmlns:models="clr-namespace:KaiROS.AI.Models">
+    xmlns:converters="using:KaiROS.AI.Converters"
+    xmlns:models="using:KaiROS.AI.Models">
 
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
@@ -60,14 +60,16 @@
                             VerticalAlignment="Center"
                             Orientation="Horizontal">
                             <TextBlock
-                                Margin="0,0,8,0"
+                                Margin="8,0,0,0"
                                 VerticalAlignment="Center"
                                 FontSize="16"
                                 Text="☀️" />
-                            <CheckBox
+                            <ToggleSwitch
                                 VerticalAlignment="Center"
-                                IsChecked="{Binding IsDarkTheme}"
-                                Style="{StaticResource ModernToggleSwitch}" />
+                                IsOn="{Binding IsDarkTheme, Mode=TwoWay}"
+                                OnContent="" OffContent=""
+                                MinWidth="0"
+                                Margin="8,0"/>
                             <TextBlock
                                 Margin="8,0,0,0"
                                 VerticalAlignment="Center"
@@ -106,12 +108,13 @@
                                 Text="Expose OpenAI-compatible REST API on localhost" />
                         </StackPanel>
 
-                        <CheckBox
+                        <ToggleSwitch
                             Grid.Column="1"
                             VerticalAlignment="Center"
-                            IsChecked="{Binding IsApiEnabled}"
+                            IsOn="{Binding IsApiEnabled, Mode=TwoWay}"
                             IsEnabled="{Binding CanEnableApi}"
-                            Style="{StaticResource ModernToggleSwitch}" />
+                            OnContent="" OffContent=""
+                            MinWidth="0"/>
                     </Grid>
 
                     <StackPanel Margin="0,16,0,0">
@@ -145,27 +148,10 @@
                                 BorderThickness="0"
                                 Click="OpenApiUrl_Click"
                                 Content="🌐 Open"
-                                Cursor="Hand"
                                 FontSize="11"
                                 Foreground="White"
-                                Visibility="{Binding IsApiEnabled, Converter={StaticResource BoolToVis}}">
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="Button">
-                                                    <Border
-                                                        Padding="{TemplateBinding Padding}"
-                                                        Background="{TemplateBinding Background}"
-                                                        CornerRadius="4">
-                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                                    </Border>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
+                                CornerRadius="4"
+                                Visibility="{Binding IsApiEnabled, Converter={StaticResource BoolToVis}}"/>
                         </StackPanel>
                     </StackPanel>
 
@@ -270,20 +256,29 @@
                                                         Background="{StaticResource SurfaceLightBrush}"
                                                         BorderBrush="{StaticResource BorderBrush}"
                                                         BorderThickness="2"
-                                                        CornerRadius="8"
-                                                        Cursor="Hand">
+                                                        CornerRadius="8">
+                                                    <VisualStateManager.VisualStateGroups>
+                                                        <VisualStateGroup x:Name="SelectionStates">
+                                                            <VisualState x:Name="Unselected"/>
+                                                            <VisualState x:Name="Selected">
+                                                                <VisualState.Setters>
+                                                                    <Setter Target="border.BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                                                                    <Setter Target="border.Background" Value="{StaticResource PrimaryBrush}"/>
+                                                                </VisualState.Setters>
+                                                            </VisualState>
+                                                        </VisualStateGroup>
+                                                        <VisualStateGroup x:Name="CommonStates">
+                                                            <VisualState x:Name="Normal"/>
+                                                            <VisualState x:Name="PointerOver">
+                                                                <VisualState.Setters>
+                                                                    <Setter Target="border.BorderBrush" Value="{StaticResource PrimaryLightBrush}"/>
+                                                                </VisualState.Setters>
+                                                            </VisualState>
+                                                        </VisualStateGroup>
+                                                    </VisualStateManager.VisualStateGroups>
                                                     <TextBlock Foreground="{StaticResource TextPrimaryBrush}" 
                                                                Text="{Binding Converter={StaticResource BackendToString}}" />
                                                 </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsSelected" Value="True">
-                                                        <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
-                                                        <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryBrush}" />
-                                                    </Trigger>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryLightBrush}" />
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
@@ -398,7 +393,7 @@
                         Style="{StaticResource ModernTextBox}"
                         Text="{Binding SystemPrompt, UpdateSourceTrigger=PropertyChanged}"
                         TextWrapping="Wrap"
-                        VerticalScrollBarVisibility="Auto" />
+                        ScrollViewer.VerticalScrollBarVisibility="Auto" />
 
                     <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
                         <Button
@@ -442,27 +437,11 @@
                         BorderThickness="0"
                         Click="FeedbackHub_Click"
                         Content="💬 Send Feedback"
-                        Cursor="Hand"
-                        Foreground="White">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border
-                                                Padding="{TemplateBinding Padding}"
-                                                Background="{TemplateBinding Background}"
-                                                CornerRadius="6">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+                        CornerRadius="6"
+                        Foreground="White"/>
                 </StackPanel>
             </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>
+

@@ -28,7 +28,7 @@
   <Applications>
     <Application Id="App"
       Executable="KaiROS.AI.exe"
-      EntryPoint="Windows.FullTrustApplication">
+      EntryPoint="$targetentrypoint$">
       <uap:VisualElements
         DisplayName="KaiROS AI"
         Description="Local AI Assistant powered by LLamaSharp"

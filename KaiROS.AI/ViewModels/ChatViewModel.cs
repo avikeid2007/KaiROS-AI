@@ -1,9 +1,13 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-
+using KaiROS.AI;
 using KaiROS.AI.Models;
 using KaiROS.AI.Services;
-
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 using System.Collections.ObjectModel;
 using System.IO;
 
@@ -17,6 +21,7 @@ public partial class ChatViewModel : ViewModelBase
     private readonly IExportService _exportService;
     private readonly IDocumentService _documentService;
     private readonly IRaasService _raasService;
+    private readonly DispatcherQueue _dispatcherQueue;
     private CancellationTokenSource? _currentInferenceCts;
 
     [ObservableProperty]
@@ -114,6 +119,7 @@ public partial class ChatViewModel : ViewModelBase
         _exportService = exportService;
         _documentService = documentService;
         _raasService = raasService;
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         IsWebSearchEnabled = false;
         IsEnterToSendEnabled = true;
@@ -121,20 +127,32 @@ public partial class ChatViewModel : ViewModelBase
         _chatService.StatsUpdated += OnStatsUpdated;
         _modelManager.ModelLoaded += OnModelLoaded;
         _modelManager.ModelUnloaded += OnModelUnloaded;
-        
-        // Listen to config changes to update list? 
-        // Ideally we'd subscribe to _raasService.Configurations.CollectionChanged
-        _raasService.Configurations.CollectionChanged += (s, e) => UpdateKnowledgeBaseList();
+
+        // Always dispatch to UI thread — CollectionChanged may fire from any thread
+        _raasService.Configurations.CollectionChanged += (s, e) =>
+            _dispatcherQueue.TryEnqueue(UpdateKnowledgeBaseList);
     }
 
     public override async Task InitializeAsync()
     {
-        await _sessionService.InitializeAsync();
-        await LoadSessionsAsync();
-        GlobalRagDocumentCount = _documentService.LoadedDocuments.Count;
-        
-        await _raasService.InitializeAsync(); // ensure loaded
-        UpdateKnowledgeBaseList();
+        await _sessionService.InitializeAsync().ConfigureAwait(false);
+
+        var sessions = await _sessionService.GetAllSessionsAsync().ConfigureAwait(false);
+        var docCount = _documentService.LoadedDocuments.Count;
+
+        // Populate sessions on the UI thread to avoid cross-thread ObservableCollection writes
+        _dispatcherQueue.TryEnqueue(() =>
+        {
+            Sessions.Clear();
+            foreach (var s in sessions)
+                Sessions.Add(s);
+            GlobalRagDocumentCount = docCount;
+        });
+
+        await _raasService.InitializeAsync().ConfigureAwait(false);
+
+        // UpdateKnowledgeBaseList touches ObservableCollection — must be on UI thread
+        _dispatcherQueue.TryEnqueue(UpdateKnowledgeBaseList);
     }
     
     private void UpdateKnowledgeBaseList()
@@ -171,31 +189,28 @@ public partial class ChatViewModel : ViewModelBase
         }
     }
 
-    private async Task LoadSessionsAsync()
-    {
-        var sessions = await _sessionService.GetAllSessionsAsync();
-        Sessions.Clear();
-        foreach (var session in sessions)
-        {
-            Sessions.Add(session);
-        }
-    }
-
     private void OnModelLoaded(object? sender, LLMModelInfo model)
     {
-        HasActiveModel = true;
-        ActiveModelInfo = $"{model.DisplayName} ({model.SizeText})";
+        // ModelLoaded fires from background inference thread — must dispatch to UI
+        _dispatcherQueue.TryEnqueue(() =>
+        {
+            HasActiveModel = true;
+            ActiveModelInfo = $"{model.DisplayName} ({model.SizeText})";
+        });
     }
 
     private void OnModelUnloaded(object? sender, EventArgs e)
     {
-        HasActiveModel = false;
-        ActiveModelInfo = "No model loaded";
+        _dispatcherQueue.TryEnqueue(() =>
+        {
+            HasActiveModel = false;
+            ActiveModelInfo = "No model loaded";
+        });
     }
 
     private void OnStatsUpdated(object? sender, InferenceStats stats)
     {
-        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        _dispatcherQueue.TryEnqueue(() =>
         {
             TokensPerSecond = Math.Round(stats.TokensPerSecond, 1);
             TotalTokens = stats.TotalTokens;
@@ -211,15 +226,24 @@ public partial class ChatViewModel : ViewModelBase
     {
         try
         {
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Filter = "All Supported Files|*.txt;*.md;*.json;*.cs;*.xml;*.html;*.pdf;*.docx;*.doc|PDF Documents|*.pdf|Word Documents|*.docx;*.doc|Text Documents|*.txt;*.md;*.json;*.cs;*.xml;*.html|All Files|*.*",
-                Title = "Select a document to chat with"
-            };
+            var picker = new FileOpenPicker();
+            picker.FileTypeFilter.Add(".txt");
+            picker.FileTypeFilter.Add(".md");
+            picker.FileTypeFilter.Add(".json");
+            picker.FileTypeFilter.Add(".cs");
+            picker.FileTypeFilter.Add(".xml");
+            picker.FileTypeFilter.Add(".html");
+            picker.FileTypeFilter.Add(".pdf");
+            picker.FileTypeFilter.Add(".docx");
+            picker.FileTypeFilter.Add(".doc");
+            picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+            var mainWindow = KaiROS.AI.App.Current.Services.GetRequiredService<MainWindow>();
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(mainWindow));
 
-            if (openFileDialog.ShowDialog() == true)
+            var file = await picker.PickSingleFileAsync();
+            if (file != null)
             {
-                var filePath = openFileDialog.FileName;
+                var filePath = file.Path;
                 var fileName = Path.GetFileName(filePath);
 
                 if (File.Exists(filePath))
@@ -251,6 +275,7 @@ public partial class ChatViewModel : ViewModelBase
         }
     }
 
+
     [RelayCommand]
     private void RemoveDocument()
     {
@@ -259,19 +284,25 @@ public partial class ChatViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void AttachImage()
+    private async Task AttachImage()
     {
         try
         {
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp|All Files|*.*",
-                Title = "Select an image to attach"
-            };
+            var picker = new FileOpenPicker();
+            picker.FileTypeFilter.Add(".jpg");
+            picker.FileTypeFilter.Add(".jpeg");
+            picker.FileTypeFilter.Add(".png");
+            picker.FileTypeFilter.Add(".bmp");
+            picker.FileTypeFilter.Add(".gif");
+            picker.FileTypeFilter.Add(".webp");
+            picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+            var mainWindow = KaiROS.AI.App.Current.Services.GetRequiredService<MainWindow>();
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(mainWindow));
 
-            if (openFileDialog.ShowDialog() == true)
+            var file = await picker.PickSingleFileAsync();
+            if (file != null)
             {
-                AttachedImagePath = openFileDialog.FileName;
+                AttachedImagePath = file.Path;
                 HasAttachedImage = true;
             }
         }
@@ -367,7 +398,7 @@ public partial class ChatViewModel : ViewModelBase
 
         var assistantMessage = ChatMessage.Assistant(string.Empty);
         assistantMessage.IsStreaming = true;
-        var assistantVm = new ChatMessageViewModel(assistantMessage);
+        var assistantVm = new ChatMessageViewModel(assistantMessage, _dispatcherQueue);
         Messages.Add(assistantVm);
 
         IsGenerating = true;
@@ -446,40 +477,43 @@ public partial class ChatViewModel : ViewModelBase
     private async Task LoadSession(ChatSession session)
     {
         if (session == null) return;
-        CurrentSession = await _sessionService.GetSessionAsync(session.Id);
-        if (CurrentSession == null) return;
+        var loadedSession = await _sessionService.GetSessionAsync(session.Id).ConfigureAwait(false);
+        if (loadedSession == null) return;
 
-        Messages.Clear();
-        _chatService.ClearContext();
-
-        foreach (var msg in CurrentSession.Messages)
+        _dispatcherQueue.TryEnqueue(() =>
         {
-            Messages.Add(new ChatMessageViewModel(msg));
-        }
+            CurrentSession = loadedSession;
+            Messages.Clear();
+            _chatService.ClearContext();
 
-        if (!string.IsNullOrEmpty(CurrentSession.SystemPrompt))
-        {
-            SystemPrompt = CurrentSession.SystemPrompt;
-        }
+            foreach (var msg in loadedSession.Messages)
+                Messages.Add(new ChatMessageViewModel(msg, _dispatcherQueue));
 
-        TokensPerSecond = 0;
-        TotalTokens = 0;
-        MemoryUsage = "N/A";
-        ElapsedTime = "0s";
+            if (!string.IsNullOrEmpty(loadedSession.SystemPrompt))
+                SystemPrompt = loadedSession.SystemPrompt;
+
+            TokensPerSecond = 0;
+            TotalTokens = 0;
+            MemoryUsage = "N/A";
+            ElapsedTime = "0s";
+        });
     }
 
     [RelayCommand]
     private async Task DeleteSession(ChatSession session)
     {
         if (session == null) return;
-        await _sessionService.DeleteSessionAsync(session.Id);
-        Sessions.Remove(session);
-        if (CurrentSession?.Id == session.Id)
+        await _sessionService.DeleteSessionAsync(session.Id).ConfigureAwait(false);
+        _dispatcherQueue.TryEnqueue(() =>
         {
-            CurrentSession = null;
-            Messages.Clear();
-            _chatService.ClearContext();
-        }
+            Sessions.Remove(session);
+            if (CurrentSession?.Id == session.Id)
+            {
+                CurrentSession = null;
+                Messages.Clear();
+                _chatService.ClearContext();
+            }
+        });
     }
 
     [RelayCommand]
@@ -555,64 +589,142 @@ public partial class ChatMessageViewModel : ObservableObject
     public string? AttachedImagePath => Message.AttachedImagePath;
 
     private readonly System.Text.StringBuilder _tokenBuffer = new();
-    private System.Windows.Threading.DispatcherTimer? _flushTimer;
+    private readonly object _bufferLock = new();
+    private Microsoft.UI.Xaml.DispatcherTimer? _flushTimer;
     private int _pendingTokenCount;
-    private const int BATCH_TOKEN_COUNT = 15;  
-    private const int FLUSH_INTERVAL_MS = 50;  
+    private const int BATCH_TOKEN_COUNT = 15;
+    private const int FLUSH_INTERVAL_MS = 50;
 
-    public ChatMessageViewModel(ChatMessage message)
+    private readonly DispatcherQueue? _dispatcherQueue;
+
+    public ChatMessageViewModel(ChatMessage message, DispatcherQueue? dispatcherQueue = null)
     {
         Message = message;
         _content = message.Content;
         _isStreaming = message.IsStreaming;
+        _dispatcherQueue = dispatcherQueue ?? DispatcherQueue.GetForCurrentThread();
     }
 
+    /// <summary>
+    /// Thread-safe: may be called from background LLamaSharp inference threads.
+    /// Buffers tokens and flushes to the UI thread via DispatcherQueue.
+    /// </summary>
     public void AppendContent(string text)
     {
-        _tokenBuffer.Append(text);
-        _pendingTokenCount++;
-        if (_pendingTokenCount >= BATCH_TOKEN_COUNT) FlushBuffer();
-        else EnsureFlushTimer();
+        string? toFlush = null;
+        lock (_bufferLock)
+        {
+            _tokenBuffer.Append(text);
+            _pendingTokenCount++;
+            if (_pendingTokenCount >= BATCH_TOKEN_COUNT)
+            {
+                toFlush = _tokenBuffer.ToString();
+                _tokenBuffer.Clear();
+                _pendingTokenCount = 0;
+            }
+        }
+
+        if (toFlush != null)
+        {
+            // Batch threshold hit — flush immediately on UI thread
+            var captured = toFlush;
+            EnqueueUI(() =>
+            {
+                _flushTimer?.Stop();
+                Content += captured;
+                Message.Content = Content;
+            });
+        }
+        else
+        {
+            // Not yet at batch threshold — ensure the periodic flush timer is running
+            EnqueueUI(EnsureFlushTimer);
+        }
     }
 
+    private void EnqueueUI(Action action)
+    {
+        if (_dispatcherQueue == null)
+        {
+            action();
+            return;
+        }
+        // If already on the UI thread, run inline to avoid redundant marshalling
+        if (_dispatcherQueue == DispatcherQueue.GetForCurrentThread())
+            action();
+        else
+            _dispatcherQueue.TryEnqueue(() => action());
+    }
+
+    // Must be called on the UI thread (enforced via EnqueueUI).
     private void EnsureFlushTimer()
     {
         if (_flushTimer == null)
         {
-            _flushTimer = new System.Windows.Threading.DispatcherTimer
+            _flushTimer = new Microsoft.UI.Xaml.DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(FLUSH_INTERVAL_MS)
             };
-            _flushTimer.Tick += (s, e) => FlushBuffer();
+            _flushTimer.Tick += (s, e) =>
+            {
+                string? buffered;
+                lock (_bufferLock)
+                {
+                    if (_tokenBuffer.Length == 0) return;
+                    buffered = _tokenBuffer.ToString();
+                    _tokenBuffer.Clear();
+                    _pendingTokenCount = 0;
+                }
+                _flushTimer?.Stop();
+                Content += buffered;
+                Message.Content = Content;
+            };
         }
         if (!_flushTimer.IsEnabled) _flushTimer.Start();
     }
 
-    private void FlushBuffer()
-    {
-        _flushTimer?.Stop();
-        if (_tokenBuffer.Length == 0) return;
-        Content += _tokenBuffer.ToString();
-        Message.Content = Content;
-        _tokenBuffer.Clear();
-        _pendingTokenCount = 0;
-    }
-
     public void FinalizeStreaming()
     {
-        FlushBuffer();
-        _flushTimer?.Stop();
-        _flushTimer = null;
+        string? remaining;
+        lock (_bufferLock)
+        {
+            remaining = _tokenBuffer.Length > 0 ? _tokenBuffer.ToString() : null;
+            _tokenBuffer.Clear();
+            _pendingTokenCount = 0;
+        }
+        EnqueueUI(() =>
+        {
+            _flushTimer?.Stop();
+            _flushTimer = null;
+            if (!string.IsNullOrEmpty(remaining))
+            {
+                Content += remaining;
+                Message.Content = Content;
+            }
+        });
     }
 
     public void CleanupContent()
     {
-        FlushBuffer();
-        var unwantedPatterns = new[] { "###", "\n###", "User:", "\nUser:", "Human:", "\nHuman:", "<|im_end|>", "<|assistant|>" };
-        var cleaned = Content;
-        foreach (var pattern in unwantedPatterns) cleaned = cleaned.Replace(pattern, "");
-        Content = cleaned.Trim();
-        Message.Content = Content;
+        string? remaining;
+        lock (_bufferLock)
+        {
+            remaining = _tokenBuffer.Length > 0 ? _tokenBuffer.ToString() : null;
+            _tokenBuffer.Clear();
+            _pendingTokenCount = 0;
+        }
+        EnqueueUI(() =>
+        {
+            _flushTimer?.Stop();
+            _flushTimer = null;
+            if (!string.IsNullOrEmpty(remaining))
+                Content += remaining;
+            var unwantedPatterns = new[] { "###", "\n###", "User:", "\nUser:", "Human:", "\nHuman:", "<|im_end|>", "<|assistant|>" };
+            var cleaned = Content;
+            foreach (var pattern in unwantedPatterns) cleaned = cleaned.Replace(pattern, "");
+            Content = cleaned.Trim();
+            Message.Content = Content;
+        });
     }
 
     [RelayCommand]
@@ -620,7 +732,13 @@ public partial class ChatMessageViewModel : ObservableObject
     {
         if (!string.IsNullOrEmpty(Content))
         {
-            try { System.Windows.Clipboard.SetText(Content); } catch { }
+            try
+            {
+                var pkg = new DataPackage();
+                pkg.SetText(Content);
+                Clipboard.SetContent(pkg);
+            }
+            catch { }
         }
     }
 }

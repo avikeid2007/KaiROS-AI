@@ -1,0 +1,11 @@
+<Project>
+  <!-- When building with "dotnet run" / .NET SDK MSBuild, the AppxMSBuildToolsPath
+       defaults to a path inside the .NET SDK that doesn't contain the PRI task DLL.
+       Override it to the Visual Studio Insiders installation which has it. -->
+  <PropertyGroup>
+    <_VsPriToolsPath>C:\Program Files\Microsoft Visual Studio\18\Insiders\MSBuild\Microsoft\VisualStudio\v18.0\AppxPackage\</_VsPriToolsPath>
+    <!-- Override AppxMSBuildToolsPath so "dotnet run" can find the PRI task DLL
+         (normally only available via VS MSBuild path, not .NET SDK path). -->
+    <AppxMSBuildToolsPath Condition="Exists('$(_VsPriToolsPath)Microsoft.Build.Packaging.Pri.Tasks.dll')">$(_VsPriToolsPath)</AppxMSBuildToolsPath>
+  </PropertyGroup>
+</Project>

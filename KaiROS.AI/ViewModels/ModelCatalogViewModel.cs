@@ -3,6 +3,9 @@ using CommunityToolkit.Mvvm.Input;
 using KaiROS.AI.Models;
 using KaiROS.AI.Services;
 using KaiROS.AI.Views;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml.Controls;
 using System.Collections.ObjectModel;
 
 namespace KaiROS.AI.ViewModels;
@@ -64,11 +67,14 @@ public partial class ModelCatalogViewModel : ViewModelBase
     public ObservableCollection<string> Variants { get; } = new() { "all", "All", "CPU-Only", "GPU-Recommended" };
     public ObservableCollection<string> VisionOptions { get; } = new() { "All", "Vision Only", "Text Only" };
 
+    private readonly DispatcherQueue _dispatcherQueue;
+
     public ModelCatalogViewModel(IModelManagerService modelManager, IDatabaseService databaseService, IHardwareDetectionService hardwareService)
     {
         _modelManager = modelManager;
         _databaseService = databaseService;
         _hardwareService = hardwareService;
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
     }
 
     public override async Task InitializeAsync()
@@ -207,7 +213,7 @@ public partial class ModelCatalogViewModel : ViewModelBase
         _downloadCts[model.Name] = cts;
 
         // Update UI state on UI thread
-        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        _dispatcherQueue.TryEnqueue(() =>
         {
             modelVm.IsDownloading = true;
             modelVm.IsPaused = false;
@@ -225,7 +231,7 @@ public partial class ModelCatalogViewModel : ViewModelBase
 
             // Update final state on UI thread
             // IMPORTANT: Set IsDownloaded BEFORE IsDownloading=false to ensure UI triggers work
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            _dispatcherQueue.TryEnqueue(() =>
             {
                 if (success)
                 {
@@ -247,7 +253,7 @@ public partial class ModelCatalogViewModel : ViewModelBase
         catch (OperationCanceledException)
         {
             // Paused - don't set IsDownloading to false, let pause handler do it
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            _dispatcherQueue.TryEnqueue(() =>
             {
                 modelVm.IsDownloading = false;
                 modelVm.IsPaused = true;
@@ -255,7 +261,7 @@ public partial class ModelCatalogViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            _dispatcherQueue.TryEnqueue(() =>
             {
                 modelVm.IsDownloading = false;
                 modelVm.ErrorMessage = ex.Message;
@@ -331,13 +337,19 @@ public partial class ModelCatalogViewModel : ViewModelBase
 
     public async Task DeleteModelAsync(ModelItemViewModel modelVm)
     {
-        var result = System.Windows.MessageBox.Show(
-            $"Delete {modelVm.Model.DisplayName}? This will remove the downloaded file.",
-            "Confirm Delete",
-            System.Windows.MessageBoxButton.YesNo,
-            System.Windows.MessageBoxImage.Warning);
+        var mainWindow = KaiROS.AI.App.Current.Services.GetRequiredService<KaiROS.AI.MainWindow>();
+        var confirm = new ContentDialog
+        {
+            Title = "Confirm Delete",
+            Content = $"Delete {modelVm.Model.DisplayName}? This will remove the downloaded file.",
+            PrimaryButtonText = "Yes",
+            CloseButtonText = "No",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = mainWindow.Content.XamlRoot
+        };
+        var dialogResult = await confirm.ShowAsync();
 
-        if (result == System.Windows.MessageBoxResult.Yes)
+        if (dialogResult == ContentDialogResult.Primary)
         {
             // If it's a custom model, also delete from database
             if (modelVm.Model.IsCustomModel)
@@ -357,24 +369,30 @@ public partial class ModelCatalogViewModel : ViewModelBase
     [RelayCommand]
     private async Task AddCustomModelAsync()
     {
-        var dialog = new AddCustomModelDialog
+        // WinUI 3: ContentDialog requires XamlRoot from the visual tree
+        var mainWindow = KaiROS.AI.App.Current.Services
+            .GetRequiredService<KaiROS.AI.MainWindow>();
+
+        var dialog = new KaiROS.AI.Views.AddCustomModelDialog
         {
-            Owner = System.Windows.Application.Current.MainWindow
+            XamlRoot = mainWindow.Content.XamlRoot
         };
 
-        if (dialog.ShowDialog() == true && dialog.Result != null)
+        var result = await dialog.ShowAsync();
+        if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary && dialog.Result != null)
         {
-            // Save to database
             await _databaseService.AddCustomModelAsync(dialog.Result);
-
-            // Refresh the model list
             await InitializeAsync();
 
-            System.Windows.MessageBox.Show(
-                $"Model '{dialog.Result.DisplayName}' added successfully!",
-                "Model Added",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Information);
+            // Brief success note via another ContentDialog
+            var info = new ContentDialog
+            {
+                Title = "Model Added",
+                Content = $"Model '{dialog.Result.DisplayName}' added successfully!",
+                CloseButtonText = "OK",
+                XamlRoot = mainWindow.Content.XamlRoot
+            };
+            await info.ShowAsync();
         }
     }
 }

@@ -1,26 +1,26 @@
 ﻿using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using KaiROS.AI.Services;
 using KaiROS.AI.ViewModels;
 using KaiROS.AI.Models;
 
 namespace KaiROS.AI;
 
-public partial class App : System.Windows.Application
+public partial class App : Application
 {
     private ServiceProvider? _serviceProvider;
 
-    protected override void OnStartup(System.Windows.StartupEventArgs e)
+    // Expose services and current app for use throughout the app
+    public static new App Current => (App)Application.Current;
+    public IServiceProvider Services => _serviceProvider!;
+
+    protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        base.OnStartup(e);
-
-        // Load saved theme preference at startup
-        LoadSavedTheme();
-
         // Build configuration
         var configuration = new ConfigurationBuilder()
-            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .Build();
 
@@ -29,51 +29,12 @@ public partial class App : System.Windows.Application
         ConfigureServices(services, configuration);
         _serviceProvider = services.BuildServiceProvider();
 
+        // Load saved theme preference at startup
+        _serviceProvider.GetRequiredService<IThemeService>().LoadSavedTheme();
+
         // Create and show main window
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-        mainWindow.Show();
-    }
-
-    private void LoadSavedTheme()
-    {
-        try
-        {
-            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var themePath = Path.Combine(localAppData, "KaiROS.AI", "theme.txt");
-
-            if (File.Exists(themePath))
-            {
-                var savedTheme = File.ReadAllText(themePath).Trim();
-                if (savedTheme == "Light")
-                {
-                    // Replace the dark theme with light theme
-                    var lightTheme = new System.Windows.ResourceDictionary
-                    {
-                        Source = new Uri("Themes/LightTheme.xaml", UriKind.Relative)
-                    };
-
-                    // Find and remove dark theme
-                    System.Windows.ResourceDictionary? themeToRemove = null;
-                    foreach (var dict in Resources.MergedDictionaries)
-                    {
-                        var source = dict.Source?.OriginalString ?? "";
-                        if (source.Contains("ModernTheme.xaml"))
-                        {
-                            themeToRemove = dict;
-                            break;
-                        }
-                    }
-
-                    if (themeToRemove != null)
-                    {
-                        Resources.MergedDictionaries.Remove(themeToRemove);
-                    }
-
-                    Resources.MergedDictionaries.Insert(0, lightTheme);
-                }
-            }
-        }
-        catch { /* Ignore errors, use default dark theme */ }
+        mainWindow.Activate();
     }
 
     private void ConfigureServices(IServiceCollection services, IConfiguration configuration)
@@ -115,11 +76,5 @@ public partial class App : System.Windows.Application
 
         // Views
         services.AddSingleton<MainWindow>();
-    }
-
-    protected override void OnExit(System.Windows.ExitEventArgs e)
-    {
-        _serviceProvider?.Dispose();
-        base.OnExit(e);
     }
 }

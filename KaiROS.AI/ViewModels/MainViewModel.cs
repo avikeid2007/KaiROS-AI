@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KaiROS.AI.Models;
 using KaiROS.AI.Services;
+using Microsoft.UI.Dispatching;
 using System.Collections.ObjectModel;
 
 namespace KaiROS.AI.ViewModels;
@@ -10,6 +11,7 @@ public partial class MainViewModel : ViewModelBase
 {
     private readonly IModelManagerService _modelManager;
     private readonly IHardwareDetectionService _hardwareService;
+    private readonly DispatcherQueue _dispatcherQueue;
 
     [ObservableProperty]
     private ViewModelBase? _currentView;
@@ -48,6 +50,8 @@ public partial class MainViewModel : ViewModelBase
         ChatViewModel = chatViewModel;
         SettingsViewModel = settingsViewModel;
         DocumentViewModel = documentViewModel;
+        // Capture UI thread's DispatcherQueue for cross-thread UI updates
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         _modelManager.ModelLoaded += (s, m) =>
         {
@@ -56,8 +60,8 @@ public partial class MainViewModel : ViewModelBase
             StatusText = $"Model loaded: {m.DisplayName}";
 
             // Auto-navigate to Chat whenever a model is loaded (including auto-load on startup)
-            // Use Dispatcher to ensure UI update if event comes from background thread
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            // Use DispatcherQueue to ensure UI update if event comes from background thread
+            _dispatcherQueue.TryEnqueue(() =>
             {
                 SelectedNavigationIndex = 1;
             });

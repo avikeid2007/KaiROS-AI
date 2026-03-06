@@ -1,8 +1,8 @@
-<UserControl
+﻿<UserControl
     x:Class="KaiROS.AI.Views.DocumentView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:converters="clr-namespace:KaiROS.AI.Converters"
+    xmlns:converters="using:KaiROS.AI.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     d:DesignHeight="600"
@@ -11,6 +11,7 @@
 
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <converters:StringFormatConverter x:Key="StringFmt" />
     </UserControl.Resources>
 
     <Grid Margin="16">
@@ -51,7 +52,7 @@
                         Command="{Binding StartCreatingServiceCommand}"
                         Content="+"
                         Style="{StaticResource SecondaryButton}"
-                        ToolTip="Add New Service" />
+                        ToolTipService.ToolTip="Add New Service" />
                 </Grid>
 
                 <ListBox
@@ -83,7 +84,7 @@
                                         Grid.Row="1"
                                         FontSize="12"
                                         Foreground="{StaticResource TextSecondaryBrush}"
-                                        Text="{Binding Port, StringFormat='Port: {0}'}" />
+                                        Text="{Binding Port, Converter={StaticResource StringFmt}, ConverterParameter='Port: {0}'}" />
 
                                     <StackPanel
                                         Grid.Row="2"
@@ -94,11 +95,11 @@
                                             Width="30"
                                             Height="30"
                                             Padding="0"
-                                            Command="{Binding DataContext.StartServiceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                            CommandParameter="{Binding}"
-                                            Content="▶"
+                                            Click="StartService_Click"
+                                            Tag="{Binding}"
+                                            Content="â–¶"
                                             Style="{StaticResource AccentButton}"
-                                            ToolTip="Start Service"
+                                            ToolTipService.ToolTip="Start Service"
                                             Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
                                         <!--  Stop Button  -->
@@ -107,11 +108,11 @@
                                             Height="30"
                                             Padding="0"
                                             Background="#E53935"
-                                            Command="{Binding DataContext.StopServiceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                            CommandParameter="{Binding}"
-                                            Content="⬛"
+                                            Click="StopService_Click"
+                                            Tag="{Binding}"
+                                            Content="â¬›"
                                             Style="{StaticResource AccentButton}"
-                                            ToolTip="Stop Service"
+                                            ToolTipService.ToolTip="Stop Service"
                                             Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
 
                                         <!--  View API Button  -->
@@ -120,11 +121,11 @@
                                             Height="30"
                                             Margin="8,0,0,0"
                                             Padding="0"
-                                            Command="{Binding DataContext.OpenServiceUrlCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                            CommandParameter="{Binding}"
-                                            Content="🌐"
+                                            Click="ViewApiService_Click"
+                                            Tag="{Binding}"
+                                            Content="ðŸŒ"
                                             Style="{StaticResource SecondaryButton}"
-                                            ToolTip="View API Dashboard"
+                                            ToolTipService.ToolTip="View API Dashboard"
                                             Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
 
                                         <!--  Delete Button  -->
@@ -133,9 +134,9 @@
                                             Height="30"
                                             Margin="8,0,0,0"
                                             Padding="0"
-                                            Command="{Binding DataContext.DeleteServiceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                            CommandParameter="{Binding}"
-                                            Content="🗑"
+                                            Click="DeleteService_Click"
+                                            Tag="{Binding}"
+                                            Content="ðŸ—‘"
                                             Style="{StaticResource SecondaryButton}" />
                                     </StackPanel>
 
@@ -148,7 +149,7 @@
                                         VerticalAlignment="Top"
                                         Background="#4CAF50"
                                         CornerRadius="5"
-                                        ToolTip="Running"
+                                        ToolTipService.ToolTip="Running"
                                         Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
                                 </Grid>
                             </Border>
@@ -175,7 +176,7 @@
                             FontSize="16"
                             FontWeight="Bold"
                             Foreground="{StaticResource TextPrimaryBrush}"
-                            Text="✨ Create New Service" />
+                            Text="âœ¨ Create New Service" />
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -237,7 +238,7 @@
                                 <TextBlock
                                     FontSize="16"
                                     Foreground="{StaticResource TextPrimaryBrush}"
-                                    Text="🔧 " />
+                                    Text="ðŸ”§ " />
                                 <TextBlock
                                     FontSize="16"
                                     FontWeight="Bold"
@@ -269,7 +270,7 @@
                                 BorderThickness="0"
                                 Command="{Binding OpenServiceUrlCommand}"
                                 CommandParameter="{Binding SelectedConfiguration}"
-                                Content="{Binding SelectedConfiguration.Port, StringFormat='http://localhost:{0}'}"
+                                Content="{Binding SelectedConfiguration.Port, Converter={StaticResource StringFmt}, ConverterParameter='http://localhost:{0}'}"
                                 FontSize="12"
                                 Foreground="{StaticResource AccentBrush}"
                                 Style="{StaticResource SecondaryButton}"
@@ -277,7 +278,7 @@
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <TextBlock
-                                            Cursor="Hand"
+                                            
                                             Foreground="{TemplateBinding Foreground}"
                                             Text="{TemplateBinding Content}"
                                             TextDecorations="Underline" />
@@ -293,14 +294,14 @@
                                     Margin="0,0,8,0"
                                     Command="{Binding OpenServiceUrlCommand}"
                                     CommandParameter="{Binding SelectedConfiguration}"
-                                    Content="🌐 View API"
+                                    Content="ðŸŒ View API"
                                     Style="{StaticResource SecondaryButton}"
                                     Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}" />
                                 <Button
                                     Margin="0,0,8,0"
                                     Command="{Binding StartServiceCommand}"
                                     CommandParameter="{Binding SelectedConfiguration}"
-                                    Content="▶ Start"
+                                    Content="â–¶ Start"
                                     Style="{StaticResource AccentButton}"
                                     Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
@@ -309,14 +310,14 @@
                                     Background="#E53935"
                                     Command="{Binding StopServiceCommand}"
                                     CommandParameter="{Binding SelectedConfiguration}"
-                                    Content="⬛ Stop"
+                                    Content="â¬› Stop"
                                     Style="{StaticResource AccentButton}"
                                     Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}" />
 
                                 <Button
                                     Command="{Binding DeleteServiceCommand}"
                                     CommandParameter="{Binding SelectedConfiguration}"
-                                    Content="🗑 Delete"
+                                    Content="ðŸ—‘ Delete"
                                     Style="{StaticResource SecondaryButton}" />
                             </StackPanel>
                         </Grid>
@@ -333,25 +334,17 @@
                                 Text="Sources (Documents/Links)" />
                             <Button
                                 Grid.Column="1"
-                                Content="+ Add Source ▾"
-                                Click="OpenContextMenu_Click"
-                                Style="{StaticResource SecondaryButton}"
-                                Tag="{Binding}">
-                                <Button.ContextMenu>
-                                    <ContextMenu>
-                                        <MenuItem
-                                            Command="{Binding PlacementTarget.Tag.AddFileSourceCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                            CommandParameter="{Binding PlacementTarget.Tag.SelectedConfiguration, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                            Header="📄 File" />
-                                        <MenuItem
-                                            Command="{Binding PlacementTarget.Tag.AddWebSourceCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                            CommandParameter="{Binding PlacementTarget.Tag.SelectedConfiguration, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                            Header="🌐 Web URL" />
-                                        <Separator />
-                                        <MenuItem Header="🗄️ Database (Reset soon)" IsEnabled="False" />
-                                        <MenuItem Header="💻 GitHub (Reset soon)" IsEnabled="False" />
-                                    </ContextMenu>
-                                </Button.ContextMenu>
+                                Content="+ Add Source â–¾"
+                                Style="{StaticResource SecondaryButton}">
+                                <Button.Flyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem Text="ðŸ“„ File" Click="AddFileSource_Click"/>
+                                        <MenuFlyoutItem Text="ðŸŒ Web URL" Click="AddWebSource_Click"/>
+                                        <MenuFlyoutSeparator/>
+                                        <MenuFlyoutItem Text="ðŸ—„ï¸ Database (Reset soon)" IsEnabled="False"/>
+                                        <MenuFlyoutItem Text="ðŸ’» GitHub (Reset soon)" IsEnabled="False"/>
+                                    </MenuFlyout>
+                                </Button.Flyout>
                             </Button>
                         </Grid>
 
@@ -388,9 +381,9 @@
                                             </StackPanel>
                                             <Button
                                                 Grid.Column="2"
-                                                Command="{Binding DataContext.RemoveSourceFromServiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"
-                                                Content="✕"
+                                                Click="RemoveSource_Click"
+                                                Tag="{Binding}"
+                                                Content="âœ•"
                                                 Style="{StaticResource IconButton}" />
                                         </Grid>
                                     </Border>

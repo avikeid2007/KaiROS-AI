@@ -1,11 +1,15 @@
 using System.Text.RegularExpressions;
-using System.Windows;
-using System.Windows.Documents;
-using System.Windows.Media;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
+using Microsoft.UI.Xaml.Media;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.UI;
 
 namespace KaiROS.AI.Controls;
 
-public partial class CodeBlock : System.Windows.Controls.UserControl
+public partial class CodeBlock : UserControl
 {
     private string _code = string.Empty;
     private string _language = "code";
@@ -39,12 +43,16 @@ public partial class CodeBlock : System.Windows.Controls.UserControl
     {
         try
         {
-            System.Windows.Clipboard.SetText(_code);
+            // WinUI 3: Windows.ApplicationModel.DataTransfer.Clipboard
+            var pkg = new DataPackage();
+            pkg.SetText(_code);
+            Clipboard.SetContent(pkg);
+
             CopyText.Text = "Copied!";
             CopyIcon.Text = "✓";
             
-            // Reset after 2 seconds
-            var timer = new System.Windows.Threading.DispatcherTimer
+            // Reset after 2 seconds using Microsoft.UI.Xaml.DispatcherTimer
+            var timer = new Microsoft.UI.Xaml.DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(2)
             };
@@ -82,13 +90,14 @@ public partial class CodeBlock : System.Windows.Controls.UserControl
         var runs = new List<Run>();
         
         // Color palette (Catppuccin Mocha inspired)
-        var keywordColor = new SolidColorBrush(System.Windows.Media.Color.FromRgb(203, 166, 247)); // Mauve - keywords
-        var stringColor = new SolidColorBrush(System.Windows.Media.Color.FromRgb(166, 227, 161));  // Green - strings
-        var commentColor = new SolidColorBrush(System.Windows.Media.Color.FromRgb(108, 112, 134)); // Overlay0 - comments
-        var numberColor = new SolidColorBrush(System.Windows.Media.Color.FromRgb(250, 179, 135));  // Peach - numbers
-        var typeColor = new SolidColorBrush(System.Windows.Media.Color.FromRgb(137, 180, 250));    // Blue - types
-        var functionColor = new SolidColorBrush(System.Windows.Media.Color.FromRgb(249, 226, 175)); // Yellow - functions
-        var defaultColor = new SolidColorBrush(System.Windows.Media.Color.FromRgb(205, 214, 244)); // Text - default
+        // WinUI 3: Windows.UI.Color.FromArgb replaces System.Windows.Media.Color.FromRgb
+        var keywordColor = new SolidColorBrush(Color.FromArgb(255, 203, 166, 247)); // Mauve - keywords
+        var stringColor  = new SolidColorBrush(Color.FromArgb(255, 166, 227, 161)); // Green - strings
+        var commentColor = new SolidColorBrush(Color.FromArgb(255, 108, 112, 134)); // Overlay0 - comments
+        var numberColor  = new SolidColorBrush(Color.FromArgb(255, 250, 179, 135)); // Peach - numbers
+        var typeColor    = new SolidColorBrush(Color.FromArgb(255, 137, 180, 250)); // Blue - types
+        var functionColor= new SolidColorBrush(Color.FromArgb(255, 249, 226, 175)); // Yellow - functions
+        var defaultColor = new SolidColorBrush(Color.FromArgb(255, 205, 214, 244)); // Text - default
         
         // Language-specific keywords
         var keywords = GetKeywords(language);
@@ -103,7 +112,7 @@ public partial class CodeBlock : System.Windows.Controls.UserControl
             // Check for comment
             if (IsComment(line, language))
             {
-                runs.Add(new Run(line) { Foreground = commentColor });
+                runs.Add(new Run { Text = line, Foreground = commentColor });
             }
             else
             {
@@ -112,35 +121,35 @@ public partial class CodeBlock : System.Windows.Controls.UserControl
                 {
                     if (keywords.Contains(token.ToLower()) || keywords.Contains(token))
                     {
-                        runs.Add(new Run(token) { Foreground = keywordColor, FontWeight = FontWeights.SemiBold });
+                        runs.Add(new Run { Text = token, Foreground = keywordColor, FontWeight = FontWeights.SemiBold });
                     }
                     else if (types.Contains(token))
                     {
-                        runs.Add(new Run(token) { Foreground = typeColor });
+                        runs.Add(new Run { Text = token, Foreground = typeColor });
                     }
                     else if (IsString(token))
                     {
-                        runs.Add(new Run(token) { Foreground = stringColor });
+                        runs.Add(new Run { Text = token, Foreground = stringColor });
                     }
                     else if (IsNumber(token))
                     {
-                        runs.Add(new Run(token) { Foreground = numberColor });
+                        runs.Add(new Run { Text = token, Foreground = numberColor });
                     }
                     else if (token.EndsWith("("))
                     {
-                        runs.Add(new Run(token.TrimEnd('(')) { Foreground = functionColor });
-                        runs.Add(new Run("(") { Foreground = defaultColor });
+                        runs.Add(new Run { Text = token.TrimEnd('('), Foreground = functionColor });
+                        runs.Add(new Run { Text = "(", Foreground = defaultColor });
                     }
                     else
                     {
-                        runs.Add(new Run(token) { Foreground = defaultColor });
+                        runs.Add(new Run { Text = token, Foreground = defaultColor });
                     }
                 }
             }
             
             if (i < lines.Length - 1)
             {
-                runs.Add(new Run("\n") { Foreground = defaultColor });
+                runs.Add(new Run { Text = "\n", Foreground = defaultColor });
             }
         }
         

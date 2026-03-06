@@ -1,11 +1,11 @@
 using System.Diagnostics;
-using System.Windows;
-using System.Windows.Controls;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using KaiROS.AI.ViewModels;
 
 namespace KaiROS.AI.Views;
 
-public partial class SettingsView : System.Windows.Controls.UserControl
+public partial class SettingsView : UserControl
 {
     public SettingsView()
     {
@@ -23,7 +23,6 @@ public partial class SettingsView : System.Windows.Controls.UserControl
     
     private void FeedbackHub_Click(object sender, RoutedEventArgs e)
     {
-        // Open Feedback Hub with app context
         var feedbackUri = "feedback-hub:?appid=34488AvnishKumar.KaiROSAI_gph07xvrc9pap";
         try
         {
@@ -31,9 +30,9 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         }
         catch
         {
-            // Fallback: open Microsoft Store feedback page or email
             Process.Start(new ProcessStartInfo("mailto:support@kairosai.app?subject=KaiROS AI Feedback") { UseShellExecute = true });
         }
     }
 }
+
 
