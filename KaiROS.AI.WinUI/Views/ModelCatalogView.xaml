@@ -1,0 +1,439 @@
+﻿<UserControl x:Class="KaiROS.AI.WinUI.Views.ModelCatalogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:KaiROS.AI.WinUI.ViewModels"
+             xmlns:converters="using:KaiROS.AI.WinUI.Converters"
+             xmlns:ctk="using:CommunityToolkit.WinUI.Controls">
+    
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:InverseBoolConverter x:Key="InverseBool"/>
+        <converters:CategoryToColorConverter x:Key="CategoryToColor"/>
+        <converters:UrlToImageSourceConverter x:Key="UrlToImage"/>
+        <converters:StringFormatConverter x:Key="StringFmt"/>
+    </UserControl.Resources>
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Grid Margin="0,0,0,24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel>
+                <TextBlock Text="Model Catalog" 
+                           FontSize="28" 
+                           FontWeight="Bold" 
+                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                <TextBlock Text="Download and manage AI models for local inference" 
+                           FontSize="14" 
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Margin="0,4,0,0"/>
+            </StackPanel>
+            
+            <Button Grid.Column="1" 
+                    Content="+ Add Custom Model"
+                    Command="{Binding AddCustomModelCommand}"
+                    Style="{StaticResource AccentButton}"
+                    VerticalAlignment="Center"/>
+        </Grid>
+        
+        <!-- Premium Filter Bar -->
+        <Border Grid.Row="1" 
+                Background="{StaticResource SurfaceLightBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="16,12"
+                Margin="0,0,0,24"
+                HorizontalAlignment="Stretch">
+            
+            <ctk:WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                
+                <!-- Category Buttons as Segmented Control -->
+                <Border Background="{StaticResource SurfaceBrush}" 
+                        BorderBrush="{StaticResource BorderBrush}" 
+                        BorderThickness="1" 
+                        CornerRadius="8" 
+                        Padding="4"
+                        Margin="0,0,16,6">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="All" 
+                                Command="{Binding FilterByCategoryCommand}" 
+                                CommandParameter="all"
+                                Style="{StaticResource SecondaryButton}"
+                                BorderThickness="0"
+                                Padding="16,8"
+                                Margin="0,0,4,0"/>
+                        <Button Content="Small" 
+                                Command="{Binding FilterByCategoryCommand}" 
+                                CommandParameter="small"
+                                Style="{StaticResource SecondaryButton}"
+                                BorderThickness="0"
+                                Padding="16,8"
+                                Margin="0,0,4,0"/>
+                        <Button Content="Medium" 
+                                Command="{Binding FilterByCategoryCommand}" 
+                                CommandParameter="medium"
+                                Style="{StaticResource SecondaryButton}"
+                                BorderThickness="0"
+                                Padding="16,8"
+                                Margin="0,0,4,0"/>
+                        <Button Content="Large" 
+                                Command="{Binding FilterByCategoryCommand}" 
+                                CommandParameter="large"
+                                Style="{StaticResource SecondaryButton}"
+                                BorderThickness="0"
+                                Padding="16,8"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Dropdown Filters -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
+                    <TextBlock Text="Org:" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" 
+                               Margin="0,0,6,0"/>
+                    <ComboBox ItemsSource="{Binding Organizations}" 
+                              SelectedItem="{Binding SelectedOrganization, Mode=TwoWay}"
+                              Width="105"
+                              Style="{StaticResource ModernComboBox}"/>
+                </StackPanel>
+                
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
+                    <TextBlock Text="Family:" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" 
+                               Margin="0,0,6,0"/>
+                    <ComboBox ItemsSource="{Binding Families}" 
+                              SelectedItem="{Binding SelectedFamily, Mode=TwoWay}"
+                              Width="105"
+                              Style="{StaticResource ModernComboBox}"/>
+                </StackPanel>
+                
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
+                    <TextBlock Text="Variant:" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" 
+                               Margin="0,0,6,0"/>
+                    <ComboBox ItemsSource="{Binding Variants}" 
+                              SelectedItem="{Binding SelectedVariant, Mode=TwoWay}"
+                              Width="130"
+                              Style="{StaticResource ModernComboBox}"/>
+                </StackPanel>
+
+                <!-- NEW: Vision Filter -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
+                    <TextBlock Text="Vision:" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" 
+                               Margin="0,0,6,0"/>
+                    <ComboBox ItemsSource="{Binding VisionOptions}" 
+                              SelectedItem="{Binding SelectedVisionOption, Mode=TwoWay}"
+                              Width="120"
+                              Style="{StaticResource ModernComboBox}"/>
+                </StackPanel>
+                
+                <!-- Right Side Actions -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,6" HorizontalAlignment="Right">
+                    <ToggleButton x:Name="RecommendedToggle" 
+                                  Content="&#x2605; Recommended" 
+                                  IsChecked="{Binding ShowRecommendedOnly}"
+                                  Margin="0,0,12,0">
+                        <ToggleButton.Style>
+                            <Style TargetType="ToggleButton">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="Padding" Value="14,8"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border x:Name="border" 
+                                                    Background="{TemplateBinding Background}" 
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="8"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <VisualStateManager.VisualStateGroups>
+                                                    <VisualStateGroup x:Name="CommonStates">
+                                                        <VisualState x:Name="Normal"/>
+                                                        <VisualState x:Name="Checked">
+                                                            <VisualState.Setters>
+                                                                <Setter Target="border.Background" Value="{StaticResource AccentBrush}"/>
+                                                                <Setter Target="border.BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                                            </VisualState.Setters>
+                                                        </VisualState>
+                                                        <VisualState x:Name="PointerOver">
+                                                            <VisualState.Setters>
+                                                                <Setter Target="border.Background" Value="{StaticResource SurfaceBrush}"/>
+                                                            </VisualState.Setters>
+                                                        </VisualState>
+                                                        <VisualState x:Name="CheckedPointerOver">
+                                                            <VisualState.Setters>
+                                                                <Setter Target="border.Background" Value="{StaticResource AccentBrush}"/>
+                                                            </VisualState.Setters>
+                                                        </VisualState>
+                                                        <VisualState x:Name="Pressed"/>
+                                                        <VisualState x:Name="Disabled"/>
+                                                    </VisualStateGroup>
+                                                </VisualStateManager.VisualStateGroups>
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ToggleButton.Style>
+                    </ToggleButton>
+                    
+                    <!-- Search Box with Icon -->
+                    <Border Background="{StaticResource SurfaceBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="12,0">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE721;" FontSize="14" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0"/>
+                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     Width="150"
+                                     Padding="0,8"
+                                     VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                
+            </ctk:WrapPanel>
+        </Border>
+        
+        <!-- Model List -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                
+                <!-- Downloaded Models Section (Always at Top) -->
+                <Border Style="{StaticResource DownloadedSectionBorder}"
+                        Visibility="{Binding DownloadedModels.Count, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <TextBlock Text="&#x2713;" FontSize="20" Foreground="#10B981" VerticalAlignment="Center"/>
+                            <TextBlock Text=" Downloaded Models" FontSize="20" FontWeight="Bold" 
+                                       Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <Border Background="#10B981" CornerRadius="10" Padding="8,2" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding DownloadedModels.Count}" FontSize="12" 
+                                           Foreground="White" FontWeight="Bold"/>
+                            </Border>
+                        </StackPanel>
+                        
+                        <ItemsControl ItemsSource="{Binding DownloadedModels}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource CardBorder}" Margin="0,0,0,12">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                    <Image Width="24" Height="24" Margin="0,0,10,0" VerticalAlignment="Center"
+                                                           
+                                                           Source="{Binding Model.OrgLogoUrl, Converter={StaticResource UrlToImage}}"/>
+                                                    <TextBlock Text="{Binding Model.DisplayName}" FontSize="18" FontWeight="SemiBold"
+                                                               VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                    <Border Background="{StaticResource PrimaryBrush}" CornerRadius="4" Padding="8,4" Margin="12,0,0,0"
+                                                            Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}">
+                                                        <TextBlock Text="ACTIVE" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                                    </Border>
+                                                    <Border Background="#3d4450" CornerRadius="4" Padding="6,3" Margin="6,0,0,0">
+                                                        <TextBlock Text="{Binding Model.Family}" Foreground="#a0a8b4" FontSize="10" FontWeight="SemiBold"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding Model.Description}" Foreground="{StaticResource TextSecondaryBrush}"
+                                                           TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="13">
+                                                        <Run Text=" "/><Run Text="{Binding Model.SizeText}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                                <!-- Error Message -->
+                                                <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource ErrorBrush}" 
+                                                         FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap"
+                                                         Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVis}}"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" Margin="20,0,0,0">
+                                                <Button Command="{Binding SetActiveCommand}" Style="{StaticResource PrimaryButton}" 
+                                                        Content="Load Model" Margin="0,0,8,0"
+                                                        IsEnabled="{Binding IsActive, Converter={StaticResource InverseBool}}"/>
+                                                <Button Command="{Binding DeleteCommand}" Style="{StaticResource IconButton}"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" FontSize="14" ToolTipService.ToolTip="Delete model"/></Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Organization Sections -->
+                <TextBlock Text="All Models by Organization" FontSize="20" FontWeight="Bold" 
+                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
+                
+                <ItemsControl ItemsSource="{Binding GroupedModels}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" 
+                                      Style="{StaticResource OrganizationExpander}">
+                                <Expander.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Width="28" Height="28" Margin="0,0,12,0" VerticalAlignment="Center"
+                                               
+                                               Source="{Binding LogoUrl, Converter={StaticResource UrlToImage}}"/>
+                                        <TextBlock Text="{Binding OrganizationName}" FontSize="18" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                                        <Border Background="{StaticResource PrimaryBrush}" CornerRadius="10" Padding="10,3" Margin="12,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock FontSize="12" Foreground="White" FontWeight="SemiBold">
+                                                <Run Text="{Binding ModelCount, Mode=OneWay}"/>
+                                                <Run Text=" models"/>
+                                            </TextBlock>
+                                        </Border>
+                                        <Border Background="#2a5a4a" CornerRadius="10" Padding="8,3" Margin="8,0,0,0" VerticalAlignment="Center"
+                                                Visibility="{Binding DownloadedCount, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock FontSize="11" Foreground="#10B981" FontWeight="SemiBold">
+                                                <Run Text="{Binding DownloadedCount, Mode=OneWay}"/>
+                                                <Run Text=" downloaded"/>
+                                            </TextBlock>
+                                        </Border>
+                                    </StackPanel>
+                                </Expander.Header>
+                                
+                                <ItemsControl ItemsSource="{Binding Models}" Margin="0,8,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,12">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                            <Image Width="24" Height="24" Margin="0,0,10,0" VerticalAlignment="Center"
+                                                                   
+                                                                   Source="{Binding Model.OrgLogoUrl, Converter={StaticResource UrlToImage}}"/>
+                                                            <TextBlock Text="{Binding Model.DisplayName}" FontSize="18" FontWeight="SemiBold"
+                                                                       VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                            <Border Style="{StaticResource RecommendedBadge}" Margin="12,0,0,0"
+                                                                    Visibility="{Binding Model.IsRecommended, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock Text="&#x2605; Recommended" Foreground="White" FontSize="11" FontWeight="SemiBold"/>
+                                                            </Border>
+                                                            <Border Style="{StaticResource CategoryBadge}" Margin="8,0,0,0">
+                                                                <TextBlock Text="{Binding Model.Category}" FontSize="11" FontWeight="SemiBold">
+                                                                    <TextBlock.Foreground>
+                                                                        <SolidColorBrush Color="{Binding Model.Category, Converter={StaticResource CategoryToColor}}"/>
+                                                                    </TextBlock.Foreground>
+                                                                </TextBlock>
+                                                            </Border>
+                                                            <Border Background="#3d4450" CornerRadius="4" Padding="6,3" Margin="6,0,0,0">
+                                                                <TextBlock Text="{Binding Model.Family}" Foreground="#a0a8b4" FontSize="10" FontWeight="SemiBold"/>
+                                                            </Border>
+                                                            <Border CornerRadius="4" Padding="6,3" Margin="6,0,0,0"
+                                                                    Background="#2d4a3e"
+                                                                    Visibility="{Binding Model.Variant, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock Text="{Binding Model.Variant}" Foreground="#90a090" FontSize="10" FontWeight="SemiBold"/>
+                                                            </Border>
+                                                            <Border Background="{StaticResource PrimaryBrush}" CornerRadius="4" Padding="8,4" Margin="8,0,0,0"
+                                                                    Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock Text="ACTIVE" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                                            </Border>
+                                                            <Border Background="#10B981" CornerRadius="4" Padding="6,3" Margin="6,0,0,0"
+                                                                    Visibility="{Binding IsDownloaded, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock Text="&#x2713; Downloaded" Foreground="White" FontSize="10" FontWeight="SemiBold"/>
+                                                            </Border>
+                                                        </StackPanel>
+                                                        
+                                                        <TextBlock Text="{Binding Model.Description}" Foreground="{StaticResource TextSecondaryBrush}"
+                                                                   TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                                        
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="13">
+                                                                <Run Text=" "/><Run Text="{Binding Model.SizeText}"/>
+                                                            </TextBlock>
+                                                            <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="13" Margin="16,0,0,0">
+                                                                <Run Text=" "/><Run Text="{Binding Model.MinRam}"/><Run Text=" RAM"/>
+                                                            </TextBlock>
+                                                            <TextBlock Text="{Binding Model.Capabilities}" Foreground="{StaticResource TextMutedBrush}" 
+                                                                       FontSize="13" Margin="16,0,0,0"/>
+                                                        </StackPanel>
+                                                        
+                                                        <Grid Margin="0,12,0,0" Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVis}}">
+                                                            <ProgressBar Value="{Binding DownloadProgress}" Maximum="100" Height="6" Style="{StaticResource ModernProgressBar}"/>
+                                                            <TextBlock Text="{Binding DownloadProgress, Converter={StaticResource StringFmt}, ConverterParameter='{}{0:F1}%'}" HorizontalAlignment="Right"
+                                                                       Margin="0,10,0,0" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                        </Grid>
+
+                                                        <!-- Error Message -->
+                                                        <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource ErrorBrush}" 
+                                                                 FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap"
+                                                                 Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVis}}"/>
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" Margin="20,0,0,0">
+                                                        <Button Command="{Binding DownloadCommand}"
+                                                                Style="{StaticResource AccentButton}"
+                                                                Content="Download"
+                                                                Visibility="{Binding IsDownloaded, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"/>
+                                                        <Button Command="{Binding PauseCommand}" Style="{StaticResource SecondaryButton}" Content="&#x23F8; Pause"
+                                                                Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVis}}"/>
+                                                        <Button Command="{Binding ResumeCommand}" Style="{StaticResource AccentButton}" Content="&#x25B6; Resume"
+                                                                Visibility="{Binding IsPaused, Converter={StaticResource BoolToVis}}"/>
+                                                        <StackPanel Orientation="Horizontal" Visibility="{Binding ShowLoadButton, Converter={StaticResource BoolToVis}}">
+                                                            <Button Command="{Binding SetActiveCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
+                                                                    IsEnabled="{Binding IsActive, Converter={StaticResource InverseBool}}">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <!-- Loading Spinner (WinUI 3: ProgressRing) -->
+                                                                    <ProgressRing Width="12" Height="12"
+                                                                                  IsActive="{Binding IsLoading}"
+                                                                                  IsIndeterminate="True"
+                                                                                  Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"
+                                                                                  Margin="0,0,8,0"
+                                                                                  Foreground="White"/>
+                                                                    
+                                                                    <TextBlock Text="Load Model"/>
+                                                                </StackPanel>
+                                                            </Button>
+                                                            <Button Command="{Binding DeleteCommand}" Style="{StaticResource IconButton}"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" FontSize="14" ToolTipService.ToolTip="Delete model"/></Button>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Expander>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

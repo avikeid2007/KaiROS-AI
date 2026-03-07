@@ -1,0 +1,526 @@
+﻿using KaiROS.AI.WinUI.Models;
+using Microsoft.Extensions.Configuration;
+using LLama;
+using LLama.Common;
+using LLama.Native;
+using System.IO;
+
+namespace KaiROS.AI.WinUI.Services;
+
+public class ModelManagerService : IModelManagerService
+{
+    private readonly IDownloadService _downloadService;
+    private readonly IConfiguration _configuration;
+    private readonly IDatabaseService _databaseService;
+    private readonly IHardwareDetectionService _hardwareService;
+    private readonly List<LLMModelInfo> _models = new();
+    private string _modelsDirectory;
+    private LLamaWeights? _loadedWeights;
+    private MtmdWeights? _loadedLlavaWeights;
+    private LLMModelInfo? _activeModel;
+    private int _currentGpuLayers;
+
+    public IReadOnlyList<LLMModelInfo> Models => _models.AsReadOnly();
+    public LLMModelInfo? ActiveModel => _activeModel;
+    public string ModelsDirectory => _modelsDirectory;
+    public int CurrentGpuLayers => _currentGpuLayers;
+    public bool IsVisionModelLoaded => _loadedLlavaWeights is not null;
+
+    public event EventHandler<LLMModelInfo>? ModelDownloadStarted;
+    public event EventHandler<LLMModelInfo>? ModelDownloadCompleted;
+    public event EventHandler<LLMModelInfo>? ModelLoaded;
+    public event EventHandler? ModelUnloaded;
+    public event EventHandler<double>? ModelLoadProgress;
+
+    private string _lastModelSettingsPath;
+
+    public ModelManagerService(IConfiguration configuration, IDownloadService downloadService, IDatabaseService databaseService, IHardwareDetectionService hardwareService)
+    {
+        _configuration = configuration;
+        _downloadService = downloadService;
+        _databaseService = databaseService;
+        _hardwareService = hardwareService;
+
+        // Use LocalAppData for MSIX compatibility (installation folder is read-only)
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        _modelsDirectory = Path.Combine(localAppData, "KaiROS.AI", "Models");
+        _lastModelSettingsPath = Path.Combine(localAppData, "KaiROS.AI", "last_model.txt");
+        Directory.CreateDirectory(_modelsDirectory);
+    }
+
+    public async Task InitializeAsync()
+    {
+        // Initialize database
+        await _databaseService.InitializeAsync();
+
+        // Load model catalog from configuration
+        var modelConfigs = _configuration.GetSection("LLMModels").Get<List<LLMModelInfo>>() ?? new();
+
+        _models.Clear();
+        foreach (var model in modelConfigs)
+        {
+            // Check if model is already downloaded
+            var localPath = Path.Combine(_modelsDirectory, model.Name);
+            model.LocalPath = localPath;
+            model.IsDownloaded = File.Exists(localPath);
+
+            if (model.IsDownloaded)
+            {
+                model.DownloadState = DownloadState.Completed;
+                model.DownloadProgress = 100;
+
+                // Reconstruct MmProjLocalPath for vision models if the file exists
+                if (model.IsVisionModel && !string.IsNullOrEmpty(model.MmProjDownloadUrl))
+                {
+                    var mmProjName = Path.GetFileName(new Uri(model.MmProjDownloadUrl).LocalPath);
+                    var mmProjPath = Path.Combine(_modelsDirectory, mmProjName);
+                    if (File.Exists(mmProjPath))
+                    {
+                        model.MmProjLocalPath = mmProjPath;
+                    }
+                }
+            }
+            else if (_downloadService.HasPartialDownload(model.Name))
+            {
+                model.DownloadState = DownloadState.Paused;
+            }
+
+            _models.Add(model);
+        }
+
+        // Load custom models from SQLite
+        var customModels = await _databaseService.GetCustomModelsAsync();
+        foreach (var custom in customModels)
+        {
+            var model = new LLMModelInfo
+            {
+                Name = custom.Name,
+                DisplayName = custom.DisplayName,
+                Description = custom.Description,
+                DownloadUrl = custom.DownloadUrl,
+                LocalPath = custom.IsLocal ? custom.FilePath : Path.Combine(_modelsDirectory, custom.Name),
+                SizeBytes = custom.SizeBytes,
+                IsDownloaded = custom.IsLocal || File.Exists(Path.Combine(_modelsDirectory, custom.Name)),
+                IsCustomModel = true,
+                CustomModelId = custom.Id,
+                Organization = "Local",
+                OrgLogoUrl = "pack://application:,,,/Assets/logo.png",
+                Family = "Custom",
+                Variant = "All"
+            };
+
+            if (model.IsDownloaded)
+            {
+                model.DownloadState = DownloadState.Completed;
+                model.DownloadProgress = 100;
+            }
+
+            _models.Add(model);
+        }
+
+        // Auto-load last used model
+        await LoadLastUsedModelAsync();
+    }
+
+    private async Task LoadLastUsedModelAsync()
+    {
+        try
+        {
+            if (File.Exists(_lastModelSettingsPath))
+            {
+                var lastModelName = File.ReadAllText(_lastModelSettingsPath).Trim();
+                var modelToLoad = _models.FirstOrDefault(m => m.Name == lastModelName);
+
+                if (modelToLoad != null && modelToLoad.IsDownloaded)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[KaiROS] Auto-loading last used model: {modelToLoad.Name}");
+                    // Load in background so we don't block startup UI too much, but we need to await it partly or fire and forget?
+                    // Better to fire and forget or let the UI handle the loading state via events if InitializeAsync is awaited during splash.
+                    // Since SetActiveModelAsync handles its own threading, we can await it here if we want startup to wait,
+                    // OR we can just fire it. The user specifically asked for "On run of the App", so waiting is safer to ensure it's ready.
+                    // However, we don't want to freeze the UI.
+                    // Let's attempt to load it.
+                    await SetActiveModelAsync(modelToLoad);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[KaiROS] Failed to auto-load last model: {ex.Message}");
+        }
+    }
+
+    public async Task<bool> DownloadModelAsync(LLMModelInfo model, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+    {
+        if (model.IsDownloaded) return true;
+
+        var localPath = Path.Combine(_modelsDirectory, model.Name);
+        model.DownloadState = DownloadState.Downloading;
+        ModelDownloadStarted?.Invoke(this, model);
+
+        try
+        {
+            // For vision models, split progress: 90% for main model, 10% for mm-proj
+            double mainModelShare = model.IsVisionModel && !string.IsNullOrEmpty(model.MmProjDownloadUrl) ? 0.9 : 1.0;
+
+            var wrappedProgress = new Progress<double>(p =>
+            {
+                model.DownloadProgress = p * mainModelShare;
+                progress?.Report(p * mainModelShare);
+            });
+
+            var success = await _downloadService.DownloadFileAsync(
+                model.DownloadUrl,
+                localPath,
+                wrappedProgress,
+                cancellationToken);
+
+            if (success)
+            {
+                model.DownloadState = DownloadState.Verifying;
+                var valid = await _downloadService.VerifyFileIntegrityAsync(localPath, model.SizeBytes);
+
+                if (valid)
+                {
+                    model.IsDownloaded = true;
+                    model.LocalPath = localPath;
+
+                    // Download mm-proj for vision models
+                    if (model.IsVisionModel && !string.IsNullOrEmpty(model.MmProjDownloadUrl))
+                    {
+                        var mmProjName = Path.GetFileName(new Uri(model.MmProjDownloadUrl).LocalPath);
+                        var mmProjPath = Path.Combine(_modelsDirectory, mmProjName);
+                        var mmProjProgress = new Progress<double>(p =>
+                        {
+                            var overall = 90 + p * 0.1;
+                            model.DownloadProgress = overall;
+                            progress?.Report(overall);
+                        });
+                        var mmSuccess = await _downloadService.DownloadFileAsync(
+                            model.MmProjDownloadUrl, mmProjPath, mmProjProgress, cancellationToken);
+                        if (mmSuccess)
+                        {
+                            model.MmProjLocalPath = mmProjPath;
+                            System.Diagnostics.Debug.WriteLine($"[KaiROS] mm-proj downloaded: {mmProjPath}");
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[KaiROS] mm-proj download failed for {model.Name}. Vision disabled.");
+                        }
+                    }
+
+                    model.DownloadState = DownloadState.Completed;
+                    model.DownloadProgress = 100;
+                    ModelDownloadCompleted?.Invoke(this, model);
+                    return true;
+                }
+                else
+                {
+                    model.DownloadState = DownloadState.Failed;
+                    model.LoadError = "File verification failed. The download may be corrupted - please try again.";
+                    System.Diagnostics.Debug.WriteLine($"Verification failed for {model.Name} at {localPath}");
+                    return false;
+                }
+            }
+            else
+            {
+                model.DownloadState = DownloadState.Paused;
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            model.DownloadState = DownloadState.Failed;
+            model.LoadError = ex.Message;
+            throw;
+        }
+    }
+
+    public async Task PauseDownloadAsync(LLMModelInfo model)
+    {
+        await _downloadService.PauseDownloadAsync(model.Name);
+        model.DownloadState = DownloadState.Paused;
+    }
+
+    public async Task ResumeDownloadAsync(LLMModelInfo model)
+    {
+        await _downloadService.ResumeDownloadAsync(model.Name);
+    }
+
+    public async Task<bool> DeleteModelAsync(LLMModelInfo model)
+    {
+        if (_activeModel?.Name == model.Name)
+        {
+            await UnloadModelAsync();
+        }
+
+        try
+        {
+            if (model.LocalPath != null && File.Exists(model.LocalPath))
+            {
+                await Task.Run(() => File.Delete(model.LocalPath));
+            }
+
+            var partialPath = Path.Combine(_modelsDirectory, model.Name + ".partial");
+            if (File.Exists(partialPath))
+            {
+                await Task.Run(() => File.Delete(partialPath));
+            }
+
+            model.IsDownloaded = false;
+            model.DownloadState = DownloadState.NotStarted;
+            model.DownloadProgress = 0;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> SetActiveModelAsync(LLMModelInfo model, IProgress<double>? progress = null)
+    {
+        if (!model.IsDownloaded || model.LocalPath == null)
+            return false;
+
+        // Save as last used model
+        try
+        {
+            File.WriteAllText(_lastModelSettingsPath, model.Name);
+        }
+        catch { /* ignore save errors */ }
+
+        if (!File.Exists(model.LocalPath))
+        {
+            model.IsDownloaded = false;
+            return false;
+        }
+
+        // Report initial progress
+        progress?.Report(5);
+        ModelLoadProgress?.Invoke(this, 5);
+
+        // Unload current model if any
+        await UnloadModelAsync();
+
+        progress?.Report(10);
+        ModelLoadProgress?.Invoke(this, 10);
+
+        try
+        {
+            // Get hardware info for GPU detection
+            var hardwareInfo = await _hardwareService.DetectHardwareAsync();
+
+            // Calculate optimal GPU layers based on VRAM and model size
+            _currentGpuLayers = CalculateOptimalGpuLayers(hardwareInfo, model);
+
+            System.Diagnostics.Debug.WriteLine($"[KaiROS] Loading model with backend: {hardwareInfo.SelectedBackend}, GpuLayerCount: {_currentGpuLayers}");
+
+            // Try loading with decreasing GPU layers on failure
+            int[] layersToTry = new[]
+            {
+                _currentGpuLayers,
+                Math.Max(1, _currentGpuLayers / 2),  // 50%
+                Math.Max(1, _currentGpuLayers / 4),  // 25%
+                0  // CPU fallback
+            };
+
+            Exception? lastException = null;
+
+            foreach (var layers in layersToTry)
+            {
+                try
+                {
+                    System.Diagnostics.Debug.WriteLine($"[KaiROS] Attempting to load with {layers} GPU layers...");
+
+                    // Strict timeout to prevent hanging on Intel drivers
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(45));
+
+                    await Task.Run(() =>
+                    {
+                        progress?.Report(20);
+                        ModelLoadProgress?.Invoke(this, 20);
+
+                        var parameters = new ModelParams(model.LocalPath)
+                        {
+                            ContextSize = 4096,
+                            GpuLayerCount = layers
+                        };
+
+                        progress?.Report(30);
+                        ModelLoadProgress?.Invoke(this, 30);
+
+                        // This is the heavy operation - loading weights
+                        _loadedWeights = LLamaWeights.LoadFromFile(parameters);
+
+                        // Load LLava mmproj if this is a vision model
+                        if (model.IsVisionModel && !string.IsNullOrEmpty(model.MmProjLocalPath) && File.Exists(model.MmProjLocalPath))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[KaiROS] Loading MTMD mm-proj: {model.MmProjLocalPath}");
+                            _loadedLlavaWeights = MtmdWeights.LoadFromFile(
+                                model.MmProjLocalPath,
+                                _loadedWeights,
+                                MtmdContextParams.Default());
+                            System.Diagnostics.Debug.WriteLine($"[KaiROS] Vision model ready. Supports vision: {_loadedLlavaWeights.SupportsVision}");
+                        }
+                        else
+                        {
+                            _loadedLlavaWeights = null;
+                        }
+
+                        progress?.Report(90);
+                        ModelLoadProgress?.Invoke(this, 90);
+                    }, cts.Token).WaitAsync(TimeSpan.FromSeconds(45));
+
+                    // Success!
+                    _currentGpuLayers = layers;
+                    _activeModel = model;
+                    model.IsActive = true;
+
+                    progress?.Report(100);
+                    ModelLoadProgress?.Invoke(this, 100);
+
+                    if (layers < layersToTry[0])
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[KaiROS] Model loaded successfully with reduced layers: {layers} (original: {layersToTry[0]})");
+                    }
+
+                    ModelLoaded?.Invoke(this, model);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    System.Diagnostics.Debug.WriteLine($"[KaiROS] Failed to load with {layers} layers: {ex.Message}");
+
+                    // Clean up any partial state
+                    if (_loadedWeights != null)
+                    {
+                        try { _loadedWeights.Dispose(); } catch { }
+                        _loadedWeights = null;
+                    }
+
+                    // If this was already CPU fallback (0 layers), don't retry
+                    if (layers == 0) break;
+                }
+            }
+
+            // All attempts failed
+            System.Diagnostics.Debug.WriteLine($"Error loading model: {lastException?.Message}");
+            model.LoadError = lastException?.Message ?? "Failed to load model after multiple attempts";
+            progress?.Report(0);
+            ModelLoadProgress?.Invoke(this, 0);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading model: {ex.Message}");
+            // Store error for UI to display
+            model.LoadError = ex.Message;
+            progress?.Report(0);
+            ModelLoadProgress?.Invoke(this, 0);
+            return false;
+        }
+    }
+
+    public async Task UnloadModelAsync()
+    {
+        if (_loadedWeights != null)
+        {
+            await Task.Run(() =>
+            {
+                _loadedLlavaWeights?.Dispose();
+                _loadedLlavaWeights = null;
+                _loadedWeights.Dispose();
+                _loadedWeights = null;
+            });
+
+            if (_activeModel != null)
+            {
+                _activeModel.IsActive = false;
+                _activeModel = null;
+            }
+
+            ModelUnloaded?.Invoke(this, EventArgs.Empty);
+            GC.Collect();
+        }
+    }
+
+    public async Task<bool> VerifyModelAsync(LLMModelInfo model)
+    {
+        if (model.LocalPath == null) return false;
+        return await _downloadService.VerifyFileIntegrityAsync(model.LocalPath, model.SizeBytes);
+    }
+
+    public void SetModelsDirectory(string path)
+    {
+        _modelsDirectory = path;
+        Directory.CreateDirectory(_modelsDirectory);
+    }
+
+    public LLamaWeights? GetLoadedWeights() => _loadedWeights;
+    public MtmdWeights? GetLoadedLlavaWeights() => _loadedLlavaWeights;
+
+    /// <summary>
+    /// Calculate optimal GPU layers based on available VRAM and model size.
+    /// Uses conservative estimates to prevent OOM crashes.
+    /// </summary>
+    private int CalculateOptimalGpuLayers(HardwareInfo hardwareInfo, LLMModelInfo model)
+    {
+        // CPU-only or NPU modes don't use GPU layers
+        if (hardwareInfo.SelectedBackend == ExecutionBackend.Cpu ||
+            hardwareInfo.SelectedBackend == ExecutionBackend.Npu)
+        {
+            return 0;
+        }
+
+        // Get available VRAM in GB
+        double vramGB = hardwareInfo.GpuMemoryBytes / (1024.0 * 1024.0 * 1024.0);
+        if (vramGB <= 0) vramGB = 0; // Don't assume VRAM if detection failed - fallback to CPU
+
+        // Get model size in GB
+        double modelSizeGB = model.SizeBytes / (1024.0 * 1024.0 * 1024.0);
+        if (modelSizeGB <= 0) modelSizeGB = 4.0; // Default assumption for unknown size
+
+        // Estimate total layers based on model size (Q4_K_M quantization typical values)
+        int estimatedTotalLayers = modelSizeGB switch
+        {
+            < 1.0 => 22,    // TinyLlama ~1B
+            < 2.0 => 24,    // Phi-2 ~2.7B
+            < 3.0 => 26,    // Phi-3 Mini ~3.8B, LLaMA 3.2 3B
+            < 5.0 => 32,    // Mistral 7B, LLaMA 3.1 8B
+            < 8.0 => 40,    // 13B models
+            _ => 60         // Larger models
+        };
+
+        System.Diagnostics.Debug.WriteLine($"[GPU] VRAM: {vramGB:F1} GB, Model: {modelSizeGB:F1} GB, Est. layers: {estimatedTotalLayers}");
+
+        // Calculate how many layers can fit in VRAM
+        // Rule of thumb: Each layer uses approximately (ModelSize / TotalLayers) * 1.2 (20% overhead)
+        double memoryPerLayerGB = (modelSizeGB / estimatedTotalLayers) * 1.2;
+
+        // Reserve 1.5GB VRAM for context, KV cache, and system overhead
+        double availableForLayersGB = Math.Max(0, vramGB - 1.5);
+
+        int maxLayersByVram = (int)(availableForLayersGB / memoryPerLayerGB);
+
+        // Take minimum of estimated total layers and what fits in VRAM
+        int optimalLayers = Math.Min(estimatedTotalLayers, maxLayersByVram);
+
+        // Ensure we have at least some GPU acceleration if VRAM allows
+        if (optimalLayers < 5 && vramGB >= 2.0)
+        {
+            optimalLayers = 5; // Minimum useful GPU acceleration
+        }
+
+        // Cap at reasonable maximum to leave room for other operations
+        optimalLayers = Math.Min(optimalLayers, 100);
+
+        // Never go below 0
+        optimalLayers = Math.Max(optimalLayers, 0);
+
+        System.Diagnostics.Debug.WriteLine($"[GPU] Calculated optimal layers: {optimalLayers} (max by VRAM: {maxLayersByVram})");
+
+        return optimalLayers;
+    }
+}

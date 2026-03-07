@@ -1,53 +1,51 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
-  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  xmlns:systemai="http://schemas.microsoft.com/appx/manifest/systemai/windows10"
-  IgnorableNamespaces="uap rescap systemai">
+  IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="366acf3d-d565-4840-9c10-a9d18edee669"
-    Publisher="CN=User"
-    Version="2.0.0.0" />
-
-  <mp:PhoneIdentity PhoneProductId="366acf3d-d565-4840-9c10-a9d18edee669" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+    Name="34488AvnishKumar.KaiROSAI"
+    Publisher="CN=1494B4FB-4349-4083-8AFA-16D2A64B8D99"
+    Version="1.0.9.0" />
 
   <Properties>
-    <DisplayName>KaiROS.AI.WinUI</DisplayName>
-    <PublisherDisplayName>User</PublisherDisplayName>
+    <DisplayName>KaiROS AI</DisplayName>
+    <PublisherDisplayName>Avnish Kumar</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Local AI Assistant - Run LLMs privately on your own hardware</Description>
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26226.0" />
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26226.0" />
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.19041.0" MaxVersionTested="10.0.19041.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.19041.0" />
   </Dependencies>
 
   <Resources>
-    <Resource Language="x-generate"/>
+    <Resource Language="en-US"/>
   </Resources>
 
   <Applications>
     <Application Id="App"
-      Executable="$targetnametoken$.exe"
+      Executable="KaiROS.AI.WinUI.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="KaiROS.AI.WinUI"
-        Description="KaiROS.AI.WinUI"
+        DisplayName="KaiROS AI"
+        Description="Local AI Assistant powered by LLamaSharp"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
-        <uap:SplashScreen Image="Assets\SplashScreen.png" />
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" Square310x310Logo="Assets\Square310x310Logo.png" Square71x71Logo="Assets\SmallTile.png"/>
+        <uap:SplashScreen Image="Assets\SplashScreen.png"/>
       </uap:VisualElements>
     </Application>
   </Applications>
 
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
-    <systemai:Capability Name="systemAIModels"/>
+    <Capability Name="internetClient" />
+    <Capability Name="internetClientServer" />
+
   </Capabilities>
 </Package>

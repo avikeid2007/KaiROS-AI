@@ -1,19 +1,267 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Window
+﻿<Window
     x:Class="KaiROS.AI.WinUI.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:KaiROS.AI.WinUI"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Title="KaiROS.AI.WinUI">
+    xmlns:converters="using:KaiROS.AI.WinUI.Converters"
+    xmlns:helpers="using:KaiROS.AI.WinUI.Helpers"
+    xmlns:tb="using:H.NotifyIcon"
+    xmlns:views="using:KaiROS.AI.WinUI.Views"
+    xmlns:vm="using:KaiROS.AI.WinUI.ViewModels"
+    Title="KaiROS AI">
 
-    <Window.SystemBackdrop>
-        <MicaBackdrop />
-    </Window.SystemBackdrop>
+    <Grid Background="{StaticResource BackgroundBrush}">
+        <Grid.Resources>
+            <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
 
-    <Grid>
+            <!--  View templates � replaces WPF implicit DataType routing  -->
+            <DataTemplate x:Key="CatalogTemplate">
+                <views:ModelCatalogView />
+            </DataTemplate>
+            <DataTemplate x:Key="ChatTemplate">
+                <views:ChatView />
+            </DataTemplate>
+            <DataTemplate x:Key="DocumentTemplate">
+                <views:DocumentView />
+            </DataTemplate>
+            <DataTemplate x:Key="SettingsTemplate">
+                <views:SettingsView />
+            </DataTemplate>
 
+            <helpers:ViewModelTemplateSelector
+                x:Key="ViewModelSelector"
+                CatalogTemplate="{StaticResource CatalogTemplate}"
+                ChatTemplate="{StaticResource ChatTemplate}"
+                DocumentTemplate="{StaticResource DocumentTemplate}"
+                SettingsTemplate="{StaticResource SettingsTemplate}" />
+        </Grid.Resources>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition
+                Width="260"
+                MinWidth="200"
+                MaxWidth="400" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!--  System Tray Icon (H.NotifyIcon.WinUI)  -->
+        <tb:TaskbarIcon
+            x:Name="TrayIcon"
+            MenuActivation="RightClick"
+            ToolTipText="KaiROS AI"
+            Visibility="Collapsed">
+            <tb:TaskbarIcon.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem
+                        Click="TrayMenu_NewChat"
+                        FontFamily="Segoe MDL2 Assets"
+                        Text="&#xE710; New Chat" />
+                    <MenuFlyoutItem
+                        Click="TrayMenu_Settings"
+                        FontFamily="Segoe MDL2 Assets"
+                        Text="&#xE713; Settings" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem
+                        Click="TrayMenu_Restore"
+                        FontFamily="Segoe MDL2 Assets"
+                        Text="&#xE740; Restore" />
+                    <MenuFlyoutItem
+                        Click="TrayMenu_Exit"
+                        FontFamily="Segoe MDL2 Assets"
+                        Text="&#xE7E8; Exit" />
+                </MenuFlyout>
+            </tb:TaskbarIcon.ContextFlyout>
+        </tb:TaskbarIcon>
+
+        <!--  Sidebar Navigation  -->
+        <Border
+            Background="{StaticResource SurfaceBrush}"
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!--  Logo / Title  -->
+                <Border Padding="24,24,24,16">
+                    <StackPanel Orientation="Horizontal">
+                        <Image
+                            Width="48"
+                            Height="48"
+                            Margin="0,0,12,0"
+                            Source="Assets/logo.png" />
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock FontSize="24" FontWeight="Bold">
+                                <TextBlock.Foreground>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Offset="0" Color="#6366F1" />
+                                        <GradientStop Offset="1" Color="#A855F7" />
+                                    </LinearGradientBrush>
+                                </TextBlock.Foreground>
+                                <Run Text="Kai" />
+                                <Run Foreground="{StaticResource TextPrimaryBrush}" Text="ROS" />
+                                <Run Text=" AI" />
+                            </TextBlock>
+                            <TextBlock
+                                Margin="0,2,0,0"
+                                FontSize="11"
+                                Foreground="{StaticResource TextMutedBrush}"
+                                Text="Local AI Assistant" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!--  Navigation Items  -->
+                <ListBox
+                    Grid.Row="1"
+                    Padding="12,0"
+                    SelectedIndex="{Binding SelectedNavigationIndex, Mode=TwoWay}"
+                    Style="{StaticResource ModernListBox}">
+                    <ListBoxItem Style="{StaticResource ModernListBoxItem}">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon
+                                Margin="0,0,12,0"
+                                FontFamily="Segoe MDL2 Assets"
+                                Glyph="&#xF158;" />
+                            <TextBlock FontSize="14" Text="Models" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Style="{StaticResource ModernListBoxItem}">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon
+                                Margin="0,0,12,0"
+                                FontFamily="Segoe MDL2 Assets"
+                                Glyph="&#xE8F2;" />
+                            <TextBlock FontSize="14" Text="Chat" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Style="{StaticResource ModernListBoxItem}">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon
+                                Margin="0,0,12,0"
+                                FontFamily="Segoe MDL2 Assets"
+                                Glyph="&#xF571;" />
+                            <TextBlock FontSize="14" Text="RaaS" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Style="{StaticResource ModernListBoxItem}">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon
+                                Margin="0,0,12,0"
+                                FontFamily="Segoe MDL2 Assets"
+                                Glyph="&#xE713;" />
+                            <TextBlock FontSize="14" Text="Settings" />
+                        </StackPanel>
+                    </ListBoxItem>
+                </ListBox>
+
+                <!--  Status Footer  -->
+                <Border
+                    Grid.Row="2"
+                    Margin="12,0,12,12"
+                    Padding="16"
+                    Background="{StaticResource CardBrush}"
+                    CornerRadius="8">
+                    <StackPanel>
+                        <!--  Active Model  -->
+                        <StackPanel Visibility="{Binding ActiveModelName, Converter={StaticResource BoolToVis}}">
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{StaticResource TextMutedBrush}"
+                                Text="Active Model" />
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource TextPrimaryBrush}"
+                                Text="{Binding ActiveModelName}"
+                                TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{StaticResource TextMutedBrush}"
+                            Text="No model loaded"
+                            Visibility="{Binding ActiveModelName, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                        <Border
+                            Height="1"
+                            Margin="0,12"
+                            Background="{StaticResource BorderBrush}" />
+
+                        <!--  Hardware Status  -->
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{StaticResource TextMutedBrush}"
+                            Text="{Binding HardwareInfo}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!--  Resizable Splitter  -->
+        <Border
+            Grid.Column="1"
+            Width="4"
+            HorizontalAlignment="Center"
+            Background="{StaticResource BorderBrush}" />
+
+        <!--  Main Content Area  -->
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!--  Content � DataTemplateSelector replaces {x:Type} implicit templates  -->
+            <ContentControl
+                Margin="0"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch"
+                Content="{Binding CurrentView}"
+                ContentTemplateSelector="{StaticResource ViewModelSelector}" />
+
+            <!--  Loading Overlay  -->
+            <Border Background="#80000000" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ProgressRing
+                        Width="64"
+                        Height="64"
+                        HorizontalAlignment="Center"
+                        Foreground="{StaticResource PrimaryBrush}"
+                        IsActive="True" />
+                    <TextBlock
+                        Margin="0,16,0,0"
+                        FontSize="16"
+                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Text="Initializing..." />
+                </StackPanel>
+            </Border>
+
+            <!--  Status Bar  -->
+            <Border
+                Grid.Row="1"
+                Padding="16,8"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0">
+                <Grid>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Text="{Binding StatusText}" />
+
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        FontSize="12"
+                        Foreground="{StaticResource ErrorBrush}"
+                        Text="{Binding ErrorMessage}"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVis}}" />
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

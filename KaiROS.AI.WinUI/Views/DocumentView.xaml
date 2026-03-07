@@ -1,0 +1,406 @@
+﻿<UserControl
+    x:Class="KaiROS.AI.WinUI.Views.DocumentView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:KaiROS.AI.WinUI.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    d:DesignHeight="600"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <converters:StringFormatConverter x:Key="StringFmt" />
+    </UserControl.Resources>
+
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!--  Left: Service List  -->
+        <Border
+            Grid.Column="0"
+            Margin="0,0,16,0"
+            Padding="16"
+            Background="{StaticResource CardBrush}"
+            CornerRadius="12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Text="Your RaaS Services" />
+                    <Button
+                        Grid.Column="1"
+                        Width="30"
+                        Height="30"
+                        Padding="0"
+                        Command="{Binding StartCreatingServiceCommand}"
+                        Content="+"
+                        Style="{StaticResource SecondaryButton}"
+                        ToolTipService.ToolTip="Add New Service" />
+                </Grid>
+
+                <ListBox
+                    Grid.Row="1"
+                    HorizontalContentAlignment="Stretch"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    ItemsSource="{Binding RaasConfigurations}"
+                    SelectedItem="{Binding SelectedConfiguration, Mode=TwoWay}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border
+                                Margin="0,0,0,8"
+                                Padding="12"
+                                Background="{StaticResource SurfaceLightBrush}"
+                                CornerRadius="8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock
+                                        FontWeight="Bold"
+                                        Foreground="{StaticResource TextPrimaryBrush}"
+                                        Text="{Binding Name}" />
+                                    <TextBlock
+                                        Grid.Row="1"
+                                        FontSize="12"
+                                        Foreground="{StaticResource TextSecondaryBrush}"
+                                        Text="{Binding Port, Converter={StaticResource StringFmt}, ConverterParameter='Port: {0}'}" />
+
+                                    <StackPanel
+                                        Grid.Row="2"
+                                        Margin="0,8,0,0"
+                                        Orientation="Horizontal">
+                                        <!--  Start Button  -->
+                                        <Button
+                                            Width="30"
+                                            Height="30"
+                                            Padding="0"
+                                            Click="StartService_Click"
+                                            Tag="{Binding}"
+                                            Content="&#x25B6;"
+                                            Style="{StaticResource AccentButton}"
+                                            ToolTipService.ToolTip="Start Service"
+                                            Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                                        <!--  Stop Button  -->
+                                        <Button
+                                            Width="30"
+                                            Height="30"
+                                            Padding="0"
+                                            Background="#E53935"
+                                            Click="StopService_Click"
+                                            Tag="{Binding}"
+                                            Content="&#x25A0;"
+                                            Style="{StaticResource AccentButton}"
+                                            ToolTipService.ToolTip="Stop Service"
+                                            Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
+
+                                        <!--  View API Button  -->
+                                        <Button
+                                            Width="30"
+                                            Height="30"
+                                            Margin="8,0,0,0"
+                                            Padding="0"
+                                            Click="ViewApiService_Click"
+                                            Tag="{Binding}"
+                                            Content="&#xE8A7;"
+                                            Style="{StaticResource SecondaryButton}"
+                                            ToolTipService.ToolTip="View API Dashboard"
+                                            Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
+
+                                        <!--  Delete Button  -->
+                                        <Button
+                                            Width="30"
+                                            Height="30"
+                                            Margin="8,0,0,0"
+                                            Padding="0"
+                                            Click="DeleteService_Click"
+                                            Tag="{Binding}"
+                                            Content="&#xE74D;"
+                                            Style="{StaticResource SecondaryButton}" />
+                                    </StackPanel>
+
+                                    <!--  Running Indicator  -->
+                                    <Border
+                                        Grid.Row="0"
+                                        Width="10"
+                                        Height="10"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Background="#4CAF50"
+                                        CornerRadius="5"
+                                        ToolTipService.ToolTip="Running"
+                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
+
+        <!--  Right: Details & Create  -->
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <!--  Create New Service Form  -->
+                <Border
+                    Margin="0,0,0,16"
+                    Padding="20"
+                    Background="{StaticResource CardBrush}"
+                    CornerRadius="12"
+                    Visibility="{Binding IsCreatingService, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <TextBlock
+                            Margin="0,0,0,16"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Foreground="{StaticResource TextPrimaryBrush}"
+                            Text="Create New Service" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="100" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,16,0">
+                                <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="Name" />
+                                <TextBox
+                                    Margin="0,4,0,12"
+                                    Style="{StaticResource ModernTextBox}"
+                                    Text="{Binding NewServiceName, Mode=TwoWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="Port" />
+                                <TextBox
+                                    Margin="0,4,0,12"
+                                    Style="{StaticResource ModernTextBox}"
+                                    Text="{Binding NewServicePort, Mode=TwoWay}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="Description" />
+                        <TextBox
+                            Margin="0,4,0,12"
+                            Style="{StaticResource ModernTextBox}"
+                            Text="{Binding NewServiceDescription, Mode=TwoWay}" />
+
+                        <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="System Prompt" />
+                        <TextBox
+                            Height="60"
+                            Margin="0,4,0,16"
+                            Style="{StaticResource ModernTextBox}"
+                            Text="{Binding NewServiceSystemPrompt, Mode=TwoWay}"
+                            TextWrapping="Wrap" />
+
+                        <Button
+                            HorizontalAlignment="Right"
+                            Command="{Binding CreateServiceCommand}"
+                            Content="Create Service"
+                            Style="{StaticResource AccentButton}" />
+                    </StackPanel>
+                </Border>
+
+                <!--  Selected Service Details  -->
+                <Border
+                    Padding="20"
+                    Background="{StaticResource CardBrush}"
+                    CornerRadius="12"
+                    Visibility="{Binding SelectedConfiguration, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    FontSize="16"
+                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                    Text="&#xE8FB; " />
+                                <TextBlock
+                                    FontSize="16"
+                                    FontWeight="Bold"
+                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                    Text="{Binding SelectedConfiguration.Name}" />
+                                <!--  Status Badge  -->
+                                <Border
+                                    Margin="12,0,0,20"
+                                    Padding="8,2"
+                                    VerticalAlignment="Center"
+                                    Background="#4CAF50"
+                                    CornerRadius="4"
+                                    Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontSize="10"
+                                        FontWeight="Bold"
+                                        Foreground="White"
+                                        Text="RUNNING" />
+                                </Border>
+                            </StackPanel>
+
+                            <!--  URL Link  -->
+                            <Button
+                                Margin="28,4,0,0"
+                                Padding="0"
+                                HorizontalAlignment="Left"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Command="{Binding OpenServiceUrlCommand}"
+                                CommandParameter="{Binding SelectedConfiguration}"
+                                Content="{Binding SelectedConfiguration.Port, Converter={StaticResource StringFmt}, ConverterParameter='http://localhost:{0}'}"
+                                FontSize="12"
+                                Foreground="{StaticResource AccentBrush}"
+                                Style="{StaticResource SecondaryButton}"
+                                Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <TextBlock
+                                            
+                                            Foreground="{TemplateBinding Foreground}"
+                                            Text="{TemplateBinding Content}"
+                                            TextDecorations="Underline" />
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <StackPanel
+                                Grid.Column="1"
+                                VerticalAlignment="Top"
+                                Orientation="Horizontal">
+                                <Button
+                                    Margin="0,0,8,0"
+                                    Command="{Binding OpenServiceUrlCommand}"
+                                    CommandParameter="{Binding SelectedConfiguration}"
+                                    Content="View API"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}" />
+                                <Button
+                                    Margin="0,0,8,0"
+                                    Command="{Binding StartServiceCommand}"
+                                    CommandParameter="{Binding SelectedConfiguration}"
+                                    Content="&#x25B6; Start"
+                                    Style="{StaticResource AccentButton}"
+                                    Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                                <Button
+                                    Margin="0,0,8,0"
+                                    Background="#E53935"
+                                    Command="{Binding StopServiceCommand}"
+                                    CommandParameter="{Binding SelectedConfiguration}"
+                                    Content="&#x25A0; Stop"
+                                    Style="{StaticResource AccentButton}"
+                                    Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}" />
+
+                                <Button
+                                    Command="{Binding DeleteServiceCommand}"
+                                    CommandParameter="{Binding SelectedConfiguration}"
+                                    Content="Delete"
+                                    Style="{StaticResource SecondaryButton}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource TextPrimaryBrush}"
+                                Text="Sources (Documents/Links)" />
+                            <Button
+                                Grid.Column="1"
+                                Content="+ Add Source &#x25BE;"
+                                Style="{StaticResource SecondaryButton}">
+                                <Button.Flyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem Text="File" Click="AddFileSource_Click"/>
+                                        <MenuFlyoutItem Text="Web URL" Click="AddWebSource_Click"/>
+                                        <MenuFlyoutSeparator/>
+                                        <MenuFlyoutItem Text="Database (Reset soon)" IsEnabled="False"/>
+                                        <MenuFlyoutItem Text="GitHub (Reset soon)" IsEnabled="False"/>
+                                    </MenuFlyout>
+                                </Button.Flyout>
+                            </Button>
+                        </Grid>
+
+                        <!--  Sources List  -->
+                        <ItemsControl ItemsSource="{Binding SelectedConfiguration.Sources}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Margin="0,0,0,8"
+                                        Padding="12"
+                                        Background="{StaticResource SurfaceBrush}"
+                                        CornerRadius="6">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock
+                                                Margin="0,0,12,0"
+                                                FontSize="16"
+                                                Foreground="{StaticResource TextPrimaryBrush}"
+                                                Text="{Binding DisplayIcon}" />
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock
+                                                    FontWeight="SemiBold"
+                                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                                    Text="{Binding Name}" />
+                                                <TextBlock
+                                                    FontSize="11"
+                                                    Foreground="{StaticResource TextMutedBrush}"
+                                                    Text="{Binding Value}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <Button
+                                                Grid.Column="2"
+                                                Click="RemoveSource_Click"
+                                                Tag="{Binding}"
+                                                Content="&#xE711;"
+                                                Style="{StaticResource IconButton}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock
+                            Margin="0,8,0,0"
+                            FontStyle="Italic"
+                            Foreground="{StaticResource TextMutedBrush}"
+                            Text="No sources added yet."
+                            Visibility="{Binding SelectedConfiguration.Sources.Count, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

@@ -1,52 +1,80 @@
-﻿using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
+﻿using System.IO;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
+using KaiROS.AI.WinUI.Services;
+using KaiROS.AI.WinUI.ViewModels;
+using KaiROS.AI.WinUI.Models;
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+namespace KaiROS.AI.WinUI;
 
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
-
-namespace KaiROS.AI.WinUI
+public partial class App : Application
 {
-    /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
-    /// </summary>
-    public partial class App : Application
+    private ServiceProvider? _serviceProvider;
+
+    // Expose services and current app for use throughout the app
+    public static new App Current => (App)Application.Current;
+    public IServiceProvider Services => _serviceProvider!;
+
+    protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        private Window? _window;
+        // Build configuration
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .Build();
 
-        /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
-        public App()
-        {
-            InitializeComponent();
-        }
+        // Setup dependency injection
+        var services = new ServiceCollection();
+        ConfigureServices(services, configuration);
+        _serviceProvider = services.BuildServiceProvider();
 
-        /// <summary>
-        /// Invoked when the application is launched.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
-        {
-            _window = new MainWindow();
-            _window.Activate();
-        }
+        // Load saved theme preference at startup
+        _serviceProvider.GetRequiredService<IThemeService>().LoadSavedTheme();
+
+        // Create and show main window
+        var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+        mainWindow.Activate();
+    }
+
+    private void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+    {
+        // Configuration
+        services.AddSingleton<IConfiguration>(configuration);
+
+        // Get app settings - Use LocalAppData for MSIX compatibility (installation folder is read-only)
+        var appSettings = configuration.GetSection("AppSettings").Get<AppSettings>() ?? new AppSettings();
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var modelsDir = Path.Combine(localAppData, "KaiROS.AI", "Models");
+
+        // Services
+        services.AddSingleton<IDatabaseService, DatabaseService>();
+        services.AddSingleton<IDownloadService>(sp => new DownloadService(modelsDir));
+        services.AddSingleton<IHardwareDetectionService, HardwareDetectionService>();
+        services.AddSingleton<ISessionService, SessionService>();
+        services.AddSingleton<IExportService, ExportService>();
+        services.AddSingleton<IDocumentService, DocumentService>();
+        services.AddSingleton<IThemeService, ThemeService>();
+        services.AddSingleton<ModelManagerService>();
+        services.AddSingleton<IModelManagerService>(sp => sp.GetRequiredService<ModelManagerService>());
+        services.AddSingleton<ChatService>();
+        services.AddSingleton<IChatService>(sp => sp.GetRequiredService<ChatService>());
+        services.AddSingleton<IApiService, ApiService>();
+        services.AddSingleton<IWebSearchService, WebSearchService>();
+
+        // RaaS Services
+        services.AddSingleton<IRagSourceProvider, FileSourceProvider>();
+        services.AddSingleton<IRagSourceProvider, WebSourceProvider>();
+        services.AddSingleton<IRaasService, RaasService>();
+
+        // ViewModels
+        services.AddSingleton<MainViewModel>();
+        services.AddSingleton<ModelCatalogViewModel>();
+        services.AddSingleton<ChatViewModel>();
+        services.AddSingleton<SettingsViewModel>();
+        services.AddSingleton<DocumentViewModel>();
+
+        // Views
+        services.AddSingleton<MainWindow>();
     }
 }
