@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Linq;
 using Microsoft.UI;
 using Microsoft.UI.Composition;
@@ -73,35 +73,7 @@ public partial class MainWindow : Window
                 SyncNavViewSelection(_viewModel.SelectedNavigationIndex);
         };
 
-        // Keep NavigationView pane/content backgrounds in sync with the active theme.
-        // The Resources entries are plain SolidColorBrush objects (not theme-variant), so
-        // WinUI's ThemeResource lookup can skip them on explicit theme changes; we fix this
-        // by mutating their Color when ActualTheme changes on the NavView itself.
-        NavView.ActualThemeChanged += OnNavViewActualThemeChanged;
-    }
-
-    private void OnNavViewActualThemeChanged(FrameworkElement sender, object args)
-    {
-        bool isLight = sender.ActualTheme == ElementTheme.Light;
-
-        void MutateNavBrush(string key, Windows.UI.Color light, Windows.UI.Color dark)
-        {
-            if (NavView.Resources[key] is Microsoft.UI.Xaml.Media.SolidColorBrush brush)
-                brush.Color = isLight ? light : dark;
-        }
-
-        MutateNavBrush("NavigationViewDefaultPaneBackground",
-            Windows.UI.Color.FromArgb(255, 241, 245, 249),   // light: #F1F5F9
-            Windows.UI.Color.FromArgb(255,  26,  26,  46));  // dark:  #1A1A2E
-        MutateNavBrush("NavigationViewTopPaneBackground",
-            Windows.UI.Color.FromArgb(255, 241, 245, 249),
-            Windows.UI.Color.FromArgb(255,  26,  26,  46));
-        MutateNavBrush("NavigationViewContentBackground",
-            Windows.UI.Color.FromArgb(255, 255, 255, 255),   // light: #FFFFFF
-            Windows.UI.Color.FromArgb(255,  15,  15,  35));  // dark:  #0F0F23
-        MutateNavBrush("NavigationViewContentGridBorderBrush",
-            Windows.UI.Color.FromArgb(255, 226, 232, 240),   // light: #E2E8F0
-            Windows.UI.Color.FromArgb(255,  45,  45,  68));  // dark:  #2D2D44
+        // NavigationView backgrounds use ThemeDictionaries in XAML — no code-behind needed.
     }
 
     private async void OnFirstActivated(object sender, WindowActivatedEventArgs e)
@@ -212,3 +184,4 @@ public partial class MainWindow : Window
         }
     }
 }
+

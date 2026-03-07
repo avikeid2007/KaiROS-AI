@@ -77,11 +77,29 @@
             SelectionChanged="NavView_SelectionChanged">
 
             <NavigationView.Resources>
-                <!--  Pin the pane and content backgrounds to our dark palette  -->
-                <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#1A1A2E" />
-                <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="#1A1A2E" />
-                <SolidColorBrush x:Key="NavigationViewContentBackground" Color="#0F0F23" />
-                <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="#2D2D44" />
+                <!--  Theme-aware backgrounds: automatically switch with RequestedTheme  -->
+                <ResourceDictionary>
+                    <ResourceDictionary.ThemeDictionaries>
+                        <ResourceDictionary x:Key="Default">
+                            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#1A1A2E" />
+                            <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="#1A1A2E" />
+                            <SolidColorBrush x:Key="NavigationViewContentBackground" Color="#0F0F23" />
+                            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="#2D2D44" />
+                        </ResourceDictionary>
+                        <ResourceDictionary x:Key="Dark">
+                            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#1A1A2E" />
+                            <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="#1A1A2E" />
+                            <SolidColorBrush x:Key="NavigationViewContentBackground" Color="#0F0F23" />
+                            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="#2D2D44" />
+                        </ResourceDictionary>
+                        <ResourceDictionary x:Key="Light">
+                            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#F1F5F9" />
+                            <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="#F1F5F9" />
+                            <SolidColorBrush x:Key="NavigationViewContentBackground" Color="#FFFFFF" />
+                            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="#E2E8F0" />
+                        </ResourceDictionary>
+                    </ResourceDictionary.ThemeDictionaries>
+                </ResourceDictionary>
             </NavigationView.Resources>
 
             <NavigationView.PaneHeader>
@@ -95,7 +113,7 @@
                             Source="Assets/logo.png" />
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock FontSize="18" FontWeight="SemiBold">
-                                <Run Foreground="{StaticResource PrimaryBrush}" Text="Kai" />
+                                <Run Foreground="{ThemeResource PrimaryBrush}" Text="Kai" />
                                 <Run Text="ROS AI" />
                             </TextBlock>
                             <TextBlock
@@ -138,8 +156,8 @@
                 <Border
                     Margin="12,0,12,16"
                     Padding="12"
-                    Background="{StaticResource CardBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{ThemeResource CardBrush}"
+                    BorderBrush="{ThemeResource BorderBrush}"
                     BorderThickness="1"
                     CornerRadius="8">
                     <StackPanel>
@@ -162,7 +180,7 @@
                         <Border
                             Height="1"
                             Margin="0,8"
-                            Background="{StaticResource BorderBrush}" />
+                            Background="{ThemeResource BorderBrush}" />
                         <TextBlock
                             FontSize="11"
                             Opacity="0.6"
@@ -192,7 +210,7 @@
                         <ProgressRing
                             Width="64"
                             Height="64"
-                            Foreground="{StaticResource PrimaryBrush}"
+                            Foreground="{ThemeResource PrimaryBrush}"
                             IsActive="True" />
                         <TextBlock
                             Margin="0,16,0,0"
@@ -205,8 +223,8 @@
                 <Border
                     Grid.Row="1"
                     Padding="16,8"
-                    Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{ThemeResource SurfaceBrush}"
+                    BorderBrush="{ThemeResource BorderBrush}"
                     BorderThickness="0,1,0,0">
                     <Grid>
                         <TextBlock
@@ -217,7 +235,7 @@
                         <TextBlock
                             HorizontalAlignment="Right"
                             FontSize="12"
-                            Foreground="{StaticResource ErrorBrush}"
+                            Foreground="{ThemeResource ErrorBrush}"
                             Text="{Binding ErrorMessage}"
                             Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVis}}" />
                     </Grid>

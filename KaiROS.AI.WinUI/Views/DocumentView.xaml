@@ -25,7 +25,7 @@
             Grid.Column="0"
             Margin="0,0,16,0"
             Padding="16"
-            Background="{StaticResource CardBrush}"
+            Background="{ThemeResource CardBrush}"
             CornerRadius="12">
             <Grid>
                 <Grid.RowDefinitions>
@@ -42,7 +42,7 @@
                         VerticalAlignment="Center"
                         FontSize="16"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Foreground="{ThemeResource TextPrimaryBrush}"
                         Text="Your RaaS Services" />
                     <Button
                         Grid.Column="1"
@@ -67,7 +67,7 @@
                             <Border
                                 Margin="0,0,0,8"
                                 Padding="12"
-                                Background="{StaticResource SurfaceLightBrush}"
+                                Background="{ThemeResource SurfaceLightBrush}"
                                 CornerRadius="8">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -78,12 +78,12 @@
 
                                     <TextBlock
                                         FontWeight="Bold"
-                                        Foreground="{StaticResource TextPrimaryBrush}"
+                                        Foreground="{ThemeResource TextPrimaryBrush}"
                                         Text="{Binding Name}" />
                                     <TextBlock
                                         Grid.Row="1"
                                         FontSize="12"
-                                        Foreground="{StaticResource TextSecondaryBrush}"
+                                        Foreground="{ThemeResource TextSecondaryBrush}"
                                         Text="{Binding Port, Converter={StaticResource StringFmt}, ConverterParameter='Port: {0}'}" />
 
                                     <StackPanel
@@ -107,7 +107,7 @@
                                             Width="30"
                                             Height="30"
                                             Padding="0"
-                                            Background="{StaticResource ErrorBrush}"
+                                            Background="{ThemeResource ErrorBrush}"
                                             Click="StopService_Click"
                                             Tag="{Binding}"
                                             Content="&#x25A0;"
@@ -147,7 +147,7 @@
                                         Height="10"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Top"
-                                        Background="{StaticResource AccentBrush}"
+                                        Background="{ThemeResource AccentBrush}"
                                         CornerRadius="5"
                                         ToolTipService.ToolTip="Running"
                                         Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
@@ -167,7 +167,7 @@
                 <Border
                     Margin="0,0,0,16"
                     Padding="20"
-                    Background="{StaticResource CardBrush}"
+                    Background="{ThemeResource CardBrush}"
                     CornerRadius="12"
                     Visibility="{Binding IsCreatingService, Converter={StaticResource BoolToVis}}">
                     <StackPanel>
@@ -175,7 +175,7 @@
                             Margin="0,0,0,16"
                             FontSize="16"
                             FontWeight="Bold"
-                            Foreground="{StaticResource TextPrimaryBrush}"
+                            Foreground="{ThemeResource TextPrimaryBrush}"
                             Text="Create New Service" />
 
                         <Grid>
@@ -184,14 +184,14 @@
                                 <ColumnDefinition Width="100" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Margin="0,0,16,0">
-                                <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="Name" />
+                                <TextBlock Foreground="{ThemeResource TextSecondaryBrush}" Text="Name" />
                                 <TextBox
                                     Margin="0,4,0,12"
                                     Style="{StaticResource ModernTextBox}"
                                     Text="{Binding NewServiceName, Mode=TwoWay}" />
                             </StackPanel>
                             <StackPanel Grid.Column="1">
-                                <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="Port" />
+                                <TextBlock Foreground="{ThemeResource TextSecondaryBrush}" Text="Port" />
                                 <TextBox
                                     Margin="0,4,0,12"
                                     Style="{StaticResource ModernTextBox}"
@@ -199,13 +199,13 @@
                             </StackPanel>
                         </Grid>
 
-                        <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="Description" />
+                        <TextBlock Foreground="{ThemeResource TextSecondaryBrush}" Text="Description" />
                         <TextBox
                             Margin="0,4,0,12"
                             Style="{StaticResource ModernTextBox}"
                             Text="{Binding NewServiceDescription, Mode=TwoWay}" />
 
-                        <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="System Prompt" />
+                        <TextBlock Foreground="{ThemeResource TextSecondaryBrush}" Text="System Prompt" />
                         <TextBox
                             Height="60"
                             Margin="0,4,0,16"
@@ -224,7 +224,7 @@
                 <!--  Selected Service Details  -->
                 <Border
                     Padding="20"
-                    Background="{StaticResource CardBrush}"
+                    Background="{ThemeResource CardBrush}"
                     CornerRadius="12"
                     Visibility="{Binding SelectedConfiguration, Converter={StaticResource BoolToVis}}">
                     <StackPanel>
@@ -237,19 +237,19 @@
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock
                                     FontSize="16"
-                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                    Foreground="{ThemeResource TextPrimaryBrush}"
                                     Text="&#xE8FB; " />
                                 <TextBlock
                                     FontSize="16"
                                     FontWeight="Bold"
-                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                    Foreground="{ThemeResource TextPrimaryBrush}"
                                     Text="{Binding SelectedConfiguration.Name}" />
                                 <!--  Status Badge  -->
                                 <Border
                                     Margin="12,0,0,20"
                                     Padding="8,2"
                                     VerticalAlignment="Center"
-                                    Background="{StaticResource AccentBrush}"
+                                    Background="{ThemeResource AccentBrush}"
                                     CornerRadius="4"
                                     Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}">
                                     <TextBlock
@@ -272,7 +272,7 @@
                                 CommandParameter="{Binding SelectedConfiguration}"
                                 Content="{Binding SelectedConfiguration.Port, Converter={StaticResource StringFmt}, ConverterParameter='http://localhost:{0}'}"
                                 FontSize="12"
-                                Foreground="{StaticResource AccentBrush}"
+                                Foreground="{ThemeResource AccentBrush}"
                                 Style="{StaticResource SecondaryButton}"
                                 Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}">
                                 <Button.Template>
@@ -307,7 +307,7 @@
 
                                 <Button
                                     Margin="0,0,8,0"
-                                    Background="{StaticResource ErrorBrush}"
+                                    Background="{ThemeResource ErrorBrush}"
                                     Command="{Binding StopServiceCommand}"
                                     CommandParameter="{Binding SelectedConfiguration}"
                                     Content="&#x25A0; Stop"
@@ -330,7 +330,7 @@
                             <TextBlock
                                 VerticalAlignment="Center"
                                 FontWeight="SemiBold"
-                                Foreground="{StaticResource TextPrimaryBrush}"
+                                Foreground="{ThemeResource TextPrimaryBrush}"
                                 Text="Sources (Documents/Links)" />
                             <Button
                                 Grid.Column="1"
@@ -355,7 +355,7 @@
                                     <Border
                                         Margin="0,0,0,8"
                                         Padding="12"
-                                        Background="{StaticResource SurfaceBrush}"
+                                        Background="{ThemeResource SurfaceBrush}"
                                         CornerRadius="6">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -366,16 +366,16 @@
                                             <TextBlock
                                                 Margin="0,0,12,0"
                                                 FontSize="16"
-                                                Foreground="{StaticResource TextPrimaryBrush}"
+                                                Foreground="{ThemeResource TextPrimaryBrush}"
                                                 Text="{Binding DisplayIcon}" />
                                             <StackPanel Grid.Column="1">
                                                 <TextBlock
                                                     FontWeight="SemiBold"
-                                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                                    Foreground="{ThemeResource TextPrimaryBrush}"
                                                     Text="{Binding Name}" />
                                                 <TextBlock
                                                     FontSize="11"
-                                                    Foreground="{StaticResource TextMutedBrush}"
+                                                    Foreground="{ThemeResource TextMutedBrush}"
                                                     Text="{Binding Value}"
                                                     TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
@@ -394,7 +394,7 @@
                         <TextBlock
                             Margin="0,8,0,0"
                             FontStyle="Italic"
-                            Foreground="{StaticResource TextMutedBrush}"
+                            Foreground="{ThemeResource TextMutedBrush}"
                             Text="No sources added yet."
                             Visibility="{Binding SelectedConfiguration.Sources.Count, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                     </StackPanel>

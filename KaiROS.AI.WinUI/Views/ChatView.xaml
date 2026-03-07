@@ -18,7 +18,7 @@
         </Grid.ColumnDefinitions>
         
         <!-- Session Sidebar -->
-        <Border Background="{StaticResource CardBrush}"
+        <Border Background="{ThemeResource CardBrush}"
                 CornerRadius="12"
                 Margin="0,0,16,0"
                 Padding="12"
@@ -45,7 +45,7 @@
                     <ItemsControl ItemsSource="{Binding Sessions}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="{StaticResource SurfaceLightBrush}"
+                                <Border Background="{ThemeResource SurfaceLightBrush}"
                                         CornerRadius="8"
                                         Padding="12,10"
                                         Margin="0,0,0,8"
@@ -57,10 +57,10 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
                                             <TextBlock Text="{Binding Title}" 
-                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       Foreground="{ThemeResource TextPrimaryBrush}"
                                                        TextTrimming="CharacterEllipsis"
                                                        FontWeight="Medium"/>
-                                            <TextBlock Foreground="{StaticResource TextMutedBrush}" 
+                                            <TextBlock Foreground="{ThemeResource TextMutedBrush}" 
                                                        FontSize="11"
                                                        Margin="0,4,0,0">
                                                 <Run Text="{Binding MessageCount, Mode=OneWay}"/>
@@ -86,7 +86,7 @@
                 <!-- Empty State -->
                 <TextBlock Grid.Row="1"
                            Text="No chat history yet"
-                           Foreground="{StaticResource TextMutedBrush}"
+                           Foreground="{ThemeResource TextMutedBrush}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Visibility="{Binding Sessions.Count, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"/>
@@ -103,7 +103,7 @@
             </Grid.RowDefinitions>
         
         <!-- Header with Model Info -->
-        <Border Background="{StaticResource CardBrush}" 
+        <Border Background="{ThemeResource CardBrush}" 
                 CornerRadius="12" 
                 Padding="16"
                 Margin="0,0,0,16">
@@ -117,9 +117,9 @@
                     <TextBlock Text="Chat" 
                                FontSize="24" 
                                FontWeight="Bold" 
-                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                               Foreground="{ThemeResource TextPrimaryBrush}"/>
                     <TextBlock Text="{Binding ActiveModelInfo}" 
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{ThemeResource TextSecondaryBrush}"
                                Margin="0,4,0,0"/>
                 </StackPanel>
                 
@@ -140,7 +140,7 @@
                     </Button>
                     <!-- Search Bar (collapsible) -->
                     <Border Visibility="{Binding IsSearchVisible, Converter={StaticResource BoolToVis}}"
-                            Background="{StaticResource SurfaceLightBrush}"
+                            Background="{ThemeResource SurfaceLightBrush}"
                             CornerRadius="8"
                             Padding="8,4"
                             Margin="0,0,8,0">
@@ -193,7 +193,7 @@
                             <Border HorizontalAlignment="Right"
                                     MaxWidth="600"
                                     Visibility="{Binding IsUser, Converter={StaticResource BoolToVis}}">
-                                <Border Background="{StaticResource PrimaryBrush}" 
+                                <Border Background="{ThemeResource PrimaryBrush}" 
                                         CornerRadius="16,16,4,16" 
                                         Padding="16,12">
                                     <StackPanel>
@@ -220,7 +220,7 @@
                             <Border HorizontalAlignment="Left"
                                     MaxWidth="600"
                                     Visibility="{Binding IsAssistant, Converter={StaticResource BoolToVis}}">
-                                <Border Background="{StaticResource SurfaceLightBrush}" 
+                                <Border Background="{ThemeResource SurfaceLightBrush}" 
                                         CornerRadius="16,16,16,4" 
                                         Padding="16,12">
                                     <StackPanel>
@@ -231,7 +231,7 @@
                                             </Grid.ColumnDefinitions>
                                             
                                             <TextBlock Text="&#xE9CE; Assistant" 
-                                                       Foreground="{StaticResource PrimaryLightBrush}"
+                                                       Foreground="{ThemeResource PrimaryLightBrush}"
                                                        FontSize="12"
                                                        FontWeight="SemiBold"
                                                        VerticalAlignment="Center"/>
@@ -244,20 +244,20 @@
                                                      Padding="4"
                                                      ToolTipService.ToolTip="Copy Response">
                                                 <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
-                                                      Fill="{StaticResource TextSecondaryBrush}"
+                                                      Fill="{ThemeResource TextSecondaryBrush}"
                                                       Stretch="Uniform"/>
                                             </Button>
                                         </Grid>
                                         <ContentPresenter Content="{Binding Content, Converter={StaticResource MarkdownConverter}}"/>
                                         <TextBlock Text="{Binding Timestamp}" 
-                                                   Foreground="{StaticResource TextMutedBrush}"
+                                                   Foreground="{ThemeResource TextMutedBrush}"
                                                    FontSize="11"
                                                    HorizontalAlignment="Right"
                                                    Margin="0,8,0,0"/>
                                         
                                         <!-- Streaming Indicator -->
                                         <TextBlock Text="&#x2022;&#x2022;&#x2022;" 
-                                                   Foreground="{StaticResource PrimaryBrush}"
+                                                   Foreground="{ThemeResource PrimaryBrush}"
                                                    FontSize="14"
                                                    Margin="0,4,0,0"
                                                    Visibility="{Binding IsStreaming, Converter={StaticResource BoolToVis}}"/>
@@ -272,7 +272,7 @@
         
         <!-- Input Area -->
         <Border Grid.Row="2" 
-                Background="{StaticResource CardBrush}" 
+                Background="{ThemeResource CardBrush}" 
                 CornerRadius="12" 
                 Padding="16">
             <Grid>
@@ -292,7 +292,7 @@
                              <TextBlock Text="Knowledge Base"
                                         VerticalAlignment="Center"
                                         Margin="0,0,8,0"
-                                        Foreground="{StaticResource TextSecondaryBrush}"
+                                        Foreground="{ThemeResource TextSecondaryBrush}"
                                         FontSize="12"/>
                              <ComboBox ItemsSource="{Binding AvailableKnowledgeBases}" 
                                        SelectedItem="{Binding SelectedKnowledgeBase, Mode=TwoWay}"
@@ -305,7 +305,7 @@
                          <TextBlock Text="Web Search"
                                     VerticalAlignment="Center"
                                     Margin="0,0,8,0"
-                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                    Foreground="{ThemeResource TextSecondaryBrush}"
                                     FontSize="12"/>
                          <ToggleSwitch IsOn="{Binding IsWebSearchEnabled, Mode=TwoWay}"
                                       ToolTipService.ToolTip="Enable Web Search to fetch real-time info"/>
@@ -316,7 +316,7 @@
                          <TextBlock Text="Enter to Send"
                                     VerticalAlignment="Center"
                                     Margin="0,0,8,0"
-                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                    Foreground="{ThemeResource TextSecondaryBrush}"
                                     FontSize="12"/>
                          <ToggleSwitch IsOn="{Binding IsEnterToSendEnabled, Mode=TwoWay}"
                                       ToolTipService.ToolTip="Press Enter to send message"/>
@@ -325,16 +325,16 @@
                      
                      <!-- Attached Document Indicator -->
                      <Border HorizontalAlignment="Left" 
-                             Background="{StaticResource SurfaceBrush}" 
+                             Background="{ThemeResource SurfaceBrush}" 
                              CornerRadius="4" 
                              Padding="8,4" 
-                             BorderBrush="{StaticResource BorderBrush}"
+                             BorderBrush="{ThemeResource BorderBrush}"
                              BorderThickness="1"
                              Margin="0,0,8,0"
                              Visibility="{Binding CurrentDocumentName, Converter={StaticResource BoolToVis}}">
                          <StackPanel Orientation="Horizontal">
                              <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE8A5;" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                             <TextBlock Text="{Binding CurrentDocumentName}" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Medium"/>
+                             <TextBlock Text="{Binding CurrentDocumentName}" Foreground="{ThemeResource TextPrimaryBrush}" FontWeight="Medium"/>
                              <Button Command="{Binding RemoveDocumentCommand}"
                                      Style="{StaticResource SecondaryButton}"
                                      Padding="4,0"
@@ -346,15 +346,15 @@
 
                      <!-- Attached Image Indicator -->
                      <Border HorizontalAlignment="Left" 
-                             Background="{StaticResource SurfaceBrush}" 
+                             Background="{ThemeResource SurfaceBrush}" 
                              CornerRadius="4" 
                              Padding="8,4" 
-                             BorderBrush="{StaticResource BorderBrush}"
+                             BorderBrush="{ThemeResource BorderBrush}"
                              BorderThickness="1"
                              Visibility="{Binding HasAttachedImage, Converter={StaticResource BoolToVis}}">
                          <StackPanel Orientation="Horizontal">
                              <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xEB9F;" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                             <TextBlock Text="Image Attached" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Medium"/>
+                             <TextBlock Text="Image Attached" Foreground="{ThemeResource TextPrimaryBrush}" FontWeight="Medium"/>
                              <Button Command="{Binding RemoveAttachedImageCommand}"
                                      Style="{StaticResource SecondaryButton}"
                                      Padding="4,0"
@@ -413,7 +413,7 @@
                     <Button Command="{Binding StopGenerationCommand}"
                             Visibility="{Binding IsGenerating, Converter={StaticResource BoolToVis}}"
                             Style="{StaticResource SecondaryButton}"
-                            BorderBrush="{StaticResource ErrorBrush}"
+                            BorderBrush="{ThemeResource ErrorBrush}"
                             ><StackPanel Orientation="Horizontal"><FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE71A;" FontSize="14" VerticalAlignment="Center"/><TextBlock Text=" Stop" VerticalAlignment="Center"/></StackPanel></Button>
                 </StackPanel>
             </Grid>
@@ -421,35 +421,35 @@
         
         <!-- Performance Stats -->
         <Border Grid.Row="3" 
-                Background="{StaticResource SurfaceBrush}" 
+                Background="{ThemeResource SurfaceBrush}" 
                 CornerRadius="8" 
                 Padding="12"
                 Margin="0,12,0,0">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="12">
+                <TextBlock Foreground="{ThemeResource TextMutedBrush}" FontSize="12">
                     <Run FontFamily="Segoe Fluent Icons" Text="&#xE945;"/>
                     <Run Text="{Binding TokensPerSecond, Converter={StaticResource StringFmt}, ConverterParameter='{}{0:F1}'}"/>
                     <Run Text="tok/s"/>
                 </TextBlock>
-                <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="12" Margin="20,0,0,0">
+                <TextBlock Foreground="{ThemeResource TextMutedBrush}" FontSize="12" Margin="20,0,0,0">
                     <Run FontFamily="Segoe Fluent Icons" Text="&#xE9F3;"/>
                     <Run Text="{Binding TotalTokens}"/>
                     <Run Text="tokens"/>
                 </TextBlock>
-                <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="12" Margin="20,0,0,0">
+                <TextBlock Foreground="{ThemeResource TextMutedBrush}" FontSize="12" Margin="20,0,0,0">
                     <Run FontFamily="Segoe Fluent Icons" Text="&#xE950;"/>
                     <Run Text="{Binding MemoryUsage}"/>
                 </TextBlock>
-                <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="12" Margin="20,0,0,0">
+                <TextBlock Foreground="{ThemeResource TextMutedBrush}" FontSize="12" Margin="20,0,0,0">
                     <Run FontFamily="Segoe Fluent Icons" Text="&#xE916;"/>
                     <Run Text="{Binding ElapsedTime}"/>
                 </TextBlock>
-                <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="12" Margin="20,0,0,0">
+                <TextBlock Foreground="{ThemeResource TextMutedBrush}" FontSize="12" Margin="20,0,0,0">
                     <Run FontFamily="Segoe Fluent Icons" Text="&#xE8EF;"/>
                     <Run Text="Ctx:"/>
                     <Run Text="{Binding ContextWindow}"/>
                 </TextBlock>
-                <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="12" Margin="20,0,0,0">
+                <TextBlock Foreground="{ThemeResource TextMutedBrush}" FontSize="12" Margin="20,0,0,0">
                     <Run FontFamily="Segoe Fluent Icons" Text="&#xECE4;"/>
                     <Run Text="GPU:"/>
                     <Run Text="{Binding GpuLayers}"/>

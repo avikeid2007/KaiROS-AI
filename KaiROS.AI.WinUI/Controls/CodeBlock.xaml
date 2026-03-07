@@ -2,10 +2,10 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     
-    <Border Background="{StaticResource SurfaceLightBrush}" 
+    <Border Background="{ThemeResource SurfaceLightBrush}" 
             CornerRadius="8" 
             Padding="0"
-            BorderBrush="{StaticResource BorderBrush}"
+            BorderBrush="{ThemeResource BorderBrush}"
             BorderThickness="1">
         <Grid>
             <Grid.RowDefinitions>
@@ -14,7 +14,7 @@
             </Grid.RowDefinitions>
             
             <!-- Header with language and copy button -->
-            <Border Background="{StaticResource SurfaceBrush}" 
+            <Border Background="{ThemeResource SurfaceBrush}" 
                     CornerRadius="8,8,0,0" 
                     Padding="12,8">
                 <Grid>
@@ -25,7 +25,7 @@
                     
                     <TextBlock x:Name="LanguageLabel"
                                Text="code"
-                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Foreground="{ThemeResource TextSecondaryBrush}"
                                FontSize="12"
                                FontFamily="Consolas"
                                VerticalAlignment="Center"/>
@@ -67,7 +67,7 @@
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock x:Name="CopyIcon" Text="&#xE8C8;" FontFamily="Segoe Fluent Icons" FontSize="12" Margin="0,0,4,0"/>
-                            <TextBlock x:Name="CopyText" Text="Copy" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                            <TextBlock x:Name="CopyText" Text="Copy" Foreground="{ThemeResource TextSecondaryBrush}" FontSize="12"/>
                         </StackPanel>
                     </Button>
                 </Grid>
@@ -81,7 +81,7 @@
                 <TextBlock x:Name="CodeContent"
                            FontFamily="Consolas, 'Courier New', monospace"
                            FontSize="13"
-                           Foreground="{StaticResource TextPrimaryBrush}"
+                           Foreground="{ThemeResource TextPrimaryBrush}"
                            Padding="16,12"
                            TextWrapping="NoWrap"/>
             </ScrollViewer>

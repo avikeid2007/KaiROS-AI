@@ -61,8 +61,8 @@
     
     <!-- Button Style -->
     <Style x:Key="PrimaryButton" TargetType="Button">
-        <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
-        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        <Setter Property="Background" Value="{ThemeResource PrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{ThemeResource TextPrimaryBrush}"/>
         <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
@@ -80,7 +80,7 @@
                                 <VisualState x:Name="Normal"/>
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
-                                        <Setter Target="border.Background" Value="{StaticResource PrimaryDarkBrush}"/>
+                                        <Setter Target="border.Background" Value="{ThemeResource PrimaryDarkBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Pressed">
@@ -104,11 +104,11 @@
 
     <Style x:Key="SecondaryButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{ThemeResource TextPrimaryBrush}"/>
         <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="Padding" Value="16,10"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{ThemeResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -124,7 +124,7 @@
                                 <VisualState x:Name="Normal"/>
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
-                                        <Setter Target="border.Background" Value="{StaticResource SurfaceLightBrush}"/>
+                                        <Setter Target="border.Background" Value="{ThemeResource SurfaceLightBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Pressed"/>
@@ -139,8 +139,8 @@
     </Style>
 
     <Style x:Key="AccentButton" TargetType="Button">
-        <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
-        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        <Setter Property="Background" Value="{ThemeResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="{ThemeResource TextPrimaryBrush}"/>
         <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
@@ -158,7 +158,7 @@
                                 <VisualState x:Name="Normal"/>
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
-                                        <Setter Target="border.Background" Value="{StaticResource AccentDarkBrush}"/>
+                                        <Setter Target="border.Background" Value="{ThemeResource AccentDarkBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Pressed">
@@ -182,7 +182,7 @@
 
     <Style x:Key="IconButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+        <Setter Property="Foreground" Value="{ThemeResource TextSecondaryBrush}"/>
         <Setter Property="Width" Value="40"/>
         <Setter Property="Height" Value="40"/>
         <Setter Property="Padding" Value="8"/>
@@ -199,7 +199,7 @@
                                 <VisualState x:Name="Normal"/>
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
-                                        <Setter Target="border.Background" Value="{StaticResource SurfaceLightBrush}"/>
+                                        <Setter Target="border.Background" Value="{ThemeResource SurfaceLightBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Pressed"/>
@@ -215,14 +215,14 @@
 
     <!-- TextBox Style -->
     <Style x:Key="ModernTextBox" TargetType="TextBox">
-        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
-        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="Background" Value="{ThemeResource SurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{ThemeResource TextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{ThemeResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="14,12"/>
         <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
         <Setter Property="FontSize" Value="14"/>
-        <Setter Property="SelectionHighlightColor" Value="{StaticResource PrimaryBrush}"/>
+        <Setter Property="SelectionHighlightColor" Value="{ThemeResource PrimaryBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
@@ -237,7 +237,7 @@
                                 <VisualState x:Name="PointerOver"/>
                                 <VisualState x:Name="Focused">
                                     <VisualState.Setters>
-                                        <Setter Target="border.BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                                        <Setter Target="border.BorderBrush" Value="{ThemeResource PrimaryBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Disabled"/>
@@ -252,8 +252,8 @@
 
     <!-- Card Style -->
     <Style x:Key="CardBorder" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource CardBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="Background" Value="{ThemeResource CardBrush}"/>
+        <Setter Property="BorderBrush" Value="{ThemeResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="12"/>
         <Setter Property="Padding" Value="20"/>
@@ -262,8 +262,8 @@
     <!-- ProgressBar Style -->
     <Style x:Key="ModernProgressBar" TargetType="ProgressBar">
         <Setter Property="Height" Value="6"/>
-        <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
-        <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="Background" Value="{ThemeResource SurfaceLightBrush}"/>
+        <Setter Property="Foreground" Value="{ThemeResource AccentBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="CornerRadius" Value="3"/>
     </Style>
@@ -277,7 +277,7 @@
     
     <Style x:Key="ModernListBoxItem" TargetType="ListBoxItem">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+        <Setter Property="Foreground" Value="{ThemeResource TextSecondaryBrush}"/>
         <Setter Property="Padding" Value="16,12"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -292,7 +292,7 @@
                                 <VisualState x:Name="Normal"/>
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
-                                        <Setter Target="border.Background" Value="{StaticResource SurfaceLightBrush}"/>
+                                        <Setter Target="border.Background" Value="{ThemeResource SurfaceLightBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Pressed"/>
@@ -302,12 +302,12 @@
                                 <VisualState x:Name="Unselected"/>
                                 <VisualState x:Name="Selected">
                                     <VisualState.Setters>
-                                        <Setter Target="border.Background" Value="{StaticResource PrimaryBrush}"/>
+                                        <Setter Target="border.Background" Value="{ThemeResource PrimaryBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="SelectedUnfocused">
                                     <VisualState.Setters>
-                                        <Setter Target="border.Background" Value="{StaticResource PrimaryBrush}"/>
+                                        <Setter Target="border.Background" Value="{ThemeResource PrimaryBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                             </VisualStateGroup>
@@ -327,14 +327,14 @@
     </Style>
     
     <Style x:Key="RecommendedBadge" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="Background" Value="{ThemeResource AccentBrush}"/>
         <Setter Property="CornerRadius" Value="4"/>
         <Setter Property="Padding" Value="8,4"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
     </Style>
     
     <Style x:Key="CategoryBadge" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
+        <Setter Property="Background" Value="{ThemeResource SurfaceLightBrush}"/>
         <Setter Property="CornerRadius" Value="4"/>
         <Setter Property="Padding" Value="8,4"/>
     </Style>

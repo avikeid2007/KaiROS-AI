@@ -32,12 +32,12 @@
                 <TextBlock
                     FontSize="28"
                     FontWeight="Bold"
-                    Foreground="{StaticResource TextPrimaryBrush}"
+                    Foreground="{ThemeResource TextPrimaryBrush}"
                     Text="Model Catalog" />
                 <TextBlock
                     Margin="0,4,0,0"
                     FontSize="14"
-                    Foreground="{StaticResource TextSecondaryBrush}"
+                    Foreground="{ThemeResource TextSecondaryBrush}"
                     Text="Download and manage AI models for local inference" />
             </StackPanel>
 
@@ -64,8 +64,8 @@
                 <Border
                     Margin="0,0,16,6"
                     Padding="4"
-                    Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
+                    Background="{ThemeResource SurfaceBrush}"
+                    BorderBrush="{ThemeResource BorderBrush}"
                     BorderThickness="1"
                     CornerRadius="8">
                     <StackPanel Orientation="Horizontal">
@@ -112,7 +112,7 @@
                         Margin="0,0,6,0"
                         VerticalAlignment="Center"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Foreground="{ThemeResource TextSecondaryBrush}"
                         Text="Org:" />
                     <ComboBox
                         Width="105"
@@ -129,7 +129,7 @@
                         Margin="0,0,6,0"
                         VerticalAlignment="Center"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Foreground="{ThemeResource TextSecondaryBrush}"
                         Text="Family:" />
                     <ComboBox
                         Width="105"
@@ -146,7 +146,7 @@
                         Margin="0,0,6,0"
                         VerticalAlignment="Center"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Foreground="{ThemeResource TextSecondaryBrush}"
                         Text="Variant:" />
                     <ComboBox
                         Width="130"
@@ -164,7 +164,7 @@
                         Margin="0,0,6,0"
                         VerticalAlignment="Center"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Foreground="{ThemeResource TextSecondaryBrush}"
                         Text="Vision:" />
                     <ComboBox
                         Width="120"
@@ -186,8 +186,8 @@
                         <ToggleButton.Style>
                             <Style TargetType="ToggleButton">
                                 <Setter Property="Background" Value="Transparent" />
-                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
-                                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                                <Setter Property="Foreground" Value="{ThemeResource TextSecondaryBrush}" />
+                                <Setter Property="BorderBrush" Value="{ThemeResource BorderBrush}" />
                                 <Setter Property="BorderThickness" Value="1" />
                                 <Setter Property="Padding" Value="14,8" />
                                 <Setter Property="FontWeight" Value="SemiBold" />
@@ -207,18 +207,18 @@
                                                         <VisualState x:Name="Normal" />
                                                         <VisualState x:Name="Checked">
                                                             <VisualState.Setters>
-                                                                <Setter Target="border.Background" Value="{StaticResource AccentBrush}" />
-                                                                <Setter Target="border.BorderBrush" Value="{StaticResource AccentBrush}" />
+                                                                <Setter Target="border.Background" Value="{ThemeResource AccentBrush}" />
+                                                                <Setter Target="border.BorderBrush" Value="{ThemeResource AccentBrush}" />
                                                             </VisualState.Setters>
                                                         </VisualState>
                                                         <VisualState x:Name="PointerOver">
                                                             <VisualState.Setters>
-                                                                <Setter Target="border.Background" Value="{StaticResource SurfaceBrush}" />
+                                                                <Setter Target="border.Background" Value="{ThemeResource SurfaceBrush}" />
                                                             </VisualState.Setters>
                                                         </VisualState>
                                                         <VisualState x:Name="CheckedPointerOver">
                                                             <VisualState.Setters>
-                                                                <Setter Target="border.Background" Value="{StaticResource AccentBrush}" />
+                                                                <Setter Target="border.Background" Value="{ThemeResource AccentBrush}" />
                                                             </VisualState.Setters>
                                                         </VisualState>
                                                         <VisualState x:Name="Pressed" />
@@ -236,8 +236,8 @@
                     <!--  Search Box with Icon  -->
                     <Border
                         Padding="12,0"
-                        Background="{StaticResource SurfaceBrush}"
-                        BorderBrush="{StaticResource BorderBrush}"
+                        Background="{ThemeResource SurfaceBrush}"
+                        BorderBrush="{ThemeResource BorderBrush}"
                         BorderThickness="1"
                         CornerRadius="8">
                         <StackPanel Orientation="Horizontal">
@@ -246,7 +246,7 @@
                                 VerticalAlignment="Center"
                                 FontFamily="Segoe Fluent Icons"
                                 FontSize="14"
-                                Foreground="{StaticResource TextSecondaryBrush}"
+                                Foreground="{ThemeResource TextSecondaryBrush}"
                                 Glyph="&#xE721;" />
                             <TextBox
                                 Width="150"
@@ -254,7 +254,7 @@
                                 VerticalAlignment="Center"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                Foreground="{StaticResource TextPrimaryBrush}"
+                                Foreground="{ThemeResource TextPrimaryBrush}"
                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </Border>
@@ -274,19 +274,19 @@
                             <TextBlock
                                 VerticalAlignment="Center"
                                 FontSize="20"
-                                Foreground="{StaticResource AccentBrush}"
+                                Foreground="{ThemeResource AccentBrush}"
                                 Text="&#x2713;" />
                             <TextBlock
                                 VerticalAlignment="Center"
                                 FontSize="20"
                                 FontWeight="Bold"
-                                Foreground="{StaticResource TextPrimaryBrush}"
+                                Foreground="{ThemeResource TextPrimaryBrush}"
                                 Text=" Downloaded Models" />
                             <Border
                                 Margin="12,0,0,0"
                                 Padding="8,2"
                                 VerticalAlignment="Center"
-                                Background="{StaticResource AccentBrush}"
+                                Background="{ThemeResource AccentBrush}"
                                 CornerRadius="10">
                                 <TextBlock
                                     FontSize="12"
@@ -318,12 +318,12 @@
                                                         VerticalAlignment="Center"
                                                         FontSize="18"
                                                         FontWeight="SemiBold"
-                                                        Foreground="{StaticResource TextPrimaryBrush}"
+                                                        Foreground="{ThemeResource TextPrimaryBrush}"
                                                         Text="{Binding Model.DisplayName}" />
                                                     <Border
                                                         Margin="12,0,0,0"
                                                         Padding="8,4"
-                                                        Background="{StaticResource PrimaryBrush}"
+                                                        Background="{ThemeResource PrimaryBrush}"
                                                         CornerRadius="4"
                                                         Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}">
                                                         <TextBlock
@@ -335,22 +335,22 @@
                                                     <Border
                                                         Margin="6,0,0,0"
                                                         Padding="6,3"
-                                                        Background="{StaticResource SurfaceLightBrush}"
+                                                        Background="{ThemeResource SurfaceLightBrush}"
                                                         CornerRadius="4">
                                                         <TextBlock
                                                             FontSize="10"
                                                             FontWeight="SemiBold"
-                                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                                            Foreground="{ThemeResource TextSecondaryBrush}"
                                                             Text="{Binding Model.Family}" />
                                                     </Border>
                                                 </StackPanel>
                                                 <TextBlock
                                                     Margin="0,0,0,8"
-                                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                                    Foreground="{ThemeResource TextSecondaryBrush}"
                                                     Text="{Binding Model.Description}"
                                                     TextWrapping="Wrap" />
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock FontSize="13" Foreground="{StaticResource TextMutedBrush}">
+                                                    <TextBlock FontSize="13" Foreground="{ThemeResource TextMutedBrush}">
                                                         <Run Text=" " /><Run Text="{Binding Model.SizeText}" />
                                                     </TextBlock>
                                                 </StackPanel>
@@ -358,7 +358,7 @@
                                                 <TextBlock
                                                     Margin="0,8,0,0"
                                                     FontSize="12"
-                                                    Foreground="{StaticResource ErrorBrush}"
+                                                    Foreground="{ThemeResource ErrorBrush}"
                                                     Text="{Binding ErrorMessage}"
                                                     TextWrapping="Wrap"
                                                     Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVis}}" />
@@ -396,7 +396,7 @@
                     Margin="0,0,0,16"
                     FontSize="20"
                     FontWeight="Bold"
-                    Foreground="{StaticResource TextPrimaryBrush}"
+                    Foreground="{ThemeResource TextPrimaryBrush}"
                     Text="All Models by Organization" />
 
                 <ItemsControl ItemsSource="{Binding GroupedModels}">
@@ -415,13 +415,13 @@
                                             VerticalAlignment="Center"
                                             FontSize="18"
                                             FontWeight="SemiBold"
-                                            Foreground="{StaticResource TextPrimaryBrush}"
+                                            Foreground="{ThemeResource TextPrimaryBrush}"
                                             Text="{Binding OrganizationName}" />
                                         <Border
                                             Margin="12,0,0,0"
                                             Padding="10,3"
                                             VerticalAlignment="Center"
-                                            Background="{StaticResource PrimaryBrush}"
+                                            Background="{ThemeResource PrimaryBrush}"
                                             CornerRadius="10">
                                             <TextBlock
                                                 FontSize="12"
@@ -435,13 +435,13 @@
                                             Margin="8,0,0,0"
                                             Padding="8,3"
                                             VerticalAlignment="Center"
-                                            Background="{StaticResource SurfaceLightBrush}"
+                                            Background="{ThemeResource SurfaceLightBrush}"
                                             CornerRadius="10"
                                             Visibility="{Binding DownloadedCount, Converter={StaticResource BoolToVis}}">
                                             <TextBlock
                                                 FontSize="11"
                                                 FontWeight="SemiBold"
-                                                Foreground="{StaticResource AccentBrush}">
+                                                Foreground="{ThemeResource AccentBrush}">
                                                 <Run Text="{Binding DownloadedCount, Mode=OneWay}" />
                                                 <Run Text=" downloaded" />
                                             </TextBlock>
@@ -471,7 +471,7 @@
                                                                 VerticalAlignment="Center"
                                                                 FontSize="18"
                                                                 FontWeight="SemiBold"
-                                                                Foreground="{StaticResource TextPrimaryBrush}"
+                                                                Foreground="{ThemeResource TextPrimaryBrush}"
                                                                 Text="{Binding Model.DisplayName}" />
                                                             <Border
                                                                 Margin="12,0,0,0"
@@ -496,30 +496,30 @@
                                                             <Border
                                                                 Margin="6,0,0,0"
                                                                 Padding="6,3"
-                                                                Background="{StaticResource SurfaceLightBrush}"
+                                                                Background="{ThemeResource SurfaceLightBrush}"
                                                                 CornerRadius="4">
                                                                 <TextBlock
                                                                     FontSize="10"
                                                                     FontWeight="SemiBold"
-                                                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                                                    Foreground="{ThemeResource TextSecondaryBrush}"
                                                                     Text="{Binding Model.Family}" />
                                                             </Border>
                                                             <Border
                                                                 Margin="6,0,0,0"
                                                                 Padding="6,3"
-                                                                Background="{StaticResource SurfaceLightBrush}"
+                                                                Background="{ThemeResource SurfaceLightBrush}"
                                                                 CornerRadius="4"
                                                                 Visibility="{Binding Model.Variant, Converter={StaticResource BoolToVis}}">
                                                                 <TextBlock
                                                                     FontSize="10"
                                                                     FontWeight="SemiBold"
-                                                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                                                    Foreground="{ThemeResource TextSecondaryBrush}"
                                                                     Text="{Binding Model.Variant}" />
                                                             </Border>
                                                             <Border
                                                                 Margin="8,0,0,0"
                                                                 Padding="8,4"
-                                                                Background="{StaticResource PrimaryBrush}"
+                                                                Background="{ThemeResource PrimaryBrush}"
                                                                 CornerRadius="4"
                                                                 Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}">
                                                                 <TextBlock
@@ -531,7 +531,7 @@
                                                             <Border
                                                                 Margin="6,0,0,0"
                                                                 Padding="6,3"
-                                                                Background="{StaticResource AccentBrush}"
+                                                                Background="{ThemeResource AccentBrush}"
                                                                 CornerRadius="4"
                                                                 Visibility="{Binding IsDownloaded, Converter={StaticResource BoolToVis}}">
                                                                 <TextBlock
@@ -544,24 +544,24 @@
 
                                                         <TextBlock
                                                             Margin="0,0,0,12"
-                                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                                            Foreground="{ThemeResource TextSecondaryBrush}"
                                                             Text="{Binding Model.Description}"
                                                             TextWrapping="Wrap" />
 
                                                         <StackPanel Orientation="Horizontal">
-                                                            <TextBlock FontSize="13" Foreground="{StaticResource TextMutedBrush}">
+                                                            <TextBlock FontSize="13" Foreground="{ThemeResource TextMutedBrush}">
                                                                 <Run Text=" " /><Run Text="{Binding Model.SizeText}" />
                                                             </TextBlock>
                                                             <TextBlock
                                                                 Margin="16,0,0,0"
                                                                 FontSize="13"
-                                                                Foreground="{StaticResource TextMutedBrush}">
+                                                                Foreground="{ThemeResource TextMutedBrush}">
                                                                 <Run Text=" " /><Run Text="{Binding Model.MinRam}" /><Run Text=" RAM" />
                                                             </TextBlock>
                                                             <TextBlock
                                                                 Margin="16,0,0,0"
                                                                 FontSize="13"
-                                                                Foreground="{StaticResource TextMutedBrush}"
+                                                                Foreground="{ThemeResource TextMutedBrush}"
                                                                 Text="{Binding Model.Capabilities}" />
                                                         </StackPanel>
 
@@ -575,7 +575,7 @@
                                                                 Margin="0,10,0,0"
                                                                 HorizontalAlignment="Right"
                                                                 FontSize="12"
-                                                                Foreground="{StaticResource TextSecondaryBrush}"
+                                                                Foreground="{ThemeResource TextSecondaryBrush}"
                                                                 Text="{Binding DownloadProgress, Converter={StaticResource StringFmt}, ConverterParameter='{}{0:F1}%'}" />
                                                         </Grid>
 
@@ -583,7 +583,7 @@
                                                         <TextBlock
                                                             Margin="0,8,0,0"
                                                             FontSize="12"
-                                                            Foreground="{StaticResource ErrorBrush}"
+                                                            Foreground="{ThemeResource ErrorBrush}"
                                                             Text="{Binding ErrorMessage}"
                                                             TextWrapping="Wrap"
                                                             Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVis}}" />

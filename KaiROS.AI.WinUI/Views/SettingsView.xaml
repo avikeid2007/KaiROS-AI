@@ -17,12 +17,12 @@
                 <TextBlock
                     FontSize="28"
                     FontWeight="Bold"
-                    Foreground="{StaticResource TextPrimaryBrush}"
+                    Foreground="{ThemeResource TextPrimaryBrush}"
                     Text="Settings" />
                 <TextBlock
                     Margin="0,4,0,0"
                     FontSize="14"
-                    Foreground="{StaticResource TextSecondaryBrush}"
+                    Foreground="{ThemeResource TextSecondaryBrush}"
                     Text="Configure hardware, storage, and runtime options" />
             </StackPanel>
 
@@ -33,7 +33,7 @@
                         Margin="0,0,0,16"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Foreground="{ThemeResource TextPrimaryBrush}"
                         Text="&#xE771; Appearance" />
 
                     <Grid>
@@ -45,12 +45,12 @@
                         <StackPanel>
                             <TextBlock
                                 FontWeight="SemiBold"
-                                Foreground="{StaticResource TextPrimaryBrush}"
+                                Foreground="{ThemeResource TextPrimaryBrush}"
                                 Text="Theme" />
                             <TextBlock
                                 Margin="0,4,0,0"
                                 FontSize="12"
-                                Foreground="{StaticResource TextSecondaryBrush}"
+                                Foreground="{ThemeResource TextSecondaryBrush}"
                                 Text="Choose between dark and light mode" />
                         </StackPanel>
 
@@ -87,7 +87,7 @@
                         Margin="0,0,0,16"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Foreground="{ThemeResource TextPrimaryBrush}"
                         Text="&#xE714; API Server" />
 
                     <Grid>
@@ -99,12 +99,12 @@
                         <StackPanel>
                             <TextBlock
                                 FontWeight="SemiBold"
-                                Foreground="{StaticResource TextPrimaryBrush}"
+                                Foreground="{ThemeResource TextPrimaryBrush}"
                                 Text="Enable Local API" />
                             <TextBlock
                                 Margin="0,4,0,0"
                                 FontSize="12"
-                                Foreground="{StaticResource TextSecondaryBrush}"
+                                Foreground="{ThemeResource TextSecondaryBrush}"
                                 Text="Expose OpenAI-compatible REST API on localhost" />
                         </StackPanel>
 
@@ -120,7 +120,7 @@
                     <StackPanel Margin="0,16,0,0">
                         <TextBlock
                             FontWeight="SemiBold"
-                            Foreground="{StaticResource TextPrimaryBrush}"
+                            Foreground="{ThemeResource TextPrimaryBrush}"
                             Text="Port" />
                         <TextBox
                             Width="100"
@@ -133,18 +133,18 @@
                     <StackPanel Margin="0,16,0,0">
                         <TextBlock
                             FontWeight="SemiBold"
-                            Foreground="{StaticResource TextPrimaryBrush}"
+                            Foreground="{ThemeResource TextPrimaryBrush}"
                             Text="Status" />
                         <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
                             <TextBlock
                                 VerticalAlignment="Center"
                                 FontSize="12"
-                                Foreground="{StaticResource AccentBrush}"
+                                Foreground="{ThemeResource AccentBrush}"
                                 Text="{Binding ApiStatus}" />
                             <Button
                                 Margin="12,0,0,0"
                                 Padding="8,4"
-                                Background="{StaticResource AccentBrush}"
+                                Background="{ThemeResource AccentBrush}"
                                 BorderThickness="0"
                                 Click="OpenApiUrl_Click"
                                 Content="&#xE8A7; Open"
@@ -159,7 +159,7 @@
                         Margin="0,12,0,0"
                         FontSize="11"
                         FontStyle="Italic"
-                        Foreground="{StaticResource TextMutedBrush}"
+                        Foreground="{ThemeResource TextMutedBrush}"
                         Text="Use with VS Code Continue, LM Studio clients, or curl" />
                 </StackPanel>
             </Border>
@@ -171,7 +171,7 @@
                         Margin="0,0,0,16"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Foreground="{ThemeResource TextPrimaryBrush}"
                         Text="&#xE7F4; Hardware Information" />
 
                     <Grid>
@@ -186,22 +186,22 @@
 
                         <TextBlock
                             Margin="0,0,0,8"
-                            Foreground="{StaticResource TextSecondaryBrush}"
+                            Foreground="{ThemeResource TextSecondaryBrush}"
                             Text="GPU:" />
                         <TextBlock
                             Grid.Column="1"
                             Margin="0,0,0,8"
-                            Foreground="{StaticResource TextPrimaryBrush}"
+                            Foreground="{ThemeResource TextPrimaryBrush}"
                             Text="{Binding GpuInfo}" />
 
                         <TextBlock
                             Grid.Row="1"
-                            Foreground="{StaticResource TextSecondaryBrush}"
+                            Foreground="{ThemeResource TextSecondaryBrush}"
                             Text="System RAM:" />
                         <TextBlock
                             Grid.Row="1"
                             Grid.Column="1"
-                            Foreground="{StaticResource TextPrimaryBrush}"
+                            Foreground="{ThemeResource TextPrimaryBrush}"
                             Text="{Binding RamInfo}" />
                     </Grid>
 
@@ -221,19 +221,19 @@
                         Margin="0,0,0,8"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Foreground="{ThemeResource TextPrimaryBrush}"
                         Text="&#xE945; Execution Backend" />
 
                     <TextBlock
                         Margin="0,0,0,16"
-                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Foreground="{ThemeResource TextSecondaryBrush}"
                         Text="Choose how model inference runs. GPU acceleration provides better performance."
                         TextWrapping="Wrap" />
 
                     <StackPanel>
                         <TextBlock
                             Margin="0,0,0,8"
-                            Foreground="{StaticResource TextSecondaryBrush}"
+                            Foreground="{ThemeResource TextSecondaryBrush}"
                             Text="Available Backends:" />
 
                         <ListBox ItemsSource="{Binding AvailableBackends}"
@@ -253,8 +253,8 @@
                                                 <Border x:Name="border"
                                                         Margin="0,0,12,0"
                                                         Padding="16,12"
-                                                        Background="{StaticResource SurfaceLightBrush}"
-                                                        BorderBrush="{StaticResource BorderBrush}"
+                                                        Background="{ThemeResource SurfaceLightBrush}"
+                                                        BorderBrush="{ThemeResource BorderBrush}"
                                                         BorderThickness="2"
                                                         CornerRadius="8">
                                                     <VisualStateManager.VisualStateGroups>
@@ -262,8 +262,8 @@
                                                             <VisualState x:Name="Unselected"/>
                                                             <VisualState x:Name="Selected">
                                                                 <VisualState.Setters>
-                                                                    <Setter Target="border.BorderBrush" Value="{StaticResource PrimaryBrush}"/>
-                                                                    <Setter Target="border.Background" Value="{StaticResource PrimaryBrush}"/>
+                                                                    <Setter Target="border.BorderBrush" Value="{ThemeResource PrimaryBrush}"/>
+                                                                    <Setter Target="border.Background" Value="{ThemeResource PrimaryBrush}"/>
                                                                 </VisualState.Setters>
                                                             </VisualState>
                                                         </VisualStateGroup>
@@ -271,12 +271,12 @@
                                                             <VisualState x:Name="Normal"/>
                                                             <VisualState x:Name="PointerOver">
                                                                 <VisualState.Setters>
-                                                                    <Setter Target="border.BorderBrush" Value="{StaticResource PrimaryLightBrush}"/>
+                                                                    <Setter Target="border.BorderBrush" Value="{ThemeResource PrimaryLightBrush}"/>
                                                                 </VisualState.Setters>
                                                             </VisualState>
                                                         </VisualStateGroup>
                                                     </VisualStateManager.VisualStateGroups>
-                                                    <TextBlock Foreground="{StaticResource TextPrimaryBrush}" 
+                                                    <TextBlock Foreground="{ThemeResource TextPrimaryBrush}" 
                                                                Text="{Binding Converter={StaticResource BackendToString}}" />
                                                 </Border>
                                             </ControlTemplate>
@@ -316,10 +316,10 @@
                     <Border
                         Margin="0,16,0,0"
                         Padding="12"
-                        Background="{StaticResource SurfaceBrush}"
+                        Background="{ThemeResource SurfaceBrush}"
                         CornerRadius="8">
                         <TextBlock
-                            Foreground="{StaticResource TextSecondaryBrush}"
+                            Foreground="{ThemeResource TextSecondaryBrush}"
                             Text="{Binding BackendStatus}"
                             TextWrapping="Wrap" />
                     </Border>
@@ -340,12 +340,12 @@
                         Margin="0,0,0,8"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Foreground="{ThemeResource TextPrimaryBrush}"
                         Text="&#xED25; Model Storage" />
 
                     <TextBlock
                         Margin="0,0,0,16"
-                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Foreground="{ThemeResource TextSecondaryBrush}"
                         Text="Choose where downloaded models are stored. Models can be several GBs in size."
                         TextWrapping="Wrap" />
 
@@ -377,12 +377,12 @@
                         Margin="0,0,0,8"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Foreground="{ThemeResource TextPrimaryBrush}"
                         Text="&#xE8BD; System Prompt" />
 
                     <TextBlock
                         Margin="0,0,0,16"
-                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Foreground="{ThemeResource TextSecondaryBrush}"
                         Text="Configure the default personality and behavior of the AI assistant."
                         TextWrapping="Wrap" />
 
@@ -412,10 +412,10 @@
                         Margin="0,0,0,16"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Foreground="{ThemeResource TextPrimaryBrush}"
                         Text="&#xE946; About KaiROS AI" />
 
-                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap">
+                    <TextBlock Foreground="{ThemeResource TextSecondaryBrush}" TextWrapping="Wrap">
                         <Run Text="KaiROS AI" />
                         <Run Text="is a local AI assistant powered by" />
                         <Run FontWeight="SemiBold" Text="LLamaSharp" />
@@ -425,7 +425,7 @@
                     <TextBlock
                         Margin="0,12,0,0"
                         FontSize="12"
-                        Foreground="{StaticResource TextMutedBrush}">
+                        Foreground="{ThemeResource TextMutedBrush}">
                         <Run Text="Version 1.0.4 • Built with .NET 9 • " />
                     </TextBlock>
 
@@ -433,7 +433,7 @@
                         Margin="0,20,0,0"
                         Padding="16,10"
                         HorizontalAlignment="Left"
-                        Background="{StaticResource AccentBrush}"
+                        Background="{ThemeResource AccentBrush}"
                         BorderThickness="0"
                         Click="FeedbackHub_Click"
                         Content="&#xE8BD; Send Feedback"
