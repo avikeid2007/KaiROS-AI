@@ -10,7 +10,7 @@
     <Color x:Key="WarningColor">#F59E0B</Color>
     <Color x:Key="ErrorColor">#EF4444</Color>
     
-    <Color x:Key="BackgroundColor">#F8FAFC</Color>
+    <!--  Surface / text colors kept for backward-compat (ThemeService updates these at runtime)  -->
     <Color x:Key="SurfaceColor">#FFFFFF</Color>
     <Color x:Key="SurfaceLightColor">#F1F5F9</Color>
     <Color x:Key="CardColor">#FFFFFF</Color>
@@ -29,7 +29,7 @@
     <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
     <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
     
-    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
+    <!--  Surface / text brushes kept for View backward-compat; ThemeService updates these at runtime  -->
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
     <SolidColorBrush x:Key="SurfaceLightBrush" Color="{StaticResource SurfaceLightColor}"/>
     <SolidColorBrush x:Key="CardBrush" Color="{StaticResource CardColor}"/>

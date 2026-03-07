@@ -1,4 +1,4 @@
-﻿<UserControl
+<UserControl
     x:Class="KaiROS.AI.WinUI.Views.DocumentView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -107,7 +107,7 @@
                                             Width="30"
                                             Height="30"
                                             Padding="0"
-                                            Background="#E53935"
+                                            Background="{StaticResource ErrorBrush}"
                                             Click="StopService_Click"
                                             Tag="{Binding}"
                                             Content="&#x25A0;"
@@ -147,7 +147,7 @@
                                         Height="10"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Top"
-                                        Background="#4CAF50"
+                                        Background="{StaticResource AccentBrush}"
                                         CornerRadius="5"
                                         ToolTipService.ToolTip="Running"
                                         Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
@@ -249,7 +249,7 @@
                                     Margin="12,0,0,20"
                                     Padding="8,2"
                                     VerticalAlignment="Center"
-                                    Background="#4CAF50"
+                                    Background="{StaticResource AccentBrush}"
                                     CornerRadius="4"
                                     Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}">
                                     <TextBlock
@@ -307,7 +307,7 @@
 
                                 <Button
                                     Margin="0,0,8,0"
-                                    Background="#E53935"
+                                    Background="{StaticResource ErrorBrush}"
                                     Command="{Binding StopServiceCommand}"
                                     CommandParameter="{Binding SelectedConfiguration}"
                                     Content="&#x25A0; Stop"

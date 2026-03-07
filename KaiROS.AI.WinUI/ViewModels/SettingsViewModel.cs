@@ -109,7 +109,9 @@ public partial class SettingsViewModel : ViewModelBase
 
     partial void OnIsDarkThemeChanged(bool value)
     {
-        _themeService.SetTheme(value ? "Dark" : "Light");
+        // Pass the root FrameworkElement so ThemeService can also flip ThemeResource tokens
+        var root = (App.Current as App)?.MainWindowRoot;
+        _themeService.SetTheme(value ? "Dark" : "Light", root);
         // WinUI 3: theme is applied immediately via ResourceDictionary — no restart required
     }
 

@@ -1,4 +1,4 @@
-ï»¿<UserControl
+<UserControl
     x:Class="KaiROS.AI.WinUI.Views.SettingsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -426,7 +426,7 @@
                         Margin="0,12,0,0"
                         FontSize="12"
                         Foreground="{StaticResource TextMutedBrush}">
-                        <Run Text="Version 1.0.4 â€¢ Built with .NET 9 â€¢ " />
+                        <Run Text="Version 1.0.4 • Built with .NET 9 • " />
                     </TextBlock>
 
                     <Button

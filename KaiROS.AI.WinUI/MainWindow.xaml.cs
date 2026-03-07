@@ -1,8 +1,13 @@
 ﻿using System.IO;
+using System.Linq;
 using Microsoft.UI;
+using Microsoft.UI.Composition;
+using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Windows.Graphics;
+using WinRT;
 using KaiROS.AI.WinUI.Services;
 using KaiROS.AI.WinUI.ViewModels;
 
@@ -24,7 +29,17 @@ public partial class MainWindow : Window
 
         // WinUI 3: set DataContext on the root FrameworkElement (Window has no DataContext itself)
         if (Content is FrameworkElement root)
+        {
             root.DataContext = viewModel;
+            // Expose root for runtime theme switching via ThemeService
+            App.Current.MainWindowRoot = root;
+        }
+
+        // Extend content under the title bar for Mica to show through
+        ExtendsContentIntoTitleBar = true;
+
+        // Apply Mica backdrop
+        TrySetMicaBackdrop();
 
         _appWindow = this.AppWindow;
 
@@ -50,6 +65,43 @@ public partial class MainWindow : Window
 
         // Initialize ViewModel on first activation
         Activated += OnFirstActivated;
+
+        // Sync NavView when ViewModel programmatically changes navigation (tray commands, etc.)
+        _viewModel.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(MainViewModel.SelectedNavigationIndex))
+                SyncNavViewSelection(_viewModel.SelectedNavigationIndex);
+        };
+
+        // Keep NavigationView pane/content backgrounds in sync with the active theme.
+        // The Resources entries are plain SolidColorBrush objects (not theme-variant), so
+        // WinUI's ThemeResource lookup can skip them on explicit theme changes; we fix this
+        // by mutating their Color when ActualTheme changes on the NavView itself.
+        NavView.ActualThemeChanged += OnNavViewActualThemeChanged;
+    }
+
+    private void OnNavViewActualThemeChanged(FrameworkElement sender, object args)
+    {
+        bool isLight = sender.ActualTheme == ElementTheme.Light;
+
+        void MutateNavBrush(string key, Windows.UI.Color light, Windows.UI.Color dark)
+        {
+            if (NavView.Resources[key] is Microsoft.UI.Xaml.Media.SolidColorBrush brush)
+                brush.Color = isLight ? light : dark;
+        }
+
+        MutateNavBrush("NavigationViewDefaultPaneBackground",
+            Windows.UI.Color.FromArgb(255, 241, 245, 249),   // light: #F1F5F9
+            Windows.UI.Color.FromArgb(255,  26,  26,  46));  // dark:  #1A1A2E
+        MutateNavBrush("NavigationViewTopPaneBackground",
+            Windows.UI.Color.FromArgb(255, 241, 245, 249),
+            Windows.UI.Color.FromArgb(255,  26,  26,  46));
+        MutateNavBrush("NavigationViewContentBackground",
+            Windows.UI.Color.FromArgb(255, 255, 255, 255),   // light: #FFFFFF
+            Windows.UI.Color.FromArgb(255,  15,  15,  35));  // dark:  #0F0F23
+        MutateNavBrush("NavigationViewContentGridBorderBrush",
+            Windows.UI.Color.FromArgb(255, 226, 232, 240),   // light: #E2E8F0
+            Windows.UI.Color.FromArgb(255,  45,  45,  68));  // dark:  #2D2D44
     }
 
     private async void OnFirstActivated(object sender, WindowActivatedEventArgs e)
@@ -114,5 +166,49 @@ public partial class MainWindow : Window
     {
         _isExiting = true;
         this.Close();
+    }
+
+    private void TrySetMicaBackdrop()
+    {
+        if (!MicaController.IsSupported()) return;
+
+        var config = new SystemBackdropConfiguration { IsInputActive = true };
+
+        ((FrameworkElement)Content).ActualThemeChanged += (s, _) =>
+        {
+            config.Theme = ((FrameworkElement)Content).ActualTheme switch
+            {
+                ElementTheme.Dark  => SystemBackdropTheme.Dark,
+                ElementTheme.Light => SystemBackdropTheme.Light,
+                _                  => SystemBackdropTheme.Default
+            };
+        };
+
+        var micaController = new MicaController();
+        micaController.AddSystemBackdropTarget(this.As<ICompositionSupportsSystemBackdrop>());
+        micaController.SetSystemBackdropConfiguration(config);
+    }
+
+    private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    {
+        if (args.SelectedItem is NavigationViewItem item && item.Tag is string tag
+            && int.TryParse(tag, out int index))
+        {
+            _viewModel.SelectedNavigationIndex = index;
+        }
+    }
+
+    private void SyncNavViewSelection(int index)
+    {
+        var allItems = NavView.MenuItems.OfType<NavigationViewItem>()
+            .Concat(NavView.FooterMenuItems.OfType<NavigationViewItem>());
+        foreach (var item in allItems)
+        {
+            if (item.Tag is string tag && int.TryParse(tag, out int i) && i == index)
+            {
+                NavView.SelectedItem = item;
+                return;
+            }
+        }
     }
 }
