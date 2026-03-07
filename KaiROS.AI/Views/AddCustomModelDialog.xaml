@@ -1,7 +1,7 @@
-<ContentDialog x:Class="KaiROS.AI.Views.AddCustomModelDialog"
+﻿<ContentDialog x:Class="KaiROS.AI.Views.AddCustomModelDialog"
                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-               Title="➕ Add Custom Model"
+               Title="Add Custom Model"
                PrimaryButtonText="Add Model"
                CloseButtonText="Cancel"
                PrimaryButtonClick="AddModel_Click"
@@ -35,13 +35,13 @@
                        FontWeight="SemiBold"/>
             <StackPanel Orientation="Horizontal" Spacing="24">
                 <RadioButton x:Name="LocalFileRadio"
-                             Content="📁 Local File"
+                             Content="Local File"
                              IsChecked="True"
                              GroupName="SourceType"
                              Foreground="{StaticResource TextPrimaryBrush}"
                              Checked="SourceType_Checked"/>
                 <RadioButton x:Name="DownloadUrlRadio"
-                             Content="🌐 Download URL"
+                             Content="Download URL"
                              GroupName="SourceType"
                              Foreground="{StaticResource TextPrimaryBrush}"
                              Checked="SourceType_Checked"/>

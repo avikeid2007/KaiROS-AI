@@ -1,4 +1,4 @@
-<UserControl
+﻿<UserControl
     x:Class="KaiROS.AI.Views.SettingsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -34,7 +34,7 @@
                         FontSize="18"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource TextPrimaryBrush}"
-                        Text="🎨 Appearance" />
+                        Text="&#xE771; Appearance" />
 
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -63,7 +63,7 @@
                                 Margin="8,0,0,0"
                                 VerticalAlignment="Center"
                                 FontSize="16"
-                                Text="☀️" />
+                                Text="&#x2600;" />
                             <ToggleSwitch
                                 VerticalAlignment="Center"
                                 IsOn="{Binding IsDarkTheme, Mode=TwoWay}"
@@ -74,7 +74,7 @@
                                 Margin="8,0,0,0"
                                 VerticalAlignment="Center"
                                 FontSize="16"
-                                Text="🌙" />
+                                Text="&#x263D;" />
                         </StackPanel>
                     </Grid>
                 </StackPanel>
@@ -88,7 +88,7 @@
                         FontSize="18"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource TextPrimaryBrush}"
-                        Text="🔌 API Server" />
+                        Text="&#xE714; API Server" />
 
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -147,7 +147,7 @@
                                 Background="{StaticResource AccentBrush}"
                                 BorderThickness="0"
                                 Click="OpenApiUrl_Click"
-                                Content="🌐 Open"
+                                Content="&#xE8A7; Open"
                                 FontSize="11"
                                 Foreground="White"
                                 CornerRadius="4"
@@ -172,7 +172,7 @@
                         FontSize="18"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource TextPrimaryBrush}"
-                        Text="🖥 Hardware Information" />
+                        Text="&#xE7F4; Hardware Information" />
 
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -209,7 +209,7 @@
                         Margin="0,16,0,0"
                         HorizontalAlignment="Left"
                         Command="{Binding RefreshHardwareInfoCommand}"
-                        Content="🔄 Refresh Hardware Info"
+                        Content="&#xE72C; Refresh Hardware Info"
                         Style="{StaticResource SecondaryButton}" />
                 </StackPanel>
             </Border>
@@ -222,7 +222,7 @@
                         FontSize="18"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource TextPrimaryBrush}"
-                        Text="⚡ Execution Backend" />
+                        Text="&#xE945; Execution Backend" />
 
                     <TextBlock
                         Margin="0,0,0,16"
@@ -328,7 +328,7 @@
                         Margin="0,16,0,0"
                         HorizontalAlignment="Left"
                         Command="{Binding UseRecommendedBackendCommand}"
-                        Content="⭐ Use Recommended"
+                        Content="&#xE735; Use Recommended"
                         Style="{StaticResource AccentButton}" />
                 </StackPanel>
             </Border>
@@ -341,7 +341,7 @@
                         FontSize="18"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource TextPrimaryBrush}"
-                        Text="📁 Model Storage" />
+                        Text="&#xED25; Model Storage" />
 
                     <TextBlock
                         Margin="0,0,0,16"
@@ -364,7 +364,7 @@
                             Grid.Column="1"
                             Margin="12,0,0,0"
                             Command="{Binding BrowseModelsDirectoryCommand}"
-                            Content="📂 Browse"
+                            Content="&#xED25; Browse"
                             Style="{StaticResource SecondaryButton}" />
                     </Grid>
                 </StackPanel>
@@ -378,7 +378,7 @@
                         FontSize="18"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource TextPrimaryBrush}"
-                        Text="💬 System Prompt" />
+                        Text="&#xE8BD; System Prompt" />
 
                     <TextBlock
                         Margin="0,0,0,16"
@@ -399,7 +399,7 @@
                         <Button
                             Margin="0,0,8,0"
                             Command="{Binding ResetSystemPromptCommand}"
-                            Content="🔄 Reset to Default"
+                            Content="&#xE72C; Reset to Default"
                             Style="{StaticResource SecondaryButton}" />
                     </StackPanel>
                 </StackPanel>
@@ -413,7 +413,7 @@
                         FontSize="18"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource TextPrimaryBrush}"
-                        Text="ℹ About KaiROS AI" />
+                        Text="&#xE946; About KaiROS AI" />
 
                     <TextBlock Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap">
                         <Run Text="KaiROS AI" />
@@ -436,7 +436,7 @@
                         Background="{StaticResource AccentBrush}"
                         BorderThickness="0"
                         Click="FeedbackHub_Click"
-                        Content="💬 Send Feedback"
+                        Content="&#xE8BD; Send Feedback"
                         CornerRadius="6"
                         Foreground="White"/>
                 </StackPanel>

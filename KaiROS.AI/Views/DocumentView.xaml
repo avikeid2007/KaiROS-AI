@@ -97,7 +97,7 @@
                                             Padding="0"
                                             Click="StartService_Click"
                                             Tag="{Binding}"
-                                            Content="â–¶"
+                                            Content="&#x25B6;"
                                             Style="{StaticResource AccentButton}"
                                             ToolTipService.ToolTip="Start Service"
                                             Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
@@ -110,7 +110,7 @@
                                             Background="#E53935"
                                             Click="StopService_Click"
                                             Tag="{Binding}"
-                                            Content="â¬›"
+                                            Content="&#x25A0;"
                                             Style="{StaticResource AccentButton}"
                                             ToolTipService.ToolTip="Stop Service"
                                             Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
@@ -123,7 +123,7 @@
                                             Padding="0"
                                             Click="ViewApiService_Click"
                                             Tag="{Binding}"
-                                            Content="ðŸŒ"
+                                            Content="&#xE8A7;"
                                             Style="{StaticResource SecondaryButton}"
                                             ToolTipService.ToolTip="View API Dashboard"
                                             Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
@@ -136,7 +136,7 @@
                                             Padding="0"
                                             Click="DeleteService_Click"
                                             Tag="{Binding}"
-                                            Content="ðŸ—‘"
+                                            Content="&#xE74D;"
                                             Style="{StaticResource SecondaryButton}" />
                                     </StackPanel>
 
@@ -176,7 +176,7 @@
                             FontSize="16"
                             FontWeight="Bold"
                             Foreground="{StaticResource TextPrimaryBrush}"
-                            Text="âœ¨ Create New Service" />
+                            Text="Create New Service" />
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -238,7 +238,7 @@
                                 <TextBlock
                                     FontSize="16"
                                     Foreground="{StaticResource TextPrimaryBrush}"
-                                    Text="ðŸ”§ " />
+                                    Text="&#xE8FB; " />
                                 <TextBlock
                                     FontSize="16"
                                     FontWeight="Bold"
@@ -294,14 +294,14 @@
                                     Margin="0,0,8,0"
                                     Command="{Binding OpenServiceUrlCommand}"
                                     CommandParameter="{Binding SelectedConfiguration}"
-                                    Content="ðŸŒ View API"
+                                    Content="View API"
                                     Style="{StaticResource SecondaryButton}"
                                     Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}" />
                                 <Button
                                     Margin="0,0,8,0"
                                     Command="{Binding StartServiceCommand}"
                                     CommandParameter="{Binding SelectedConfiguration}"
-                                    Content="â–¶ Start"
+                                    Content="&#x25B6; Start"
                                     Style="{StaticResource AccentButton}"
                                     Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
@@ -310,14 +310,14 @@
                                     Background="#E53935"
                                     Command="{Binding StopServiceCommand}"
                                     CommandParameter="{Binding SelectedConfiguration}"
-                                    Content="â¬› Stop"
+                                    Content="&#x25A0; Stop"
                                     Style="{StaticResource AccentButton}"
                                     Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}" />
 
                                 <Button
                                     Command="{Binding DeleteServiceCommand}"
                                     CommandParameter="{Binding SelectedConfiguration}"
-                                    Content="ðŸ—‘ Delete"
+                                    Content="Delete"
                                     Style="{StaticResource SecondaryButton}" />
                             </StackPanel>
                         </Grid>
@@ -334,15 +334,15 @@
                                 Text="Sources (Documents/Links)" />
                             <Button
                                 Grid.Column="1"
-                                Content="+ Add Source â–¾"
+                                Content="+ Add Source &#x25BE;"
                                 Style="{StaticResource SecondaryButton}">
                                 <Button.Flyout>
                                     <MenuFlyout>
-                                        <MenuFlyoutItem Text="ðŸ“„ File" Click="AddFileSource_Click"/>
-                                        <MenuFlyoutItem Text="ðŸŒ Web URL" Click="AddWebSource_Click"/>
+                                        <MenuFlyoutItem Text="File" Click="AddFileSource_Click"/>
+                                        <MenuFlyoutItem Text="Web URL" Click="AddWebSource_Click"/>
                                         <MenuFlyoutSeparator/>
-                                        <MenuFlyoutItem Text="ðŸ—„ï¸ Database (Reset soon)" IsEnabled="False"/>
-                                        <MenuFlyoutItem Text="ðŸ’» GitHub (Reset soon)" IsEnabled="False"/>
+                                        <MenuFlyoutItem Text="Database (Reset soon)" IsEnabled="False"/>
+                                        <MenuFlyoutItem Text="GitHub (Reset soon)" IsEnabled="False"/>
                                     </MenuFlyout>
                                 </Button.Flyout>
                             </Button>
@@ -383,7 +383,7 @@
                                                 Grid.Column="2"
                                                 Click="RemoveSource_Click"
                                                 Tag="{Binding}"
-                                                Content="âœ•"
+                                                Content="&#xE711;"
                                                 Style="{StaticResource IconButton}" />
                                         </Grid>
                                     </Border>

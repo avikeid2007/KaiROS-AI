@@ -39,7 +39,7 @@
             </StackPanel>
             
             <Button Grid.Column="1" 
-                    Content="âž• Add Custom Model"
+                    Content="+ Add Custom Model"
                     Command="{Binding AddCustomModelCommand}"
                     Style="{StaticResource AccentButton}"
                     VerticalAlignment="Center"/>
@@ -97,7 +97,7 @@
                 
                 <!-- Dropdown Filters -->
                 <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
-                    <TextBlock Text="ðŸ¢ Org:" 
+                    <TextBlock Text="Org:" 
                                Foreground="{StaticResource TextSecondaryBrush}" 
                                FontWeight="SemiBold"
                                VerticalAlignment="Center" 
@@ -109,7 +109,7 @@
                 </StackPanel>
                 
                 <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
-                    <TextBlock Text="ðŸ§¬ Family:" 
+                    <TextBlock Text="Family:" 
                                Foreground="{StaticResource TextSecondaryBrush}" 
                                FontWeight="SemiBold"
                                VerticalAlignment="Center" 
@@ -121,7 +121,7 @@
                 </StackPanel>
                 
                 <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
-                    <TextBlock Text="âš™ï¸ Variant:" 
+                    <TextBlock Text="Variant:" 
                                Foreground="{StaticResource TextSecondaryBrush}" 
                                FontWeight="SemiBold"
                                VerticalAlignment="Center" 
@@ -134,7 +134,7 @@
 
                 <!-- NEW: Vision Filter -->
                 <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
-                    <TextBlock Text="ðŸ‘ï¸ Vision:" 
+                    <TextBlock Text="Vision:" 
                                Foreground="{StaticResource TextSecondaryBrush}" 
                                FontWeight="SemiBold"
                                VerticalAlignment="Center" 
@@ -148,7 +148,7 @@
                 <!-- Right Side Actions -->
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,6" HorizontalAlignment="Right">
                     <ToggleButton x:Name="RecommendedToggle" 
-                                  Content="â˜… Recommended" 
+                                  Content="&#x2605; Recommended" 
                                   IsChecked="{Binding ShowRecommendedOnly}"
                                   Margin="0,0,12,0">
                         <ToggleButton.Style>
@@ -207,7 +207,7 @@
                             CornerRadius="8"
                             Padding="12,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="ðŸ”" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0"/>
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE721;" FontSize="14" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0"/>
                             <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
                                      Background="Transparent"
                                      BorderThickness="0"
@@ -231,7 +231,7 @@
                         Visibility="{Binding DownloadedModels.Count, Converter={StaticResource BoolToVis}}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                            <TextBlock Text="âœ“" FontSize="20" Foreground="#10B981" VerticalAlignment="Center"/>
+                            <TextBlock Text="&#x2713;" FontSize="20" Foreground="#10B981" VerticalAlignment="Center"/>
                             <TextBlock Text=" Downloaded Models" FontSize="20" FontWeight="Bold" 
                                        Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
                             <Border Background="#10B981" CornerRadius="10" Padding="8,2" Margin="12,0,0,0" VerticalAlignment="Center">
@@ -269,7 +269,7 @@
                                                            TextWrapping="Wrap" Margin="0,0,0,8"/>
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="13">
-                                                        <Run Text="ðŸ’¾"/><Run Text="{Binding Model.SizeText}"/>
+                                                        <Run Text=" "/><Run Text="{Binding Model.SizeText}"/>
                                                     </TextBlock>
                                                 </StackPanel>
                                                 <!-- Error Message -->
@@ -282,7 +282,7 @@
                                                 <Button Command="{Binding SetActiveCommand}" Style="{StaticResource PrimaryButton}" 
                                                         Content="Load Model" Margin="0,0,8,0"
                                                         IsEnabled="{Binding IsActive, Converter={StaticResource InverseBool}}"/>
-                                                <Button Command="{Binding DeleteCommand}" Style="{StaticResource IconButton}" Content="ðŸ—‘" ToolTipService.ToolTip="Delete model"/>
+                                                <Button Command="{Binding DeleteCommand}" Style="{StaticResource IconButton}"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" FontSize="14" ToolTipService.ToolTip="Delete model"/></Button>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
@@ -343,7 +343,7 @@
                                                                        VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}"/>
                                                             <Border Style="{StaticResource RecommendedBadge}" Margin="12,0,0,0"
                                                                     Visibility="{Binding Model.IsRecommended, Converter={StaticResource BoolToVis}}">
-                                                                <TextBlock Text="â˜… Recommended" Foreground="White" FontSize="11" FontWeight="SemiBold"/>
+                                                                <TextBlock Text="&#x2605; Recommended" Foreground="White" FontSize="11" FontWeight="SemiBold"/>
                                                             </Border>
                                                             <Border Style="{StaticResource CategoryBadge}" Margin="8,0,0,0">
                                                                 <TextBlock Text="{Binding Model.Category}" FontSize="11" FontWeight="SemiBold">
@@ -366,7 +366,7 @@
                                                             </Border>
                                                             <Border Background="#10B981" CornerRadius="4" Padding="6,3" Margin="6,0,0,0"
                                                                     Visibility="{Binding IsDownloaded, Converter={StaticResource BoolToVis}}">
-                                                                <TextBlock Text="âœ“ Downloaded" Foreground="White" FontSize="10" FontWeight="SemiBold"/>
+                                                                <TextBlock Text="&#x2713; Downloaded" Foreground="White" FontSize="10" FontWeight="SemiBold"/>
                                                             </Border>
                                                         </StackPanel>
                                                         
@@ -375,10 +375,10 @@
                                                         
                                                         <StackPanel Orientation="Horizontal">
                                                             <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="13">
-                                                                <Run Text="ðŸ’¾"/><Run Text="{Binding Model.SizeText}"/>
+                                                                <Run Text=" "/><Run Text="{Binding Model.SizeText}"/>
                                                             </TextBlock>
                                                             <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="13" Margin="16,0,0,0">
-                                                                <Run Text="ðŸ§ "/><Run Text="{Binding Model.MinRam}"/><Run Text=" RAM"/>
+                                                                <Run Text=" "/><Run Text="{Binding Model.MinRam}"/><Run Text=" RAM"/>
                                                             </TextBlock>
                                                             <TextBlock Text="{Binding Model.Capabilities}" Foreground="{StaticResource TextMutedBrush}" 
                                                                        FontSize="13" Margin="16,0,0,0"/>
@@ -401,9 +401,9 @@
                                                                 Style="{StaticResource AccentButton}"
                                                                 Content="Download"
                                                                 Visibility="{Binding IsDownloaded, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"/>
-                                                        <Button Command="{Binding PauseCommand}" Style="{StaticResource SecondaryButton}" Content="â¸ Pause"
+                                                        <Button Command="{Binding PauseCommand}" Style="{StaticResource SecondaryButton}" Content="&#x23F8; Pause"
                                                                 Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVis}}"/>
-                                                        <Button Command="{Binding ResumeCommand}" Style="{StaticResource AccentButton}" Content="â–¶ Resume"
+                                                        <Button Command="{Binding ResumeCommand}" Style="{StaticResource AccentButton}" Content="&#x25B6; Resume"
                                                                 Visibility="{Binding IsPaused, Converter={StaticResource BoolToVis}}"/>
                                                         <StackPanel Orientation="Horizontal" Visibility="{Binding ShowLoadButton, Converter={StaticResource BoolToVis}}">
                                                             <Button Command="{Binding SetActiveCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
@@ -420,7 +420,7 @@
                                                                     <TextBlock Text="Load Model"/>
                                                                 </StackPanel>
                                                             </Button>
-                                                            <Button Command="{Binding DeleteCommand}" Style="{StaticResource IconButton}" Content="ðŸ—‘" ToolTipService.ToolTip="Delete model"/>
+                                                            <Button Command="{Binding DeleteCommand}" Style="{StaticResource IconButton}"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" FontSize="14" ToolTipService.ToolTip="Delete model"/></Button>
                                                         </StackPanel>
                                                     </StackPanel>
                                                 </Grid>

@@ -1,212 +1,265 @@
-<Window x:Class="KaiROS.AI.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:views="using:KaiROS.AI.Views"
-        xmlns:vm="using:KaiROS.AI.ViewModels"
-        xmlns:converters="using:KaiROS.AI.Converters"
-        xmlns:helpers="using:KaiROS.AI.Helpers"
-        xmlns:tb="using:H.NotifyIcon"
-        Title="KaiROS AI">
+<Window
+    x:Class="KaiROS.AI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:KaiROS.AI.Converters"
+    xmlns:helpers="using:KaiROS.AI.Helpers"
+    xmlns:tb="using:H.NotifyIcon"
+    xmlns:views="using:KaiROS.AI.Views"
+    xmlns:vm="using:KaiROS.AI.ViewModels"
+    Title="KaiROS AI">
 
     <Grid Background="{StaticResource BackgroundBrush}">
         <Grid.Resources>
-        <converters:BoolToVisibilityConverter x:Key="BoolToVis"/>
+            <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
 
-        <!-- View templates � replaces WPF implicit DataType routing -->
-        <DataTemplate x:Key="CatalogTemplate">
-            <views:ModelCatalogView/>
-        </DataTemplate>
-        <DataTemplate x:Key="ChatTemplate">
-            <views:ChatView/>
-        </DataTemplate>
-        <DataTemplate x:Key="DocumentTemplate">
-            <views:DocumentView/>
-        </DataTemplate>
-        <DataTemplate x:Key="SettingsTemplate">
-            <views:SettingsView/>
-        </DataTemplate>
+            <!--  View templates � replaces WPF implicit DataType routing  -->
+            <DataTemplate x:Key="CatalogTemplate">
+                <views:ModelCatalogView />
+            </DataTemplate>
+            <DataTemplate x:Key="ChatTemplate">
+                <views:ChatView />
+            </DataTemplate>
+            <DataTemplate x:Key="DocumentTemplate">
+                <views:DocumentView />
+            </DataTemplate>
+            <DataTemplate x:Key="SettingsTemplate">
+                <views:SettingsView />
+            </DataTemplate>
 
-        <helpers:ViewModelTemplateSelector x:Key="ViewModelSelector"
-                                           CatalogTemplate="{StaticResource CatalogTemplate}"
-                                           ChatTemplate="{StaticResource ChatTemplate}"
-                                           DocumentTemplate="{StaticResource DocumentTemplate}"
-                                           SettingsTemplate="{StaticResource SettingsTemplate}"/>
+            <helpers:ViewModelTemplateSelector
+                x:Key="ViewModelSelector"
+                CatalogTemplate="{StaticResource CatalogTemplate}"
+                ChatTemplate="{StaticResource ChatTemplate}"
+                DocumentTemplate="{StaticResource DocumentTemplate}"
+                SettingsTemplate="{StaticResource SettingsTemplate}" />
         </Grid.Resources>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="260" MinWidth="200" MaxWidth="400"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition
+                Width="260"
+                MinWidth="200"
+                MaxWidth="400" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <!-- System Tray Icon (H.NotifyIcon.WinUI) -->
-        <tb:TaskbarIcon x:Name="TrayIcon"
-                        ToolTipText="KaiROS AI"
-                        Visibility="Collapsed"
-                        MenuActivation="RightClick">
+        <!--  System Tray Icon (H.NotifyIcon.WinUI)  -->
+        <tb:TaskbarIcon
+            x:Name="TrayIcon"
+            MenuActivation="RightClick"
+            ToolTipText="KaiROS AI"
+            Visibility="Collapsed">
             <tb:TaskbarIcon.ContextFlyout>
                 <MenuFlyout>
-                    <MenuFlyoutItem Text="??? New Chat" Click="TrayMenu_NewChat"/>
-                    <MenuFlyoutItem Text="?? Settings" Click="TrayMenu_Settings"/>
-                    <MenuFlyoutSeparator/>
-                    <MenuFlyoutItem Text="?? Restore" Click="TrayMenu_Restore"/>
-                    <MenuFlyoutItem Text="? Exit" Click="TrayMenu_Exit"/>
+                    <MenuFlyoutItem
+                        Click="TrayMenu_NewChat"
+                        FontFamily="Segoe MDL2 Assets"
+                        Text="&#xE710; New Chat" />
+                    <MenuFlyoutItem
+                        Click="TrayMenu_Settings"
+                        FontFamily="Segoe MDL2 Assets"
+                        Text="&#xE713; Settings" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem
+                        Click="TrayMenu_Restore"
+                        FontFamily="Segoe MDL2 Assets"
+                        Text="&#xE740; Restore" />
+                    <MenuFlyoutItem
+                        Click="TrayMenu_Exit"
+                        FontFamily="Segoe MDL2 Assets"
+                        Text="&#xE7E8; Exit" />
                 </MenuFlyout>
             </tb:TaskbarIcon.ContextFlyout>
         </tb:TaskbarIcon>
 
-        <!-- Sidebar Navigation -->
-        <Border Background="{StaticResource SurfaceBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
-                BorderThickness="0,0,1,0">
+        <!--  Sidebar Navigation  -->
+        <Border
+            Background="{StaticResource SurfaceBrush}"
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="0,0,1,0">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- Logo / Title -->
+                <!--  Logo / Title  -->
                 <Border Padding="24,24,24,16">
                     <StackPanel Orientation="Horizontal">
-                        <Image Source="Assets/logo.png" Width="48" Height="48" Margin="0,0,12,0"/>
+                        <Image
+                            Width="48"
+                            Height="48"
+                            Margin="0,0,12,0"
+                            Source="Assets/logo.png" />
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock FontSize="24" FontWeight="Bold">
                                 <TextBlock.Foreground>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#6366F1" Offset="0"/>
-                                        <GradientStop Color="#A855F7" Offset="1"/>
+                                        <GradientStop Offset="0" Color="#6366F1" />
+                                        <GradientStop Offset="1" Color="#A855F7" />
                                     </LinearGradientBrush>
                                 </TextBlock.Foreground>
-                                <Run Text="Kai"/>
-                                <Run Text="ROS" Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <Run Text=" AI"/>
+                                <Run Text="Kai" />
+                                <Run Foreground="{StaticResource TextPrimaryBrush}" Text="ROS" />
+                                <Run Text=" AI" />
                             </TextBlock>
-                            <TextBlock Text="Local AI Assistant"
-                                       Foreground="{StaticResource TextMutedBrush}"
-                                       FontSize="11"
-                                       Margin="0,2,0,0"/>
+                            <TextBlock
+                                Margin="0,2,0,0"
+                                FontSize="11"
+                                Foreground="{StaticResource TextMutedBrush}"
+                                Text="Local AI Assistant" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
-                <!-- Navigation Items -->
-                <ListBox Grid.Row="1"
-                         SelectedIndex="{Binding SelectedNavigationIndex, Mode=TwoWay}"
-                         Style="{StaticResource ModernListBox}"
-                         Padding="12,0">
+                <!--  Navigation Items  -->
+                <ListBox
+                    Grid.Row="1"
+                    Padding="12,0"
+                    SelectedIndex="{Binding SelectedNavigationIndex, Mode=TwoWay}"
+                    Style="{StaticResource ModernListBox}">
                     <ListBoxItem Style="{StaticResource ModernListBoxItem}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="??" FontSize="18" Margin="0,0,12,0"/>
-                            <TextBlock Text="Models" FontSize="14"/>
+                            <FontIcon
+                                Margin="0,0,12,0"
+                                FontFamily="Segoe MDL2 Assets"
+                                Glyph="&#xF158;" />
+                            <TextBlock FontSize="14" Text="Models" />
                         </StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Style="{StaticResource ModernListBoxItem}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="??" FontSize="18" Margin="0,0,12,0"/>
-                            <TextBlock Text="Chat" FontSize="14"/>
+                            <FontIcon
+                                Margin="0,0,12,0"
+                                FontFamily="Segoe MDL2 Assets"
+                                Glyph="&#xE8F2;" />
+                            <TextBlock FontSize="14" Text="Chat" />
                         </StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Style="{StaticResource ModernListBoxItem}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="??" FontSize="18" Margin="0,0,12,0"/>
-                            <TextBlock Text="RaaS" FontSize="14"/>
+                            <FontIcon
+                                Margin="0,0,12,0"
+                                FontFamily="Segoe MDL2 Assets"
+                                Glyph="&#xF571;" />
+                            <TextBlock FontSize="14" Text="RaaS" />
                         </StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Style="{StaticResource ModernListBoxItem}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="?" FontSize="18" Margin="0,0,12,0"/>
-                            <TextBlock Text="Settings" FontSize="14"/>
+                            <FontIcon
+                                Margin="0,0,12,0"
+                                FontFamily="Segoe MDL2 Assets"
+                                Glyph="&#xE713;" />
+                            <TextBlock FontSize="14" Text="Settings" />
                         </StackPanel>
                     </ListBoxItem>
                 </ListBox>
 
-                <!-- Status Footer -->
-                <Border Grid.Row="2"
-                        Background="{StaticResource CardBrush}"
-                        Padding="16"
-                        Margin="12,0,12,12"
-                        CornerRadius="8">
+                <!--  Status Footer  -->
+                <Border
+                    Grid.Row="2"
+                    Margin="12,0,12,12"
+                    Padding="16"
+                    Background="{StaticResource CardBrush}"
+                    CornerRadius="8">
                     <StackPanel>
-                        <!-- Active Model -->
+                        <!--  Active Model  -->
                         <StackPanel Visibility="{Binding ActiveModelName, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="Active Model"
-                                       Foreground="{StaticResource TextMutedBrush}"
-                                       FontSize="11"/>
-                            <TextBlock Text="{Binding ActiveModelName}"
-                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                       FontWeight="SemiBold"
-                                       TextTrimming="CharacterEllipsis"
-                                       Margin="0,4,0,0"/>
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{StaticResource TextMutedBrush}"
+                                Text="Active Model" />
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource TextPrimaryBrush}"
+                                Text="{Binding ActiveModelName}"
+                                TextTrimming="CharacterEllipsis" />
                         </StackPanel>
 
-                        <TextBlock Text="No model loaded"
-                                   Foreground="{StaticResource TextMutedBrush}"
-                                   FontSize="12"
-                                   Visibility="{Binding ActiveModelName, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"/>
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{StaticResource TextMutedBrush}"
+                            Text="No model loaded"
+                            Visibility="{Binding ActiveModelName, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
-                        <Border Height="1"
-                                Background="{StaticResource BorderBrush}"
-                                Margin="0,12"/>
+                        <Border
+                            Height="1"
+                            Margin="0,12"
+                            Background="{StaticResource BorderBrush}" />
 
-                        <!-- Hardware Status -->
-                        <TextBlock Text="{Binding HardwareInfo}"
-                                   Foreground="{StaticResource TextMutedBrush}"
-                                   FontSize="11"
-                                   TextWrapping="Wrap"/>
+                        <!--  Hardware Status  -->
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{StaticResource TextMutedBrush}"
+                            Text="{Binding HardwareInfo}"
+                            TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
             </Grid>
         </Border>
 
-        <!-- Resizable Splitter -->
-        <Border Grid.Column="1"
-                Width="4"
-                Background="{StaticResource BorderBrush}"
-                HorizontalAlignment="Center"/>
+        <!--  Resizable Splitter  -->
+        <Border
+            Grid.Column="1"
+            Width="4"
+            HorizontalAlignment="Center"
+            Background="{StaticResource BorderBrush}" />
 
-        <!-- Main Content Area -->
+        <!--  Main Content Area  -->
         <Grid Grid.Column="2">
             <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Content � DataTemplateSelector replaces {x:Type} implicit templates -->
-            <ContentControl Content="{Binding CurrentView}"
-                            ContentTemplateSelector="{StaticResource ViewModelSelector}"
-                            HorizontalContentAlignment="Stretch"
-                            VerticalContentAlignment="Stretch"
-                            Margin="0"/>
+            <!--  Content � DataTemplateSelector replaces {x:Type} implicit templates  -->
+            <ContentControl
+                Margin="0"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch"
+                Content="{Binding CurrentView}"
+                ContentTemplateSelector="{StaticResource ViewModelSelector}" />
 
-            <!-- Loading Overlay -->
-            <Border Background="#80000000"
-                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock Text="?" FontSize="48" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Initializing..."
-                               Foreground="{StaticResource TextPrimaryBrush}"
-                               FontSize="16"
-                               Margin="0,16,0,0"/>
+            <!--  Loading Overlay  -->
+            <Border Background="#80000000" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ProgressRing
+                        Width="64"
+                        Height="64"
+                        HorizontalAlignment="Center"
+                        Foreground="{StaticResource PrimaryBrush}"
+                        IsActive="True" />
+                    <TextBlock
+                        Margin="0,16,0,0"
+                        FontSize="16"
+                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Text="Initializing..." />
                 </StackPanel>
             </Border>
 
-            <!-- Status Bar -->
-            <Border Grid.Row="1"
-                    Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="0,1,0,0"
-                    Padding="16,8">
+            <!--  Status Bar  -->
+            <Border
+                Grid.Row="1"
+                Padding="16,8"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0">
                 <Grid>
-                    <TextBlock Text="{Binding StatusText}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               FontSize="12"
-                               VerticalAlignment="Center"/>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Text="{Binding StatusText}" />
 
-                    <TextBlock Text="{Binding ErrorMessage}"
-                               Foreground="{StaticResource ErrorBrush}"
-                               FontSize="12"
-                               HorizontalAlignment="Right"
-                               Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVis}}"/>
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        FontSize="12"
+                        Foreground="{StaticResource ErrorBrush}"
+                        Text="{Binding ErrorMessage}"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVis}}" />
                 </Grid>
             </Border>
         </Grid>
