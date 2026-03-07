@@ -5,6 +5,8 @@ VisualStudioVersion = 18.4.11519.219
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KaiROS.AI", "KaiROS.AI.csproj", "{14F7B59C-FE18-73D9-AD84-BCA79DE8A09C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KaiROS.AI.WinUI", "..\KaiROS.AI.WinUI\KaiROS.AI.WinUI.csproj", "{3F0D33C5-FE8C-4456-92AF-5E5CC9693C1E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,18 @@ Global
 		{14F7B59C-FE18-73D9-AD84-BCA79DE8A09C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{14F7B59C-FE18-73D9-AD84-BCA79DE8A09C}.Release|x64.ActiveCfg = Release|x64
 		{14F7B59C-FE18-73D9-AD84-BCA79DE8A09C}.Release|x64.Build.0 = Release|x64
+		{3F0D33C5-FE8C-4456-92AF-5E5CC9693C1E}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{3F0D33C5-FE8C-4456-92AF-5E5CC9693C1E}.Debug|Any CPU.Build.0 = Debug|x64
+		{3F0D33C5-FE8C-4456-92AF-5E5CC9693C1E}.Debug|Any CPU.Deploy.0 = Debug|x64
+		{3F0D33C5-FE8C-4456-92AF-5E5CC9693C1E}.Debug|x64.ActiveCfg = Debug|x64
+		{3F0D33C5-FE8C-4456-92AF-5E5CC9693C1E}.Debug|x64.Build.0 = Debug|x64
+		{3F0D33C5-FE8C-4456-92AF-5E5CC9693C1E}.Debug|x64.Deploy.0 = Debug|x64
+		{3F0D33C5-FE8C-4456-92AF-5E5CC9693C1E}.Release|Any CPU.ActiveCfg = Release|x64
+		{3F0D33C5-FE8C-4456-92AF-5E5CC9693C1E}.Release|Any CPU.Build.0 = Release|x64
+		{3F0D33C5-FE8C-4456-92AF-5E5CC9693C1E}.Release|Any CPU.Deploy.0 = Release|x64
+		{3F0D33C5-FE8C-4456-92AF-5E5CC9693C1E}.Release|x64.ActiveCfg = Release|x64
+		{3F0D33C5-FE8C-4456-92AF-5E5CC9693C1E}.Release|x64.Build.0 = Release|x64
+		{3F0D33C5-FE8C-4456-92AF-5E5CC9693C1E}.Release|x64.Deploy.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

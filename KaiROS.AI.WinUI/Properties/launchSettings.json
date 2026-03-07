@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "KaiROS.AI.WinUI (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "KaiROS.AI.WinUI (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
