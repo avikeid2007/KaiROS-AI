@@ -127,7 +127,7 @@
                             Margin="0,8,0,0"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ModernTextBox}"
-                            Text="{Binding ApiPort, UpdateSourceTrigger=PropertyChanged}" />
+                            Text="{Binding ApiPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
 
                     <StackPanel Margin="0,16,0,0">
@@ -391,7 +391,7 @@
                         MaxHeight="200"
                         AcceptsReturn="True"
                         Style="{StaticResource ModernTextBox}"
-                        Text="{Binding SystemPrompt, UpdateSourceTrigger=PropertyChanged}"
+                        Text="{Binding SystemPrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         TextWrapping="Wrap"
                         ScrollViewer.VerticalScrollBarVisibility="Auto" />
 

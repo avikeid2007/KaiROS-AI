@@ -61,7 +61,7 @@
                     Background="Transparent"
                     BorderThickness="0"
                     ItemsSource="{Binding RaasConfigurations}"
-                    SelectedItem="{Binding SelectedConfiguration}">
+                    SelectedItem="{Binding SelectedConfiguration, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Border
@@ -188,14 +188,14 @@
                                 <TextBox
                                     Margin="0,4,0,12"
                                     Style="{StaticResource ModernTextBox}"
-                                    Text="{Binding NewServiceName}" />
+                                    Text="{Binding NewServiceName, Mode=TwoWay}" />
                             </StackPanel>
                             <StackPanel Grid.Column="1">
                                 <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="Port" />
                                 <TextBox
                                     Margin="0,4,0,12"
                                     Style="{StaticResource ModernTextBox}"
-                                    Text="{Binding NewServicePort}" />
+                                    Text="{Binding NewServicePort, Mode=TwoWay}" />
                             </StackPanel>
                         </Grid>
 
@@ -203,14 +203,14 @@
                         <TextBox
                             Margin="0,4,0,12"
                             Style="{StaticResource ModernTextBox}"
-                            Text="{Binding NewServiceDescription}" />
+                            Text="{Binding NewServiceDescription, Mode=TwoWay}" />
 
                         <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="System Prompt" />
                         <TextBox
                             Height="60"
                             Margin="0,4,0,16"
                             Style="{StaticResource ModernTextBox}"
-                            Text="{Binding NewServiceSystemPrompt}"
+                            Text="{Binding NewServiceSystemPrompt, Mode=TwoWay}"
                             TextWrapping="Wrap" />
 
                         <Button

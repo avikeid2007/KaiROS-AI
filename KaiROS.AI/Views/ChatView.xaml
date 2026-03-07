@@ -139,7 +139,7 @@
                             Padding="8,4"
                             Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                            <TextBox Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource ModernTextBox}"
                                      Width="150"
                                      Padding="4"
@@ -288,7 +288,7 @@
                                         Foreground="{StaticResource TextSecondaryBrush}"
                                         FontSize="12"/>
                              <ComboBox ItemsSource="{Binding AvailableKnowledgeBases}" 
-                                       SelectedItem="{Binding SelectedKnowledgeBase}"
+                                       SelectedItem="{Binding SelectedKnowledgeBase, Mode=TwoWay}"
                                        Width="180"
                                        Padding="6,4"
                                        VerticalContentAlignment="Center"/>
@@ -364,7 +364,7 @@
                 
                 <TextBox x:Name="MessageInput"
                          Grid.Row="1"
-                         Text="{Binding UserInput, UpdateSourceTrigger=PropertyChanged}"
+                         Text="{Binding UserInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          Style="{StaticResource ModernTextBox}"
                          AcceptsReturn="True"
                          TextWrapping="Wrap"

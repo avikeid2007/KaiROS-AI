@@ -327,117 +327,123 @@ public partial class ChatViewModel : ViewModelBase
 
         if (!_chatService.IsModelLoaded)
         {
-            Messages.Add(new ChatMessageViewModel(ChatMessage.Assistant("Please load a model first from the Models tab.")));
+            Messages.Add(new ChatMessageViewModel(
+                ChatMessage.Assistant("⚠️ No model loaded. Please go to the Models tab and load a model first."),
+                _dispatcherQueue));
             return;
         }
 
-        if (CurrentSession == null)
-        {
-            var modelName = _modelManager.ActiveModel?.DisplayName;
-            CurrentSession = await _sessionService.CreateSessionAsync(modelName, SystemPrompt);
-            Sessions.Insert(0, CurrentSession);
-        }
-
-        ChatMessage userMessage;
-        if (HasAttachedImage && !string.IsNullOrEmpty(AttachedImagePath))
-        {
-            userMessage = ChatMessage.UserWithImage(UserInput, AttachedImagePath);
-        }
-        else
-        {
-            userMessage = ChatMessage.User(UserInput);
-        }
-        
-        Messages.Add(new ChatMessageViewModel(userMessage));
-        await _sessionService.AddMessageAsync(CurrentSession.Id, userMessage);
-        CurrentSession.MessageCount++;
-
-         if (CurrentSession.MessageCount == 1)
-        {
-            CurrentSession.Title = ChatSession.GenerateTitle(UserInput);
-            await _sessionService.UpdateSessionAsync(CurrentSession);
-        }
-
-        // --- Determine RAG Context ---
-        string? ragContext = null;
-        if (SelectedKnowledgeBase == "Global Knowledge Base")
-        {
-            ragContext = _documentService.GetContextForQuery(UserInput, 3);
-        }
-        else if (SelectedKnowledgeBase.StartsWith("Service: "))
-        {
-             var serviceName = SelectedKnowledgeBase.Substring(9);
-             var config = _raasService.Configurations.FirstOrDefault(c => c.Name == serviceName);
-             if (config != null)
-             {
-                 var server = _raasService.GetServer(config.Id);
-                 if (server != null && server.IsRunning)
-                 {
-                     ragContext = server.RagEngine.GetContext(UserInput, 3);
-                 }
-                 else
-                 {
-                     // Service not running
-                     ragContext = "[System: The selected RAG service is not running. Answer based on general knowledge only.]";
-                 }
-             }
-        }
-        
-        // Capture image path before clearing
-        string? imagePathToSend = AttachedImagePath;
-
-        UserInput = string.Empty;
-        RemoveAttachedImage(); // Clear selection after sending
-
-        var allMessages = new List<ChatMessage>();
-        if (!string.IsNullOrWhiteSpace(SystemPrompt))
-        {
-            allMessages.Add(ChatMessage.System(SystemPrompt));
-        }
-        allMessages.AddRange(Messages.Select(m => m.Message));
-
-        var assistantMessage = ChatMessage.Assistant(string.Empty);
-        assistantMessage.IsStreaming = true;
-        var assistantVm = new ChatMessageViewModel(assistantMessage, _dispatcherQueue);
-        Messages.Add(assistantVm);
-
-        IsGenerating = true;
-        _currentInferenceCts = new CancellationTokenSource();
-
+        string savedInput = UserInput;
         try
         {
-            await foreach (var token in _chatService.GenerateResponseStreamAsync(
-                messages: allMessages,
-                useWebSearch: IsWebSearchEnabled,
-                sessionContext: _currentDocumentContext, 
-                ragContext: ragContext,
-                imagePath: imagePathToSend,
-                cancellationToken: _currentInferenceCts.Token))
+            if (CurrentSession == null)
             {
-                assistantVm.AppendContent(token);
+                var modelName = _modelManager.ActiveModel?.DisplayName;
+                var newSession = await _sessionService.CreateSessionAsync(modelName, SystemPrompt);
+                CurrentSession = newSession;
+                Sessions.Insert(0, CurrentSession);
             }
-        }
-        catch (OperationCanceledException)
-        {
-            assistantVm.AppendContent("\n[Generation stopped]");
+
+            ChatMessage userMessage;
+            if (HasAttachedImage && !string.IsNullOrEmpty(AttachedImagePath))
+                userMessage = ChatMessage.UserWithImage(UserInput, AttachedImagePath);
+            else
+                userMessage = ChatMessage.User(UserInput);
+
+            Messages.Add(new ChatMessageViewModel(userMessage, _dispatcherQueue));
+            await _sessionService.AddMessageAsync(CurrentSession.Id, userMessage);
+            CurrentSession.MessageCount++;
+
+            if (CurrentSession.MessageCount == 1)
+            {
+                CurrentSession.Title = ChatSession.GenerateTitle(UserInput);
+                await _sessionService.UpdateSessionAsync(CurrentSession);
+            }
+
+            // --- Determine RAG Context ---
+            string? ragContext = null;
+            if (SelectedKnowledgeBase == "Global Knowledge Base")
+            {
+                ragContext = _documentService.GetContextForQuery(UserInput, 3);
+            }
+            else if (SelectedKnowledgeBase.StartsWith("Service: "))
+            {
+                var serviceName = SelectedKnowledgeBase.Substring(9);
+                var config = _raasService.Configurations.FirstOrDefault(c => c.Name == serviceName);
+                if (config != null)
+                {
+                    var server = _raasService.GetServer(config.Id);
+                    ragContext = server != null && server.IsRunning
+                        ? server.RagEngine.GetContext(UserInput, 3)
+                        : "[System: The selected RAG service is not running. Answer based on general knowledge only.]";
+                }
+            }
+
+            // Capture image path before clearing
+            string? imagePathToSend = AttachedImagePath;
+            UserInput = string.Empty;
+            RemoveAttachedImage();
+
+            var allMessages = new List<ChatMessage>();
+            if (!string.IsNullOrWhiteSpace(SystemPrompt))
+                allMessages.Add(ChatMessage.System(SystemPrompt));
+            allMessages.AddRange(Messages.Select(m => m.Message));
+
+            var assistantMessage = ChatMessage.Assistant(string.Empty);
+            assistantMessage.IsStreaming = true;
+            var assistantVm = new ChatMessageViewModel(assistantMessage, _dispatcherQueue);
+            Messages.Add(assistantVm);
+
+            IsGenerating = true;
+            _currentInferenceCts = new CancellationTokenSource();
+
+            try
+            {
+                await foreach (var token in _chatService.GenerateResponseStreamAsync(
+                    messages: allMessages,
+                    useWebSearch: IsWebSearchEnabled,
+                    sessionContext: _currentDocumentContext,
+                    ragContext: ragContext,
+                    imagePath: imagePathToSend,
+                    cancellationToken: _currentInferenceCts.Token))
+                {
+                    assistantVm.AppendContent(token);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                assistantVm.AppendContent("\n[Generation stopped]");
+            }
+            catch (Exception ex)
+            {
+                assistantVm.Content = $"Error during generation: {ex.Message}";
+            }
+            finally
+            {
+                assistantVm.CleanupContent();
+                assistantVm.Message.IsStreaming = false;
+                assistantVm.IsStreaming = false;
+                IsGenerating = false;
+                _currentInferenceCts = null;
+
+                if (CurrentSession != null && !string.IsNullOrEmpty(assistantVm.Content))
+                {
+                    await _sessionService.AddMessageAsync(CurrentSession.Id, assistantVm.Message);
+                    CurrentSession.MessageCount++;
+                }
+            }
         }
         catch (Exception ex)
         {
-            assistantVm.Content = $"Error: {ex.Message}";
-        }
-        finally
-        {
-            assistantVm.CleanupContent();
-            assistantVm.Message.IsStreaming = false;
-            assistantVm.IsStreaming = false;
+            // Surface unexpected pre-inference errors as a visible chat message
             IsGenerating = false;
             _currentInferenceCts = null;
-
-            if (CurrentSession != null && !string.IsNullOrEmpty(assistantVm.Content))
-            {
-                await _sessionService.AddMessageAsync(CurrentSession.Id, assistantVm.Message);
-                CurrentSession.MessageCount++;
-            }
+            Messages.Add(new ChatMessageViewModel(
+                ChatMessage.Assistant($"⚠️ Error: {ex.Message}"),
+                _dispatcherQueue));
+            // Restore input so user can retry
+            if (string.IsNullOrWhiteSpace(UserInput))
+                UserInput = savedInput;
         }
     }
 
