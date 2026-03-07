@@ -14,7 +14,7 @@
 - Replaced `Dispatcher` with `DispatcherQueue`
 - Replaced `IValueConverter` (WPF) with WinUI 3 `IValueConverter` (different interface signature)
 - Replaced `MessageBox.Show` with WinUI 3 `ContentDialog`
-- Added `Microsoft.WindowsAppSDK 1.7.250401001` and removed WPF-specific packages
+- Added `Microsoft.WindowsAppSDK 1.8.260209005` and removed WPF-specific packages
 - Added `UseWinUI=true` and MSIX packaging config to `.csproj`
 - Created `Directory.Build.props` to fix `dotnet run` PRI task path issue
 - Fixed `AssemblyInfo.cs` to remove WPF-specific attributes
@@ -148,7 +148,7 @@ dotnet run
 
 ### Project Stack
 - **Framework**: net9.0-windows10.0.19041.0, WinUI 3
-- **WindowsAppSDK**: 1.7.250401001
+- **WindowsAppSDK**: 1.8.260209005
 - **MVVM**: CommunityToolkit.Mvvm 8.4.0
 - **DI**: Microsoft.Extensions.DependencyInjection 10.0.3
 - **LLM**: LLamaSharp 0.26.0 (CUDA12 + CPU + Vulkan backends)

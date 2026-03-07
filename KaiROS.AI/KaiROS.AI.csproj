@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <DefaultLanguage>en-US</DefaultLanguage>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWinUI>true</UseWinUI>
@@ -12,15 +13,15 @@
     
 
     
-    <!-- MSIX Packaging for MS Store -->
-    <WindowsPackageType>MSIX</WindowsPackageType>
+    <!-- Default Unpackaged run -->
+    <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <PublishProfile>win-x64</PublishProfile>
     <Platform>x64</Platform>
     
     <!-- Package Identity - Update before Store submission -->
-    <PackageId>KaiROS.AI</PackageId>
+    <PackageId>34488AvnishKumar.KaiROSAI</PackageId>
     
     <!-- Version and Assembly Info -->
     <Version>1.0.0</Version>
@@ -52,43 +53,26 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250401001" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260209005" />
     <PackageReference Include="System.Management" Version="10.0.3" />
   </ItemGroup>
 
+  <!-- Workaround for MakePri bug with duplicate native DLLs in LLamaSharp backends -->
+  <Target Name="RemoveDuplicateNativeLibsForMakePri" BeforeTargets="_GenerateProjectPriConfigurationFiles">
+    <ItemGroup>
+      <_OutputsWithTargetPath Include="@(PackagingOutputs)" Condition="'%(PackagingOutputs.TargetPath)' != ''" />
+      <_AppxLayoutAssetPackageFiles Include="@(_OutputsWithTargetPath)" Condition="$([System.String]::new('%(_OutputsWithTargetPath.TargetPath)').StartsWith('runtimes'))" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
+    <Content Remove="Assets\app.ico" />
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <Resource Include="Assets\logo.png" />
-    <Content Include="Assets\app.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\Square150x150Logo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\Square44x44Logo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\Wide310x150Logo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\Square310x310Logo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\SmallTile.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\SplashScreen.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\StoreLogo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+
   
   <ItemGroup>
     <None Include="Package.appxmanifest" />
