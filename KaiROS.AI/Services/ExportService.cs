@@ -1,7 +1,12 @@
+using KaiROS.AI;
 using KaiROS.AI.Models;
+using Microsoft.Extensions.DependencyInjection;
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
 namespace KaiROS.AI.Services;
 
@@ -132,24 +137,24 @@ public class ExportService : IExportService
     
     public async Task<bool> ExportWithDialogAsync(ChatSession session, List<ChatMessage> messages, ExportFormat format)
     {
-        var (extension, filter) = format switch
+        var (extension, fileType) = format switch
         {
-            ExportFormat.Markdown => (".md", "Markdown files (*.md)|*.md"),
-            ExportFormat.Json => (".json", "JSON files (*.json)|*.json"),
-            ExportFormat.Text => (".txt", "Text files (*.txt)|*.txt"),
-            _ => (".txt", "Text files (*.txt)|*.txt")
+            ExportFormat.Markdown => (".md", ".md"),
+            ExportFormat.Json => (".json", ".json"),
+            ExportFormat.Text => (".txt", ".txt"),
+            _ => (".txt", ".txt")
         };
-        
+
         var defaultFileName = SanitizeFileName(session.Title) + extension;
-        
-        var dialog = new Microsoft.Win32.SaveFileDialog
-        {
-            Filter = filter,
-            FileName = defaultFileName,
-            Title = "Export Conversation"
-        };
-        
-        if (dialog.ShowDialog() == true)
+
+        var picker = new FileSavePicker();
+        picker.SuggestedFileName = defaultFileName;
+        picker.FileTypeChoices.Add(format.ToString(), new List<string> { fileType });
+        var mainWindow = ((App)Microsoft.UI.Xaml.Application.Current).Services.GetRequiredService<MainWindow>();
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(mainWindow));
+
+        var file = await picker.PickSaveFileAsync();
+        if (file != null)
         {
             var content = format switch
             {
@@ -158,11 +163,11 @@ public class ExportService : IExportService
                 ExportFormat.Text => await ExportToTextAsync(session, messages),
                 _ => await ExportToTextAsync(session, messages)
             };
-            
-            await File.WriteAllTextAsync(dialog.FileName, content, Encoding.UTF8);
+
+            await FileIO.WriteTextAsync(file, content);
             return true;
         }
-        
+
         return false;
     }
     

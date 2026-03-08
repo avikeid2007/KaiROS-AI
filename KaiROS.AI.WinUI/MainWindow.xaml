@@ -1,0 +1,237 @@
+<Window
+    x:Class="KaiROS.AI.WinUI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:KaiROS.AI.WinUI.Converters"
+    xmlns:helpers="using:KaiROS.AI.WinUI.Helpers"
+    xmlns:tb="using:H.NotifyIcon"
+    xmlns:views="using:KaiROS.AI.WinUI.Views"
+    xmlns:vm="using:KaiROS.AI.WinUI.ViewModels"
+    Title="KaiROS AI">
+
+    <Grid x:Name="RootGrid">
+        <Grid.RowDefinitions>
+            <!-- Height for the TitleBar -->
+            <RowDefinition Height="40" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid.Resources>
+            <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
+
+            <!--  View templates � replaces WPF implicit DataType routing  -->
+            <DataTemplate x:Key="CatalogTemplate">
+                <views:ModelCatalogView />
+            </DataTemplate>
+            <DataTemplate x:Key="ChatTemplate">
+                <views:ChatView />
+            </DataTemplate>
+            <DataTemplate x:Key="DocumentTemplate">
+                <views:DocumentView />
+            </DataTemplate>
+            <DataTemplate x:Key="SettingsTemplate">
+                <views:SettingsView />
+            </DataTemplate>
+
+            <helpers:ViewModelTemplateSelector
+                x:Key="ViewModelSelector"
+                CatalogTemplate="{StaticResource CatalogTemplate}"
+                ChatTemplate="{StaticResource ChatTemplate}"
+                DocumentTemplate="{StaticResource DocumentTemplate}"
+                SettingsTemplate="{StaticResource SettingsTemplate}" />
+        </Grid.Resources>
+
+        <!--  Custom TitleBar mapped to the Window's drag region  -->
+        <Border x:Name="AppTitleBar"
+                Grid.Row="0"
+                Canvas.ZIndex="1"
+                Background="Transparent"
+                IsHitTestVisible="True" />
+
+        <!--  System Tray Icon (H.NotifyIcon.WinUI)  -->
+        <tb:TaskbarIcon
+            x:Name="TrayIcon"
+            MenuActivation="RightClick"
+            ToolTipText="KaiROS AI"
+            Visibility="Collapsed">
+            <tb:TaskbarIcon.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem
+                        Click="TrayMenu_NewChat"
+                        FontFamily="Segoe Fluent Icons"
+                        Text="&#xE710; New Chat" />
+                    <MenuFlyoutItem
+                        Click="TrayMenu_Settings"
+                        FontFamily="Segoe Fluent Icons"
+                        Text="&#xE713; Settings" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem
+                        Click="TrayMenu_Restore"
+                        FontFamily="Segoe Fluent Icons"
+                        Text="&#xE740; Restore" />
+                    <MenuFlyoutItem
+                        Click="TrayMenu_Exit"
+                        FontFamily="Segoe Fluent Icons"
+                        Text="&#xE7E8; Exit" />
+                </MenuFlyout>
+            </tb:TaskbarIcon.ContextFlyout>
+        </tb:TaskbarIcon>
+
+        <!--  NavigationView replaces the 3-column Grid + ListBox sidebar  -->
+        <NavigationView
+            x:Name="NavView"
+            Grid.Row="0"
+            Grid.RowSpan="2"
+            AlwaysShowHeader="False"
+            CompactPaneLength="52"
+            IsBackButtonVisible="Collapsed"
+            IsPaneOpen="True"
+            IsSettingsVisible="False"
+            OpenPaneLength="260"
+            PaneDisplayMode="Left"
+            SelectionChanged="NavView_SelectionChanged">
+
+            <NavigationView.PaneHeader>
+                <!--  Logo + App Name (Pushing down from Titlebar Drag region)  -->
+                <Border Padding="16,40,16,8">
+                    <StackPanel Orientation="Horizontal">
+                        <Image
+                            Width="36"
+                            Height="36"
+                            Margin="0,0,10,0"
+                            Source="Assets/logo.png" />
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock FontSize="18" FontWeight="SemiBold">
+                                <Run Foreground="{ThemeResource PrimaryBrush}" Text="Kai" />
+                                <Run Text="ROS AI" />
+                            </TextBlock>
+                            <TextBlock
+                                FontSize="11"
+                                Opacity="0.6"
+                                Text="Local AI Assistant" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </NavigationView.PaneHeader>
+
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Models" Tag="0">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xF158;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Chat" Tag="1">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE8F2;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Knowledge Base" Tag="2">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xF571;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem Content="Settings" Tag="3">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE713;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
+
+            <NavigationView.PaneFooter>
+                <!--  Active model + hardware info card  -->
+                <Border
+                    Margin="12,0,12,16"
+                    Padding="12"
+                    Background="{ThemeResource CardBrush}"
+                    BorderBrush="{ThemeResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <StackPanel>
+                        <TextBlock
+                            FontSize="11"
+                            Opacity="0.6"
+                            Text="Active Model" />
+                        <TextBlock
+                            Margin="0,2,0,0"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            Text="{Binding ActiveModelName}"
+                            TextTrimming="CharacterEllipsis"
+                            Visibility="{Binding ActiveModelName, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock
+                            FontSize="12"
+                            Opacity="0.6"
+                            Text="No model loaded"
+                            Visibility="{Binding ActiveModelName, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                        <Border
+                            Height="1"
+                            Margin="0,8"
+                            Background="{ThemeResource BorderBrush}" />
+                        <TextBlock
+                            FontSize="11"
+                            Opacity="0.6"
+                            Text="{Binding HardwareInfo}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </NavigationView.PaneFooter>
+
+            <!--  Main content area with status bar  -->
+            <Grid Padding="0,48,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!--  Content � DataTemplateSelector routes to the correct View  -->
+                <ContentControl
+                    Margin="24,20,24,0"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    Content="{Binding CurrentView}"
+                    ContentTemplateSelector="{StaticResource ViewModelSelector}" />
+
+                <!--  Loading Overlay  -->
+                <Border Background="#80000000" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ProgressRing
+                            Width="64"
+                            Height="64"
+                            Foreground="{ThemeResource PrimaryBrush}"
+                            IsActive="True" />
+                        <TextBlock
+                            Margin="0,16,0,0"
+                            FontSize="16"
+                            Text="Initializing..." />
+                    </StackPanel>
+                </Border>
+
+                <!--  Status Bar  -->
+                <Border
+                    Grid.Row="1"
+                    Padding="16,8"
+                    Background="{ThemeResource SurfaceBrush}"
+                    BorderBrush="{ThemeResource BorderBrush}"
+                    BorderThickness="0,1,0,0">
+                    <Grid>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Opacity="0.7"
+                            Text="{Binding StatusText}" />
+                        <TextBlock
+                            HorizontalAlignment="Right"
+                            FontSize="12"
+                            Foreground="{ThemeResource ErrorBrush}"
+                            Text="{Binding ErrorMessage}"
+                            Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVis}}" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+        </NavigationView>
+    </Grid>
+</Window>

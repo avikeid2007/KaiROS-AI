@@ -1,7 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using KaiROS.AI;
 using KaiROS.AI.Models;
 using KaiROS.AI.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 using System.Collections.ObjectModel;
 
 namespace KaiROS.AI.ViewModels;
@@ -106,13 +110,7 @@ public partial class SettingsViewModel : ViewModelBase
     partial void OnIsDarkThemeChanged(bool value)
     {
         _themeService.SetTheme(value ? "Dark" : "Light");
-
-        // Show message that restart is needed
-        System.Windows.MessageBox.Show(
-            "Theme preference saved. Please restart the application for the theme to take effect.",
-            "Theme Changed",
-            System.Windows.MessageBoxButton.OK,
-            System.Windows.MessageBoxImage.Information);
+        // WinUI 3: theme is applied immediately via ResourceDictionary — no restart required
     }
 
     async partial void OnIsApiEnabledChanged(bool value)
@@ -190,17 +188,19 @@ public partial class SettingsViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void BrowseModelsDirectory()
+    private async Task BrowseModelsDirectory()
     {
-        var dialog = new Microsoft.Win32.OpenFolderDialog
-        {
-            Title = "Select Models Directory"
-        };
+        var picker = new FolderPicker();
+        picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+        picker.FileTypeFilter.Add("*");
+        var mainWindow = App.Current.Services.GetRequiredService<MainWindow>();
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(mainWindow));
 
-        if (dialog.ShowDialog() == true)
+        var folder = await picker.PickSingleFolderAsync();
+        if (folder != null)
         {
-            ModelsDirectory = dialog.FolderName;
-            _modelManager.SetModelsDirectory(dialog.FolderName);
+            ModelsDirectory = folder.Path;
+            _modelManager.SetModelsDirectory(folder.Path);
         }
     }
 

@@ -16,12 +16,15 @@ public class HardwareDetectionService : IHardwareDetectionService
 
         await Task.Run(() =>
         {
-            // Detect RAM
+            // Detect RAM via WMI
             try
             {
-                var computerInfo = new Microsoft.VisualBasic.Devices.ComputerInfo();
-                info.TotalRamBytes = (long)computerInfo.TotalPhysicalMemory;
-                info.AvailableRamBytes = (long)computerInfo.AvailablePhysicalMemory;
+                using var ramSearcher = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem");
+                foreach (ManagementObject obj in ramSearcher.Get())
+                {
+                    info.TotalRamBytes = Convert.ToInt64(obj["TotalPhysicalMemory"]);
+                }
+                info.AvailableRamBytes = info.TotalRamBytes - Environment.WorkingSet;
             }
             catch
             {

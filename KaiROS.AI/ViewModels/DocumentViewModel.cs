@@ -1,7 +1,12 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using KaiROS.AI;
 using KaiROS.AI.Models;
 using KaiROS.AI.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml.Controls;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 using System.Collections.ObjectModel;
 
 namespace KaiROS.AI.ViewModels;
@@ -65,20 +70,26 @@ public partial class DocumentViewModel : ViewModelBase
     [RelayCommand]
     private async Task LoadDocument()
     {
-        var dialog = new Microsoft.Win32.OpenFileDialog
-        {
-            Filter = "All Supported Documents|*.txt;*.md;*.docx;*.pdf;*.csv;*.json|PDF Documents (*.pdf)|*.pdf|Word Documents (*.docx)|*.docx|Text files (*.txt)|*.txt|Markdown (*.md)|*.md|All files (*.*)|*.*",
-            Title = "Select a document to load"
-        };
-        
-        if (dialog.ShowDialog() == true)
+        var picker = new FileOpenPicker();
+        picker.FileTypeFilter.Add(".txt");
+        picker.FileTypeFilter.Add(".md");
+        picker.FileTypeFilter.Add(".docx");
+        picker.FileTypeFilter.Add(".pdf");
+        picker.FileTypeFilter.Add(".csv");
+        picker.FileTypeFilter.Add(".json");
+        picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+        var mainWindow = KaiROS.AI.App.Current.Services.GetRequiredService<MainWindow>();
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(mainWindow));
+
+        var file = await picker.PickSingleFileAsync();
+        if (file != null)
         {
             IsLoading = true;
             StatusMessage = "Loading document...";
             
             try
             {
-                var doc = await _documentService.LoadDocumentAsync(dialog.FileName);
+                var doc = await _documentService.LoadDocumentAsync(file.Path);
                 Documents.Add(doc);
                 StatusMessage = $"Loaded: {doc.FileName} ({doc.Chunks.Count} chunks)";
             }
@@ -117,7 +128,7 @@ public partial class DocumentViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(NewServiceName))
         {
-            System.Windows.MessageBox.Show("Service Name is required.");
+            // Validation: caller should ensure name is not empty
             return;
         }
 
@@ -143,7 +154,17 @@ public partial class DocumentViewModel : ViewModelBase
     [RelayCommand]
     private async Task DeleteService(RaasConfiguration config)
     {
-        if (System.Windows.MessageBox.Show($"Are you sure you want to delete '{config.Name}'?", "Confirm Delete", System.Windows.MessageBoxButton.YesNo) == System.Windows.MessageBoxResult.Yes)
+        var mainWindow = KaiROS.AI.App.Current.Services.GetRequiredService<KaiROS.AI.MainWindow>();
+        var dlg = new ContentDialog
+        {
+            Title = "Confirm Delete",
+            Content = $"Are you sure you want to delete '{config.Name}'?",
+            PrimaryButtonText = "Yes",
+            CloseButtonText = "No",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = mainWindow.Content.XamlRoot
+        };
+        if (await dlg.ShowAsync() == ContentDialogResult.Primary)
         {
             await _raasService.DeleteConfigurationAsync(config.Id);
         }
@@ -158,7 +179,7 @@ public partial class DocumentViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Failed to start service: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Failed to start service: {ex.Message}");
         }
     }
 
@@ -184,30 +205,36 @@ public partial class DocumentViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Failed to open browser: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Failed to open browser: {ex.Message}");
         }
     }
 
     [RelayCommand]
     private async Task AddFileSource(RaasConfiguration config)
     {
-        var dialog = new Microsoft.Win32.OpenFileDialog
-        {
-             Filter = "All Supported Files|*.txt;*.md;*.docx;*.pdf;*.csv;*.json",
-             Title = $"Add file to {config.Name}"
-        };
+        var mainWindow = KaiROS.AI.App.Current.Services.GetRequiredService<KaiROS.AI.MainWindow>();
+        var picker = new FileOpenPicker();
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(mainWindow));
+        picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+        picker.FileTypeFilter.Add(".txt");
+        picker.FileTypeFilter.Add(".md");
+        picker.FileTypeFilter.Add(".docx");
+        picker.FileTypeFilter.Add(".pdf");
+        picker.FileTypeFilter.Add(".csv");
+        picker.FileTypeFilter.Add(".json");
+        picker.FileTypeFilter.Add("*");
 
-        if (dialog.ShowDialog() == true)
+        var file = await picker.PickSingleFileAsync();
+        if (file != null)
         {
-            await _raasService.AddSourceAsync(config.Id, dialog.FileName);
+            await _raasService.AddSourceAsync(config.Id, file.Path);
         }
     }
 
     [RelayCommand]
     private async Task AddWebSource(RaasConfiguration config)
     {
-        // Simple Input Dialog Logic
-        var url = ShowInputDialog("Enter Website URL:", "Add Web Source", "https://");
+        var url = await ShowInputDialogAsync("Enter Website URL:", "Add Web Source", "https://");
         if (!string.IsNullOrWhiteSpace(url))
         {
             await _raasService.AddWebSourceAsync(config.Id, url);
@@ -216,43 +243,28 @@ public partial class DocumentViewModel : ViewModelBase
 
     private string ShowInputDialog(string text, string title, string defaultText = "")
     {
-        // Minimal InputBox Implementation using WPF Window
-        var window = new System.Windows.Window
+        // Synchronous stub - use ShowInputDialogAsync instead
+        return defaultText;
+    }
+
+    private async Task<string> ShowInputDialogAsync(string prompt, string title, string defaultText = "")
+    {
+        var mainWindow = KaiROS.AI.App.Current.Services.GetRequiredService<KaiROS.AI.MainWindow>();
+        var tb = new TextBox { Text = defaultText };
+        var sp = new StackPanel { Spacing = 8 };
+        sp.Children.Add(new TextBlock { Text = prompt });
+        sp.Children.Add(tb);
+        var dlg = new ContentDialog
         {
-            Width = 400,
-            Height = 180,
             Title = title,
-            WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen,
-            ResizeMode = System.Windows.ResizeMode.NoResize,
-            Background = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["CardBrush"] ?? System.Windows.Media.Brushes.White,
+            Content = sp,
+            PrimaryButtonText = "Add",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = mainWindow.Content.XamlRoot
         };
-
-        var stack = new System.Windows.Controls.StackPanel { Margin = new System.Windows.Thickness(20) };
-        
-        var label = new System.Windows.Controls.TextBlock { Text = text, Margin = new System.Windows.Thickness(0,0,0,10), Foreground = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["TextPrimaryBrush"] ?? System.Windows.Media.Brushes.Black };
-        var textBox = new System.Windows.Controls.TextBox { Text = defaultText, Margin = new System.Windows.Thickness(0,0,0,20), Padding = new System.Windows.Thickness(5) };
-        
-        var btnPanel = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
-        var okBtn = new System.Windows.Controls.Button { Content = "Add", Width = 80, Height = 30, IsDefault = true, Foreground = System.Windows.Media.Brushes.White, Padding = new System.Windows.Thickness(0), Style = (System.Windows.Style)System.Windows.Application.Current.Resources["AccentButton"] };
-        var cancelBtn = new System.Windows.Controls.Button { Content = "Cancel", Width = 80, Height = 30, IsCancel = true, Margin = new System.Windows.Thickness(10,0,0,0), Foreground = System.Windows.Media.Brushes.White, Padding = new System.Windows.Thickness(0), Style = (System.Windows.Style)System.Windows.Application.Current.Resources["SecondaryButton"] };
-
-        okBtn.Click += (s, e) => { window.DialogResult = true; window.Close(); };
-        cancelBtn.Click += (s, e) => { window.DialogResult = false; window.Close(); };
-
-        btnPanel.Children.Add(okBtn);
-        btnPanel.Children.Add(cancelBtn);
-
-        stack.Children.Add(label);
-        stack.Children.Add(textBox);
-        stack.Children.Add(btnPanel);
-        
-        window.Content = stack;
-
-        if (window.ShowDialog() == true)
-        {
-            return textBox.Text;
-        }
-        return string.Empty;
+        var result = await dlg.ShowAsync();
+        return result == ContentDialogResult.Primary ? tb.Text.Trim() : string.Empty;
     }
     
     [RelayCommand]

@@ -1,0 +1,148 @@
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using KaiROS.AI.WinUI.Models;
+using KaiROS.AI.WinUI.Services;
+using Microsoft.UI.Dispatching;
+using System.Collections.ObjectModel;
+
+namespace KaiROS.AI.WinUI.ViewModels;
+
+public partial class MainViewModel : ViewModelBase
+{
+    private readonly IModelManagerService _modelManager;
+    private readonly IHardwareDetectionService _hardwareService;
+    private readonly DispatcherQueue _dispatcherQueue;
+
+    [ObservableProperty]
+    private ViewModelBase? _currentView;
+
+    [ObservableProperty]
+    private string _statusText = "Ready";
+
+    [ObservableProperty]
+    private string _hardwareInfo = "Detecting hardware...";
+
+    [ObservableProperty]
+    private string? _activeModelName;
+
+    [ObservableProperty]
+    private HardwareInfo? _hardware;
+
+    [ObservableProperty]
+    private int _selectedNavigationIndex;
+
+    public ModelCatalogViewModel CatalogViewModel { get; }
+    public ChatViewModel ChatViewModel { get; }
+    public SettingsViewModel SettingsViewModel { get; }
+    public DocumentViewModel DocumentViewModel { get; }
+
+    public MainViewModel(
+        IModelManagerService modelManager,
+        IHardwareDetectionService hardwareService,
+        ModelCatalogViewModel catalogViewModel,
+        ChatViewModel chatViewModel,
+        SettingsViewModel settingsViewModel,
+        DocumentViewModel documentViewModel)
+    {
+        _modelManager = modelManager;
+        _hardwareService = hardwareService;
+        CatalogViewModel = catalogViewModel;
+        ChatViewModel = chatViewModel;
+        SettingsViewModel = settingsViewModel;
+        DocumentViewModel = documentViewModel;
+        // Capture UI thread's DispatcherQueue for cross-thread UI updates
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+
+        _modelManager.ModelLoaded += (s, m) =>
+        {
+            // Update UI state
+            ActiveModelName = m.DisplayName;
+            StatusText = $"Model loaded: {m.DisplayName}";
+
+            // Auto-navigate to Chat whenever a model is loaded (including auto-load on startup)
+            // Use DispatcherQueue to ensure UI update if event comes from background thread
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                SelectedNavigationIndex = 1;
+            });
+        };
+
+        _modelManager.ModelUnloaded += (s, e) =>
+        {
+            ActiveModelName = null;
+            StatusText = "Model unloaded";
+        };
+    }
+
+    public override async Task InitializeAsync()
+    {
+        IsLoading = true;
+        StatusText = "Initializing...";
+
+        try
+        {
+            // Detect hardware
+            Hardware = await _hardwareService.DetectHardwareAsync();
+            HardwareInfo = Hardware.StatusMessage;
+
+            // Initialize model catalog
+            await _modelManager.InitializeAsync();
+
+            // Initialize child view models
+            await CatalogViewModel.InitializeAsync();
+            await ChatViewModel.InitializeAsync();
+            await SettingsViewModel.InitializeAsync();
+            await DocumentViewModel.InitializeAsync();
+
+            await DocumentViewModel.InitializeAsync();
+
+            // If a model was auto-loaded, SelectedNavigationIndex would be 1 (Chat)
+            // But we shouldn't overwrite it blindly.
+            if (_modelManager.ActiveModel != null)
+            {
+                SelectedNavigationIndex = 1; // Ensure UI reflects this
+                CurrentView = ChatViewModel;
+            }
+            else
+            {
+                SelectedNavigationIndex = 0;
+                CurrentView = CatalogViewModel;
+            }
+
+            StatusText = "Ready";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            StatusText = "Initialization failed";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    partial void OnSelectedNavigationIndexChanged(int value)
+    {
+        CurrentView = value switch
+        {
+            0 => CatalogViewModel,
+            1 => ChatViewModel,
+            2 => DocumentViewModel,
+            3 => SettingsViewModel,
+            _ => CatalogViewModel
+        };
+    }
+
+    [RelayCommand]
+    private void NavigateToCatalog() => SelectedNavigationIndex = 0;
+
+    [RelayCommand]
+    private void NavigateToChat() => SelectedNavigationIndex = 1;
+
+    [RelayCommand]
+    private void NavigateToDocuments() => SelectedNavigationIndex = 2;
+
+    [RelayCommand]
+    private void NavigateToSettings() => SelectedNavigationIndex = 3;
+}

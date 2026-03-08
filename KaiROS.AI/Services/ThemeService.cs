@@ -1,6 +1,7 @@
 using System.IO;
-using System.Windows;
-using System.Windows.Media;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
+using Windows.UI;
 
 namespace KaiROS.AI.Services;
 
@@ -14,49 +15,48 @@ public interface IThemeService
 public class ThemeService : IThemeService
 {
     private readonly string _settingsPath;
-    
+
     public string CurrentTheme { get; private set; } = "Dark";
-    
+
     public ThemeService()
     {
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        _settingsPath = Path.Combine(localAppData, "KaiROS.AI", "theme.txt");
+        _settingsPath = System.IO.Path.Combine(localAppData, "KaiROS.AI", "theme.txt");
     }
-    
+
     public void SetTheme(string themeName)
     {
-        var app = System.Windows.Application.Current;
+        var app = Microsoft.UI.Xaml.Application.Current;
         if (app == null) return;
-        
+
         var isLight = themeName == "Light";
-        
-        // Update brush colors in place
-        UpdateBrush(app, "BackgroundBrush", isLight ? System.Windows.Media.Color.FromRgb(248, 250, 252) : System.Windows.Media.Color.FromRgb(15, 15, 35));
-        UpdateBrush(app, "SurfaceBrush", isLight ? System.Windows.Media.Color.FromRgb(255, 255, 255) : System.Windows.Media.Color.FromRgb(26, 26, 46));
-        UpdateBrush(app, "SurfaceLightBrush", isLight ? System.Windows.Media.Color.FromRgb(241, 245, 249) : System.Windows.Media.Color.FromRgb(37, 37, 58));
-        UpdateBrush(app, "CardBrush", isLight ? System.Windows.Media.Color.FromRgb(255, 255, 255) : System.Windows.Media.Color.FromRgb(22, 22, 42));
-        UpdateBrush(app, "BorderBrush", isLight ? System.Windows.Media.Color.FromRgb(226, 232, 240) : System.Windows.Media.Color.FromRgb(45, 45, 68));
-        UpdateBrush(app, "TextPrimaryBrush", isLight ? System.Windows.Media.Color.FromRgb(30, 41, 59) : System.Windows.Media.Color.FromRgb(249, 250, 251));
-        UpdateBrush(app, "TextSecondaryBrush", isLight ? System.Windows.Media.Color.FromRgb(100, 116, 139) : System.Windows.Media.Color.FromRgb(156, 163, 175));
-        UpdateBrush(app, "TextMutedBrush", isLight ? System.Windows.Media.Color.FromRgb(148, 163, 184) : System.Windows.Media.Color.FromRgb(107, 114, 128));
-        
+
+        // WinUI 3: Windows.UI.Color.FromArgb replaces System.Windows.Media.Color.FromRgb
+        UpdateBrush(app, "BackgroundBrush",   isLight ? Color.FromArgb(255, 248, 250, 252) : Color.FromArgb(255, 15, 15, 35));
+        UpdateBrush(app, "SurfaceBrush",      isLight ? Color.FromArgb(255, 255, 255, 255) : Color.FromArgb(255, 26, 26, 46));
+        UpdateBrush(app, "SurfaceLightBrush", isLight ? Color.FromArgb(255, 241, 245, 249) : Color.FromArgb(255, 37, 37, 58));
+        UpdateBrush(app, "CardBrush",         isLight ? Color.FromArgb(255, 255, 255, 255) : Color.FromArgb(255, 22, 22, 42));
+        UpdateBrush(app, "BorderBrush",       isLight ? Color.FromArgb(255, 226, 232, 240) : Color.FromArgb(255, 45, 45, 68));
+        UpdateBrush(app, "TextPrimaryBrush",  isLight ? Color.FromArgb(255, 30, 41, 59)   : Color.FromArgb(255, 249, 250, 251));
+        UpdateBrush(app, "TextSecondaryBrush",isLight ? Color.FromArgb(255, 100, 116, 139): Color.FromArgb(255, 156, 163, 175));
+        UpdateBrush(app, "TextMutedBrush",    isLight ? Color.FromArgb(255, 148, 163, 184): Color.FromArgb(255, 107, 114, 128));
+
         CurrentTheme = themeName;
-        
-        // Save preference
+
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
+            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_settingsPath)!);
             File.WriteAllText(_settingsPath, themeName);
         }
         catch { /* Ignore save errors */ }
     }
-    
-    private static void UpdateBrush(System.Windows.Application app, string key, System.Windows.Media.Color color)
+
+    private static void UpdateBrush(Microsoft.UI.Xaml.Application app, string key, Color color)
     {
-        // Create a new brush and replace the resource (XAML brushes are frozen/read-only)
+        // WinUI 3: Microsoft.UI.Xaml.Media.SolidColorBrush
         app.Resources[key] = new SolidColorBrush(color);
     }
-    
+
     public void LoadSavedTheme()
     {
         try
@@ -65,12 +65,9 @@ public class ThemeService : IThemeService
             {
                 var savedTheme = File.ReadAllText(_settingsPath).Trim();
                 if (savedTheme == "Light")
-                {
                     SetTheme("Light");
-                }
             }
         }
         catch { /* Ignore load errors */ }
     }
 }
-

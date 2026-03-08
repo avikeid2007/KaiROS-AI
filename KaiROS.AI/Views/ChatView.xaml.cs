@@ -1,170 +1,187 @@
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.System;
+using Windows.Storage;
+
 namespace KaiROS.AI.Views;
 
-public partial class ChatView : System.Windows.Controls.UserControl
+public partial class ChatView : UserControl
 {
     public ChatView()
     {
         InitializeComponent();
-        System.Windows.DataObject.AddPastingHandler(MessageInput, OnPaste);
     }
 
-    private void ExportButton_Click(object sender, System.Windows.RoutedEventArgs e)
+    // â”€â”€â”€ Session Sidebar handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    private void SessionItem_Tapped(object sender, TappedRoutedEventArgs e)
     {
-        if (sender is System.Windows.Controls.Button button && button.ContextMenu != null)
+        if (sender is FrameworkElement fe && fe.DataContext != null &&
+            DataContext is ViewModels.ChatViewModel vm)
         {
-            button.ContextMenu.PlacementTarget = button;
-            button.ContextMenu.IsOpen = true;
+            vm.LoadSessionCommand.Execute(fe.DataContext);
         }
     }
 
-    private void MessageInput_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    private void DeleteSession_Click(object sender, RoutedEventArgs e)
     {
-        // Check if Enter is pressed without Shift
-        if (e.Key == System.Windows.Input.Key.Enter && !System.Windows.Input.Keyboard.Modifiers.HasFlag(System.Windows.Input.ModifierKeys.Shift))
+        if (sender is Button btn && btn.Tag != null &&
+            DataContext is ViewModels.ChatViewModel vm)
+        {
+            vm.DeleteSessionCommand.Execute(btn.Tag);
+        }
+    }
+
+    // â”€â”€â”€ Keyboard accelerators â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    private void SendAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs e)
+    {
+        if (DataContext is ViewModels.ChatViewModel vm)
+        {
+            if (vm.SendMessageCommand.CanExecute(null))
+                vm.SendMessageCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    private void NewSessionAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs e)
+    {
+        if (DataContext is ViewModels.ChatViewModel vm)
+        {
+            vm.NewSessionCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    private void ClearChatAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs e)
+    {
+        if (DataContext is ViewModels.ChatViewModel vm)
+        {
+            vm.ClearChatCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    private void ToggleSearchAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs e)
+    {
+        if (DataContext is ViewModels.ChatViewModel vm)
+        {
+            vm.ToggleSearchCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    // â”€â”€â”€ MessageInput events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    private void MessageInput_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        // Enter to Send (no Shift)
+        if (e.Key == VirtualKey.Enter &&
+            !Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down))
         {
             if (DataContext is ViewModels.ChatViewModel vm && vm.IsEnterToSendEnabled)
             {
                 e.Handled = true;
                 if (vm.SendMessageCommand.CanExecute(null))
-                {
                     vm.SendMessageCommand.Execute(null);
-                }
             }
         }
-        
-        // Handle Ctrl+V directly to bypass TextBox restrictions on non-text clipboards
-        if (e.Key == System.Windows.Input.Key.V && System.Windows.Input.Keyboard.Modifiers.HasFlag(System.Windows.Input.ModifierKeys.Control))
+
+        // Ctrl+V â€” check clipboard for image
+        if (e.Key == VirtualKey.V &&
+            Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down))
         {
-            HandleImagePasteAttempt(e);
+            _ = HandleImagePasteAttemptAsync();
         }
     }
-    
-    // Attempt to paste an image manually if Ctrl+V is pressed
-    private void HandleImagePasteAttempt(System.Windows.RoutedEventArgs e)
+
+    private async Task HandleImagePasteAttemptAsync()
     {
         try
         {
-            if (System.Windows.Clipboard.ContainsFileDropList())
+            var dataView = Clipboard.GetContent();
+
+            // File-drop list
+            if (dataView.Contains(StandardDataFormats.StorageItems))
             {
-                var files = System.Windows.Clipboard.GetFileDropList();
-                if (files.Count > 0)
+                var items = await dataView.GetStorageItemsAsync();
+                if (items.Count > 0 && items[0] is StorageFile file)
                 {
-                    var file = files[0];
-                    if (file != null)
+                    var ext = System.IO.Path.GetExtension(file.Name).ToLowerInvariant();
+                    if (ext is ".png" or ".jpg" or ".jpeg" or ".bmp" or ".gif" or ".webp")
                     {
-                        var ext = System.IO.Path.GetExtension(file).ToLowerInvariant();
-                        if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".gif" || ext == ".webp")
+                        if (DataContext is ViewModels.ChatViewModel vm)
                         {
-                            if (DataContext is ViewModels.ChatViewModel vm)
-                            {
-                                vm.AttachedImagePath = file;
-                                vm.HasAttachedImage = true;
-                                e.Handled = true;
-                                return;
-                            }
+                            vm.AttachedImagePath = file.Path;
+                            vm.HasAttachedImage = true;
                         }
                     }
                 }
+                return;
             }
-            if (System.Windows.Clipboard.ContainsImage())
+
+            // Raw bitmap
+            if (dataView.Contains(StandardDataFormats.Bitmap))
             {
-                var image = System.Windows.Clipboard.GetImage();
-                if (image != null && DataContext is ViewModels.ChatViewModel vm)
+                var streamRef = await dataView.GetBitmapAsync();
+                using var stream = await streamRef.OpenReadAsync();
+                var tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"Kairos_{Guid.NewGuid()}.png");
+
+                var decoder = await Windows.Graphics.Imaging.BitmapDecoder.CreateAsync(stream);
+                using var fileStream = await StorageFile.GetFileFromPathAsync(tempPath)
+                    .AsTask()
+                    .ContinueWith(_ => Task.FromResult<IStorageFile?>(null)); // Will fail â€” use StorageFolder approach
+
+                // Simpler: copy the stream to a temp file
+                var folder = await StorageFolder.GetFolderFromPathAsync(System.IO.Path.GetTempPath());
+                var tempFile = await folder.CreateFileAsync($"Kairos_{Guid.NewGuid()}.png",
+                    CreationCollisionOption.GenerateUniqueName);
+                using (var outStream = await tempFile.OpenAsync(FileAccessMode.ReadWrite))
                 {
-                    string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"Kairos_{System.Guid.NewGuid()}.png");
-                    using (var fs = new System.IO.FileStream(tempPath, System.IO.FileMode.Create))
-                    {
-                        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
-                        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(image));
-                        encoder.Save(fs);
-                    }
-                    vm.AttachedImagePath = tempPath;
-                    vm.HasAttachedImage = true;
-                    e.Handled = true;
+                    await Windows.Storage.Streams.RandomAccessStream.CopyAsync(stream, outStream);
+                }
+
+                if (DataContext is ViewModels.ChatViewModel vmBmp)
+                {
+                    vmBmp.AttachedImagePath = tempFile.Path;
+                    vmBmp.HasAttachedImage = true;
                 }
             }
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Clipboard paste failed: {ex.Message}");
         }
     }
 
-    private void OnPaste(object sender, System.Windows.DataObjectPastingEventArgs e)
-    {
-        // Intercept standard Paste commands (e.g. from context menu context)
-        try
-        {
-            if (e.DataObject.GetDataPresent(System.Windows.DataFormats.FileDrop))
-            {
-                if (e.DataObject.GetData(System.Windows.DataFormats.FileDrop) is string[] files && files.Length > 0)
-                {
-                    var file = files[0];
-                    var ext = System.IO.Path.GetExtension(file).ToLowerInvariant();
-                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".gif" || ext == ".webp")
-                    {
-                        if (DataContext is ViewModels.ChatViewModel vm)
-                        {
-                            vm.AttachedImagePath = file;
-                            vm.HasAttachedImage = true;
-                            e.CancelCommand(); // Prevent text insertion
-                            e.Handled = true;
-                            return;
-                        }
-                    }
-                }
-            }
-            if (e.DataObject.GetDataPresent(System.Windows.DataFormats.Bitmap))
-            {
-                if (e.DataObject.GetData(System.Windows.DataFormats.Bitmap) is System.Windows.Media.Imaging.BitmapSource bitmapSrc)
-                {
-                    if (DataContext is ViewModels.ChatViewModel vm)
-                    {
-                        string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"Kairos_{System.Guid.NewGuid()}.png");
-                        using (var fs = new System.IO.FileStream(tempPath, System.IO.FileMode.Create))
-                        {
-                            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
-                            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmapSrc));
-                            encoder.Save(fs);
-                        }
-                        vm.AttachedImagePath = tempPath;
-                        vm.HasAttachedImage = true;
-                        e.CancelCommand(); // Prevent text insertion
-                        e.Handled = true;
-                    }
-                }
-            }
-        }
-        catch (System.Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"OnPaste failed: {ex.Message}");
-        }
-    }
+    // â”€â”€â”€ Drag & Drop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    private void MessageInput_PreviewDragOver(object sender, System.Windows.DragEventArgs e)
+    private void MessageInput_DragOver(object sender, DragEventArgs e)
     {
-        if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+        if (e.DataView.Contains(StandardDataFormats.StorageItems))
         {
-            e.Effects = System.Windows.DragDropEffects.Copy;
+            e.AcceptedOperation = DataPackageOperation.Copy;
             e.Handled = true;
         }
     }
 
-    private void MessageInput_PreviewDrop(object sender, System.Windows.DragEventArgs e)
+    private async void MessageInput_Drop(object sender, DragEventArgs e)
     {
         try
         {
-            if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+            if (e.DataView.Contains(StandardDataFormats.StorageItems))
             {
-                if (e.Data.GetData(System.Windows.DataFormats.FileDrop) is string[] files && files.Length > 0)
+                var items = await e.DataView.GetStorageItemsAsync();
+                if (items.Count > 0 && items[0] is StorageFile file)
                 {
-                    var file = files[0];
-                    var ext = System.IO.Path.GetExtension(file).ToLowerInvariant();
-                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".gif" || ext == ".webp")
+                    var ext = System.IO.Path.GetExtension(file.Name).ToLowerInvariant();
+                    if (ext is ".png" or ".jpg" or ".jpeg" or ".bmp" or ".gif" or ".webp")
                     {
                         if (DataContext is ViewModels.ChatViewModel vm)
                         {
-                            vm.AttachedImagePath = file;
+                            vm.AttachedImagePath = file.Path;
                             vm.HasAttachedImage = true;
                             e.Handled = true;
                         }
@@ -172,7 +189,7 @@ public partial class ChatView : System.Windows.Controls.UserControl
                 }
             }
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Drop failed: {ex.Message}");
         }

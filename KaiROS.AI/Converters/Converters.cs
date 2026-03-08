@@ -1,15 +1,15 @@
-using KaiROS.AI.Models;
+﻿using KaiROS.AI.Models;
 
 using System.Globalization;
-using System.Windows;
-using System.Windows.Data;
-using System.Windows.Media.Imaging;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace KaiROS.AI.Converters;
 
 public class BoolToVisibilityConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object value, Type targetType, object parameter, string language)
     {
         bool invert = parameter?.ToString() == "Invert";
         bool boolValue = false;
@@ -28,7 +28,7 @@ public class BoolToVisibilityConverter : IValueConverter
         return boolValue ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
     {
         throw new NotImplementedException();
     }
@@ -36,12 +36,12 @@ public class BoolToVisibilityConverter : IValueConverter
 
 public class InverseBoolConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object value, Type targetType, object parameter, string language)
     {
         return value is bool b && !b;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
     {
         return value is bool b && !b;
     }
@@ -49,7 +49,7 @@ public class InverseBoolConverter : IValueConverter
 
 public class CategoryToColorConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object value, Type targetType, object parameter, string language)
     {
         return value?.ToString()?.ToLower() switch
         {
@@ -60,7 +60,7 @@ public class CategoryToColorConverter : IValueConverter
         };
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
     {
         throw new NotImplementedException();
     }
@@ -68,21 +68,21 @@ public class CategoryToColorConverter : IValueConverter
 
 public class DownloadStateToIconConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object value, Type targetType, object parameter, string language)
     {
         return value switch
         {
-            DownloadState.NotStarted => "⬇",
-            DownloadState.Downloading => "⏸",
-            DownloadState.Paused => "▶",
-            DownloadState.Completed => "✓",
-            DownloadState.Failed => "✕",
-            DownloadState.Verifying => "⏳",
+            DownloadState.NotStarted => "â¬‡",
+            DownloadState.Downloading => "â¸",
+            DownloadState.Paused => "â–¶",
+            DownloadState.Completed => "âœ“",
+            DownloadState.Failed => "âœ•",
+            DownloadState.Verifying => "â³",
             _ => "?"
         };
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
     {
         throw new NotImplementedException();
     }
@@ -90,7 +90,7 @@ public class DownloadStateToIconConverter : IValueConverter
 
 public class BackendToStringConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object value, Type targetType, object parameter, string language)
     {
         return value switch
         {
@@ -102,7 +102,7 @@ public class BackendToStringConverter : IValueConverter
         };
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
     {
         throw new NotImplementedException();
     }
@@ -110,12 +110,12 @@ public class BackendToStringConverter : IValueConverter
 
 public class StringNotEmptyConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object value, Type targetType, object parameter, string language)
     {
         return !string.IsNullOrWhiteSpace(value?.ToString());
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
     {
         throw new NotImplementedException();
     }
@@ -123,7 +123,7 @@ public class StringNotEmptyConverter : IValueConverter
 
 public class ProgressToWidthConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object value, Type targetType, object parameter, string language)
     {
         if (value is double progress && parameter is double maxWidth)
         {
@@ -132,57 +132,27 @@ public class ProgressToWidthConverter : IValueConverter
         return 0;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
     {
         throw new NotImplementedException();
     }
 }
 
-public class ProgressToWidthMultiConverter : IMultiValueConverter
-{
-    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
-    {
-        if (values.Length == 3 &&
-            values[0] is double value &&
-            values[1] is double maximum &&
-            values[2] is double width &&
-            maximum > 0)
-        {
-            return (value / maximum) * width;
-        }
-        return 0.0;
-    }
-
-    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-    {
-        throw new NotImplementedException();
-    }
-}
+// NOTE: ProgressToWidthMultiConverter removed — WinUI 3 does not support IMultiValueConverter.
+// The ModernProgressBar style now uses WinUI 3's built-in ProgressBar which calculates fill width internally.
 
 public class UrlToImageSourceConverter : IValueConverter
 {
-    public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(object value, Type targetType, object parameter, string language)
     {
         if (value is string url && !string.IsNullOrWhiteSpace(url))
         {
             try
             {
+                // WinUI 3: BitmapImage uses UriSource directly (no BeginInit/EndInit)
                 var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-
-                // Handle both pack:// URIs (local resources) and HTTP URLs
-                if (url.StartsWith("pack://", StringComparison.OrdinalIgnoreCase))
-                {
-                    bitmap.UriSource = new Uri(url, UriKind.Absolute);
-                }
-                else
-                {
-                    bitmap.UriSource = new Uri(url, UriKind.Absolute);
-                }
-
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.UriSource = new Uri(url, UriKind.Absolute);
                 bitmap.DecodePixelWidth = 48; // Optimize for display size
-                bitmap.EndInit();
                 return bitmap;
             }
             catch
@@ -193,9 +163,26 @@ public class UrlToImageSourceConverter : IValueConverter
         return null;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
     {
         throw new NotImplementedException();
     }
 }
 
+/// <summary>
+/// Formats a value using string.Format with the ConverterParameter as the format string.
+/// XAML usage: ConverterParameter='{0:F1}%' or ConverterParameter='Port: {0}'
+/// To escape a leading brace in XAML use: ConverterParameter='{}{0:F1}%'
+/// </summary>
+public class StringFormatConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (parameter is string fmt)
+            return string.Format(fmt, value);
+        return value?.ToString() ?? string.Empty;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+        => throw new NotImplementedException();
+}

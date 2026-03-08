@@ -18,17 +18,18 @@
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.22621.0" />
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.19041.0" MaxVersionTested="10.0.19041.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.19041.0" />
   </Dependencies>
 
   <Resources>
-    <Resource Language="en-us"/>
+    <Resource Language="en-US"/>
   </Resources>
 
   <Applications>
     <Application Id="App"
       Executable="KaiROS.AI.exe"
-      EntryPoint="Windows.FullTrustApplication">
+      EntryPoint="$targetentrypoint$">
       <uap:VisualElements
         DisplayName="KaiROS AI"
         Description="Local AI Assistant powered by LLamaSharp"

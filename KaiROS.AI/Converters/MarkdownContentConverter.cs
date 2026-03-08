@@ -1,30 +1,31 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Media;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Documents;
+using Microsoft.UI.Xaml.Media;
 using KaiROS.AI.Controls;
 using KaiROS.AI.Services;
-using WpfBrush = System.Windows.Media.Brush;
+using WinUIBrush = Microsoft.UI.Xaml.Media.Brush;
 
 namespace KaiROS.AI.Converters;
 
 /// <summary>
-/// Converts message content to a list of UI elements with markdown formatting
+/// Converts message content to a list of UI elements with markdown formatting.
+/// WinUI 3 version: uses Microsoft.UI.Xaml types throughout.
 /// </summary>
 public class MarkdownContentConverter : IValueConverter
 {
-    private static readonly Regex HeaderPattern = new(@"^(#{1,6})\s+(.+)$", RegexOptions.Compiled);
+    private static readonly Regex HeaderPattern     = new(@"^(#{1,6})\s+(.+)$", RegexOptions.Compiled);
     private static readonly Regex BlockquotePattern = new(@"^>\s*(.+)$", RegexOptions.Compiled);
-    private static readonly Regex LinkPattern = new(@"\[([^\]]+)\]\(([^)]+)\)", RegexOptions.Compiled);
-    private static readonly Regex BoldPattern = new(@"\*\*(.+?)\*\*", RegexOptions.Compiled);
-    private static readonly Regex ItalicPattern = new(@"\*(.+?)\*", RegexOptions.Compiled);
+    private static readonly Regex LinkPattern       = new(@"\[([^\]]+)\]\(([^)]+)\)", RegexOptions.Compiled);
+    private static readonly Regex BoldPattern       = new(@"\*\*(.+?)\*\*", RegexOptions.Compiled);
     private static readonly Regex InlineCodePattern = new(@"`([^`]+)`", RegexOptions.Compiled);
-    private static readonly Regex ListItemPattern = new(@"^[\s]*[-*•]\s+(.+)$", RegexOptions.Compiled); // Removed Multiline to handle line-by-line
+    private static readonly Regex ListItemPattern   = new(@"^[\s]*[-*•]\s+(.+)$", RegexOptions.Compiled);
 
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object value, Type targetType, object parameter, string language)
     {
         if (value is not string content || string.IsNullOrEmpty(content))
             return new StackPanel();
@@ -46,13 +47,11 @@ public class MarkdownContentConverter : IValueConverter
             }
             else
             {
-                // Process text block line by line for block-level elements
                 var lines = segment.Content.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
                 foreach (var line in lines)
                 {
                     if (string.IsNullOrWhiteSpace(line))
                     {
-                        // Add some spacing for empty lines, optional
                         if (panel.Children.Count > 0)
                             panel.Children.Add(new TextBlock { Height = 8 });
                         continue;
@@ -61,29 +60,24 @@ public class MarkdownContentConverter : IValueConverter
                     var headerMatch = HeaderPattern.Match(line);
                     if (headerMatch.Success)
                     {
-                        var level = headerMatch.Groups[1].Length;
-                        var text = headerMatch.Groups[2].Value;
-                        panel.Children.Add(CreateHeader(text, level));
+                        panel.Children.Add(CreateHeader(headerMatch.Groups[2].Value, headerMatch.Groups[1].Length));
                         continue;
                     }
 
                     var quoteMatch = BlockquotePattern.Match(line);
                     if (quoteMatch.Success)
                     {
-                        var text = quoteMatch.Groups[1].Value;
-                        panel.Children.Add(CreateBlockquote(text));
+                        panel.Children.Add(CreateBlockquote(quoteMatch.Groups[1].Value));
                         continue;
                     }
 
                     var listMatch = ListItemPattern.Match(line);
                     if (listMatch.Success)
                     {
-                        var text = listMatch.Groups[1].Value;
-                        panel.Children.Add(CreateListItem(text));
+                        panel.Children.Add(CreateListItem(listMatch.Groups[1].Value));
                         continue;
                     }
 
-                    // Standard Paragraph
                     panel.Children.Add(CreateFormattedTextBlock(line));
                 }
             }
@@ -92,53 +86,51 @@ public class MarkdownContentConverter : IValueConverter
         return panel;
     }
 
+    private static WinUIBrush GetResource(string key) =>
+        (WinUIBrush)Microsoft.UI.Xaml.Application.Current.Resources[key];
+
     private UIElement CreateHeader(string text, int level)
     {
-        double fontSize = level switch
-        {
-            1 => 24,
-            2 => 20,
-            3 => 18,
-            _ => 16
-        };
-
-        var block = new TextBlock
+        double fontSize = level switch { 1 => 24, 2 => 20, 3 => 18, _ => 16 };
+        return new TextBlock
         {
             Text = text,
             FontSize = fontSize,
             FontWeight = FontWeights.Bold,
-            Foreground = (WpfBrush)System.Windows.Application.Current.Resources["TextPrimaryBrush"],
+            Foreground = GetResource("TextPrimaryBrush"),
             Margin = new Thickness(0, 12, 0, 4),
             TextWrapping = TextWrapping.Wrap
         };
-        return block;
     }
 
     private UIElement CreateBlockquote(string text)
     {
         var border = new Border
         {
-            BorderBrush = (WpfBrush)System.Windows.Application.Current.Resources["PrimaryBrush"],
+            BorderBrush = GetResource("PrimaryBrush"),
             BorderThickness = new Thickness(4, 0, 0, 0),
             Padding = new Thickness(12, 4, 0, 4),
             Margin = new Thickness(0, 4, 0, 4),
-            Background = (WpfBrush)System.Windows.Application.Current.Resources["SurfaceLightBrush"]
+            Background = GetResource("SurfaceLightBrush")
         };
 
         var content = CreateFormattedTextBlock(text);
-        if (content is TextBlock tb) tb.FontStyle = FontStyles.Italic;
+        content.FontStyle = Windows.UI.Text.FontStyle.Italic;
         border.Child = content;
-
         return border;
     }
 
     private UIElement CreateListItem(string text)
     {
-        var itemPanel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(8, 2, 0, 2) };
+        var itemPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(8, 2, 0, 2)
+        };
         itemPanel.Children.Add(new TextBlock
         {
             Text = "•  ",
-            Foreground = (WpfBrush)System.Windows.Application.Current.Resources["AccentBrush"],
+            Foreground = GetResource("AccentBrush"),
             FontWeight = FontWeights.Bold
         });
         itemPanel.Children.Add(CreateFormattedTextBlock(text));
@@ -151,70 +143,64 @@ public class MarkdownContentConverter : IValueConverter
         {
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 2, 0, 2),
-            LineHeight = 22 // Improve readability
+            LineHeight = 22
         };
 
-        // Find all matches: Bold, Code, Link
         var matches = new List<(int Index, int Length, string Text, string Type, string? Url)>();
-
         foreach (Match m in BoldPattern.Matches(text))
             matches.Add((m.Index, m.Length, m.Groups[1].Value, "bold", null));
-
         foreach (Match m in InlineCodePattern.Matches(text))
             matches.Add((m.Index, m.Length, m.Groups[1].Value, "code", null));
-
         foreach (Match m in LinkPattern.Matches(text))
             matches.Add((m.Index, m.Length, m.Groups[1].Value, "link", m.Groups[2].Value));
-
         matches = matches.OrderBy(m => m.Index).ToList();
 
         int currentIndex = 0;
         if (matches.Count == 0)
         {
-            textBlock.Inlines.Add(new Run(text) { Foreground = (WpfBrush)System.Windows.Application.Current.Resources["TextPrimaryBrush"] });
+            textBlock.Inlines.Add(new Run { Text = text, Foreground = GetResource("TextPrimaryBrush") });
         }
         else
         {
             foreach (var match in matches)
             {
                 if (match.Index > currentIndex)
-                {
-                    textBlock.Inlines.Add(new Run(text.Substring(currentIndex, match.Index - currentIndex))
+                    textBlock.Inlines.Add(new Run
                     {
-                        Foreground = (WpfBrush)System.Windows.Application.Current.Resources["TextPrimaryBrush"]
+                        Text = text.Substring(currentIndex, match.Index - currentIndex),
+                        Foreground = GetResource("TextPrimaryBrush")
                     });
-                }
 
                 if (match.Type == "bold")
                 {
-                    textBlock.Inlines.Add(new Run(match.Text)
+                    textBlock.Inlines.Add(new Run
                     {
+                        Text = match.Text,
                         FontWeight = FontWeights.Bold,
-                        Foreground = (WpfBrush)System.Windows.Application.Current.Resources["TextPrimaryBrush"]
+                        Foreground = GetResource("TextPrimaryBrush")
                     });
                 }
                 else if (match.Type == "code")
                 {
-                    textBlock.Inlines.Add(new Run(match.Text)
+                    textBlock.Inlines.Add(new Run
                     {
-                        FontFamily = new System.Windows.Media.FontFamily("Consolas"),
-                        Background = (WpfBrush)System.Windows.Application.Current.Resources["SurfaceLightBrush"],
-                        Foreground = (WpfBrush)System.Windows.Application.Current.Resources["AccentBrush"]
+                        Text = match.Text,
+                        FontFamily = new FontFamily("Consolas"),
+                        Foreground = GetResource("AccentBrush")
                     });
                 }
                 else if (match.Type == "link")
                 {
-                    var link = new Hyperlink(new Run(match.Text))
-                    {
-                        NavigateUri = new Uri(match.Url ?? ""),
-                        Foreground = (WpfBrush)System.Windows.Application.Current.Resources["PrimaryLightBrush"]
-                    };
-                    // Handle navigation manually usually required in WPF or Bind command
-                    link.RequestNavigate += (s, e) =>
+                    // WinUI 3: Hyperlink uses Click event (not RequestNavigate)
+                    var link = new Hyperlink { Foreground = GetResource("PrimaryLightBrush") };
+                    link.Inlines.Add(new Run { Text = match.Text });
+                    var uri = match.Url;
+                    link.Click += (s, e) =>
                     {
                         try
                         {
-                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+                            System.Diagnostics.Process.Start(
+                                new System.Diagnostics.ProcessStartInfo(uri ?? "") { UseShellExecute = true });
                         }
                         catch { }
                     };
@@ -225,20 +211,16 @@ public class MarkdownContentConverter : IValueConverter
             }
 
             if (currentIndex < text.Length)
-            {
-                textBlock.Inlines.Add(new Run(text.Substring(currentIndex))
+                textBlock.Inlines.Add(new Run
                 {
-                    Foreground = (WpfBrush)System.Windows.Application.Current.Resources["TextPrimaryBrush"]
+                    Text = text.Substring(currentIndex),
+                    Foreground = GetResource("TextPrimaryBrush")
                 });
-            }
         }
 
         return textBlock;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        throw new NotImplementedException();
-    }
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+        => throw new NotImplementedException();
 }
-

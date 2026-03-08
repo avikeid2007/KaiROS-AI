@@ -8,86 +8,85 @@ on:
         required: true
         default: '1.0.0'
 
+env:
+  PROJECT_PATH: 'KaiROS.AI.WinUI/KaiROS.AI.WinUI.csproj'
+  MANIFEST_PATH: 'KaiROS.AI.WinUI/Package.appxmanifest'
+
 jobs:
   build:
     runs-on: windows-latest
-    
+
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
 
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Update Version
+      shell: pwsh
+      run: |
+        $version = "${{ github.event.inputs.version }}"
+        $appxVersion = "$version.0"
+
+        # Update csproj
+        $csproj = Get-Content "${{ env.PROJECT_PATH }}"
+        $csproj = $csproj -replace '<Version>.*</Version>', "<Version>$version</Version>"
+        $csproj = $csproj -replace '<AssemblyVersion>.*</AssemblyVersion>', "<AssemblyVersion>$appxVersion</AssemblyVersion>"
+        $csproj = $csproj -replace '<FileVersion>.*</FileVersion>', "<FileVersion>$appxVersion</FileVersion>"
+        $csproj | Set-Content "${{ env.PROJECT_PATH }}"
+
+        # Update Package.appxmanifest (requires 4-part version x.x.x.x)
+        [xml]$manifest = Get-Content "${{ env.MANIFEST_PATH }}"
+        $manifest.Package.Identity.Version = $appxVersion
+        $manifest.Save((Resolve-Path "${{ env.MANIFEST_PATH }}"))
+
     - name: Decode PFX Certificate
-      shell: powershell
+      shell: pwsh
       run: |
         $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.PFX_BASE64 }}")
-        [IO.File]::WriteAllBytes("KaiROS.AI/KaiROS_CI.pfx", $pfx_cert_byte)
+        [IO.File]::WriteAllBytes("KaiROS.AI.WinUI/KaiROS_CI.pfx", $pfx_cert_byte)
 
-    - name: Publish Application
-      run: |
-        dotnet publish KaiROS.AI/KaiROS.AI.csproj -c Release -r win-x64 --self-contained true -o msix-publish
+    - name: Restore Dependencies
+      run: dotnet restore "${{ env.PROJECT_PATH }}"
 
-    - name: Prepare Manifest and Assets
-      shell: powershell
+    - name: Build MSIX Store Package
+      shell: pwsh
       run: |
-        $version = "${{ github.event.inputs.version }}.0"
-        Write-Host "Setting version to: $version"
-        
-        # Read Manifest
-        [xml]$xml = Get-Content "KaiROS.AI/Package.appxmanifest"
-        
-        # Update Version
-        # Format: 1.0.0.0
-        $xml.Package.Identity.Version = $version
-        
-        # Save to Publish Directory
-        $xml.Save("msix-publish/AppxManifest.xml")
-        
-        # Copy Assets Folder
-        Copy-Item "KaiROS.AI/Assets" -Destination "msix-publish/Assets" -Recurse -Force
+        msbuild "${{ env.PROJECT_PATH }}" `
+          /restore `
+          /p:Configuration=Release `
+          /p:Platform=x64 `
+          /p:GenerateAppxPackageOnBuild=true `
+          /p:UapAppxPackageBuildMode=StoreUpload `
+          /p:AppxBundle=Always `
+          /p:AppxBundlePlatforms="x86|x64|ARM64" `
+          /p:AppxPackageSigningEnabled=true `
+          /p:PackageCertificateKeyFile="KaiROS.AI.WinUI/KaiROS_CI.pfx" `
+          /p:PackageCertificatePassword="${{ secrets.PFX_PASSWORD }}"
 
-    - name: Build MSIX Package
-      shell: powershell
+    - name: Collect Artifacts
+      shell: pwsh
       run: |
-        # Locate MakeAppx (x64 specific)
-        $makeappx = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "makeappx.exe" | Where-Object { $_.FullName -like "*\x64\*" } | Select-Object -First 1
-        
-        if (-not $makeappx) {
-            Write-Error "MakeAppx.exe (x64) not found!"
-            exit 1
+        New-Item -ItemType Directory -Name artifacts -Force
+        $version = "${{ github.event.inputs.version }}"
+
+        $msixUpload = Get-ChildItem -Path "KaiROS.AI.WinUI/AppPackages" -Recurse -Filter "*.msixupload" | Select-Object -First 1
+        if ($msixUpload) {
+          Copy-Item $msixUpload.FullName "artifacts/KaiROS-v$version.msixupload"
+          Write-Host "Packaged: $($msixUpload.Name)"
+        } else {
+          Write-Error "No .msixupload file found in KaiROS.AI.WinUI/AppPackages/"
+          exit 1
         }
-        
-        Write-Host "Using MakeAppx from: $($makeappx.FullName)"
-        
-        $msixName = "KaiROS.AI-${{ github.event.inputs.version }}.msix"
-        
-        # Pack
-        & $makeappx.FullName pack /d msix-publish /p $msixName /o
-
-    - name: Sign MSIX Package
-      shell: powershell
-      run: |
-        # Locate SignTool (x64 specific)
-        $signtool = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -like "*\x64\*" } | Select-Object -First 1
-        
-        if (-not $signtool) {
-            Write-Error "SignTool.exe (x64) not found!"
-            exit 1
-        }
-        
-        Write-Host "Using SignTool from: $($signtool.FullName)"
-        
-        $msixName = "KaiROS.AI-${{ github.event.inputs.version }}.msix"
-        
-        # Sign
-        & $signtool.FullName sign /fd SHA256 /f "KaiROS.AI/KaiROS_CI.pfx" /p "${{ secrets.PFX_PASSWORD }}" /t http://timestamp.digicert.com $msixName
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: KaiROS-Installer
-        path: "*.msix"
+        name: KaiROS-Store-Package
+        path: artifacts/*.msixupload

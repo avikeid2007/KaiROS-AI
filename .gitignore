@@ -1,53 +1,77 @@
-# .NET
+## .NET / MSBuild outputs
 bin/
 obj/
 *.dll
 *.exe
 *.pdb
-*.msix
 
-# IDE
+## Build architecture output folders
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+ARM64/
+[Bb]uild/
+bld/
+
+## NuGet
+*.nupkg
+project.assets.json
+*.nuget.dgspec.json
+*.nuget.g.props
+*.nuget.g.targets
+**/packages/*
+!**/packages/build/
+
+## WinUI / UWP / MSIX packaging artifacts
+AppPackages/
+BundleArtifacts/
+Package.StoreAssociation.xml
+*.msix
+*.msixupload
+*.msixbundle
+*.appx
+*.appxupload
+*.appxbundle
+*.appxsym
+*.cer
+
+## XAML designer and generated code
+_Pvt_Extensions/
+*.g.cs
+*.g.i.cs
+Generated Files/
+
+## IDE
 .vs/
 .vscode/
 *.user
 *.suo
 *.userprefs
+*.userosscache
+*.sln.docstates
+.idea/
 
-# Build results
-[Dd]ebug/
-[Rr]elease/
-x64/
-x86/
-[Bb]uild/
-bld/
+## Local / developer settings
+local.settings.json
+appsettings.Development.json
 
-# NuGet
-*.nupkg
-**/packages/*
-!**/packages/build/
-
-# Models (large files)
+## Models (large binary files)
 **/Models/*.gguf
 **/Models/*.partial
 
-# OS generated
+## Test results
+TestResults/
+*.trx
+*.coveragexml
+coverage/
+
+## OS generated
 .DS_Store
 Thumbs.db
 *.log
 
-# Rider
-.idea/
-
-# Test results
-TestResults/
-*.trx
-
-# Local settings
-local.settings.json
-appsettings.Development.json
-
-# Security
+## Security – never commit private keys or stores
 *.keystore
 *.jks
 *.pfx
-*.cer
