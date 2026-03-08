@@ -10,6 +10,12 @@
     Title="KaiROS AI">
 
     <Grid x:Name="RootGrid">
+        <Grid.RowDefinitions>
+            <!-- Height for the TitleBar -->
+            <RowDefinition Height="40" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
         <Grid.Resources>
             <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
 
@@ -34,6 +40,13 @@
                 DocumentTemplate="{StaticResource DocumentTemplate}"
                 SettingsTemplate="{StaticResource SettingsTemplate}" />
         </Grid.Resources>
+
+        <!--  Custom TitleBar mapped to the Window's drag region  -->
+        <Border x:Name="AppTitleBar"
+                Grid.Row="0"
+                Canvas.ZIndex="1"
+                Background="Transparent"
+                IsHitTestVisible="True" />
 
         <!--  System Tray Icon (H.NotifyIcon.WinUI)  -->
         <tb:TaskbarIcon
@@ -67,6 +80,8 @@
         <!--  NavigationView replaces the 3-column Grid + ListBox sidebar  -->
         <NavigationView
             x:Name="NavView"
+            Grid.Row="0"
+            Grid.RowSpan="2"
             AlwaysShowHeader="False"
             CompactPaneLength="52"
             IsBackButtonVisible="Collapsed"
@@ -77,8 +92,8 @@
             SelectionChanged="NavView_SelectionChanged">
 
             <NavigationView.PaneHeader>
-                <!--  Logo + App Name  -->
-                <Border Padding="16,16,16,8">
+                <!--  Logo + App Name (Pushing down from Titlebar Drag region)  -->
+                <Border Padding="16,40,16,8">
                     <StackPanel Orientation="Horizontal">
                         <Image
                             Width="36"
@@ -165,7 +180,7 @@
             </NavigationView.PaneFooter>
 
             <!--  Main content area with status bar  -->
-            <Grid>
+            <Grid Padding="0,48,0,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />

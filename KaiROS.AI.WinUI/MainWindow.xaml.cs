@@ -46,6 +46,7 @@ public partial class MainWindow : Window
 
         // Extend content under the title bar for Mica to show through
         ExtendsContentIntoTitleBar = true;
+        SetTitleBar(AppTitleBar);
 
         // Apply Mica backdrop
         TrySetMicaBackdrop();

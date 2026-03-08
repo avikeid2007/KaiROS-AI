@@ -16,13 +16,13 @@
             <Color x:Key="AccentDarkColor">#059669</Color>
             <Color x:Key="WarningColor">#F59E0B</Color>
             <Color x:Key="ErrorColor">#EF4444</Color>
-            <Color x:Key="SurfaceColor">#1A1A2E</Color>
-            <Color x:Key="SurfaceLightColor">#25253A</Color>
-            <Color x:Key="CardColor">#16162A</Color>
-            <Color x:Key="BorderColor">#2D2D44</Color>
-            <Color x:Key="TextPrimaryColor">#F9FAFB</Color>
-            <Color x:Key="TextSecondaryColor">#9CA3AF</Color>
-            <Color x:Key="TextMutedColor">#6B7280</Color>
+            <Color x:Key="SurfaceColor">#101010</Color>
+            <Color x:Key="SurfaceLightColor">#2A2A2A</Color>
+            <Color x:Key="CardColor">#1A1A1A</Color>
+            <Color x:Key="BorderColor">#333333</Color>
+            <Color x:Key="TextPrimaryColor">#F3F3F3</Color>
+            <Color x:Key="TextSecondaryColor">#B3B3B3</Color>
+            <Color x:Key="TextMutedColor">#808080</Color>
 
             <SolidColorBrush x:Key="PrimaryBrush"      Color="{StaticResource PrimaryColor}" />
             <SolidColorBrush x:Key="PrimaryDarkBrush"  Color="{StaticResource PrimaryDarkColor}" />
@@ -39,11 +39,11 @@
             <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
             <SolidColorBrush x:Key="TextMutedBrush"     Color="{StaticResource TextMutedColor}" />
 
-            <!--  NavigationView pane background overrides  -->
-            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground"  Color="#1A1A2E" />
-            <SolidColorBrush x:Key="NavigationViewTopPaneBackground"      Color="#1A1A2E" />
+            <!--  NavigationView pane background overrides: Set to Transparent so Mica bleeds through completely  -->
+            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground"  Color="Transparent" />
+            <SolidColorBrush x:Key="NavigationViewTopPaneBackground"      Color="Transparent" />
             <SolidColorBrush x:Key="NavigationViewContentBackground"      Color="Transparent" />
-            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="#2D2D44" />
+            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="#333333" />
 
             <LinearGradientBrush x:Key="PrimaryGradient" StartPoint="0,0" EndPoint="1,1">
                 <GradientStop Offset="0" Color="{StaticResource PrimaryColor}" />
@@ -54,8 +54,8 @@
                 <GradientStop Offset="1" Color="#34D399" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="CardGradient" StartPoint="0,0" EndPoint="0,1">
-                <GradientStop Offset="0" Color="#1E1E36" />
-                <GradientStop Offset="1" Color="#16162A" />
+                <GradientStop Offset="0" Color="#222222" />
+                <GradientStop Offset="1" Color="#1A1A1A" />
             </LinearGradientBrush>
         </ResourceDictionary>
 
