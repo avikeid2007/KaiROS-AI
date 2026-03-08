@@ -235,10 +235,13 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock
+                                <FontIcon
+                                    FontFamily="Segoe Fluent Icons"
+                                    Glyph="&#xE8FB;"
                                     FontSize="16"
-                                    Foreground="{ThemeResource TextPrimaryBrush}"
-                                    Text="&#xE8FB; " />
+                                    Margin="0,0,6,0"
+                                    VerticalAlignment="Center"
+                                    Foreground="{ThemeResource TextPrimaryBrush}" />
                                 <TextBlock
                                     FontSize="16"
                                     FontWeight="Bold"

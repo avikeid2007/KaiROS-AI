@@ -16,9 +16,6 @@ public partial class App : Application
     public static new App Current => (App)Application.Current;
     public IServiceProvider Services => _serviceProvider!;
 
-    // Expose the root FrameworkElement for runtime theme switching
-    public FrameworkElement? MainWindowRoot { get; internal set; }
-
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         // Build configuration
@@ -32,12 +29,9 @@ public partial class App : Application
         ConfigureServices(services, configuration);
         _serviceProvider = services.BuildServiceProvider();
 
-        // Create main window first so MainWindowRoot is set (used by theme root flip)
+        // Create and activate main window
+        // Theme loading happens inside MainWindow.OnFirstActivated via IThemeService.LoadSavedTheme()
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-
-        // Load saved theme after window construction so RequestedTheme is applied to the root Grid
-        _serviceProvider.GetRequiredService<IThemeService>().LoadSavedTheme(App.Current.MainWindowRoot);
-
         mainWindow.Activate();
     }
 

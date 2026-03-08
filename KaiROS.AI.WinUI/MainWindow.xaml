@@ -76,32 +76,6 @@
             PaneDisplayMode="Left"
             SelectionChanged="NavView_SelectionChanged">
 
-            <NavigationView.Resources>
-                <!--  Theme-aware backgrounds: automatically switch with RequestedTheme  -->
-                <ResourceDictionary>
-                    <ResourceDictionary.ThemeDictionaries>
-                        <ResourceDictionary x:Key="Default">
-                            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#1A1A2E" />
-                            <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="#1A1A2E" />
-                            <SolidColorBrush x:Key="NavigationViewContentBackground" Color="#0F0F23" />
-                            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="#2D2D44" />
-                        </ResourceDictionary>
-                        <ResourceDictionary x:Key="Dark">
-                            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#1A1A2E" />
-                            <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="#1A1A2E" />
-                            <SolidColorBrush x:Key="NavigationViewContentBackground" Color="#0F0F23" />
-                            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="#2D2D44" />
-                        </ResourceDictionary>
-                        <ResourceDictionary x:Key="Light">
-                            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#F1F5F9" />
-                            <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="#F1F5F9" />
-                            <SolidColorBrush x:Key="NavigationViewContentBackground" Color="#FFFFFF" />
-                            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="#E2E8F0" />
-                        </ResourceDictionary>
-                    </ResourceDictionary.ThemeDictionaries>
-                </ResourceDictionary>
-            </NavigationView.Resources>
-
             <NavigationView.PaneHeader>
                 <!--  Logo + App Name  -->
                 <Border Padding="16,16,16,8">
@@ -199,6 +173,7 @@
 
                 <!--  Content � DataTemplateSelector routes to the correct View  -->
                 <ContentControl
+                    Margin="24,20,24,0"
                     HorizontalContentAlignment="Stretch"
                     VerticalContentAlignment="Stretch"
                     Content="{Binding CurrentView}"

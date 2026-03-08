@@ -27,14 +27,16 @@
             </StackPanel>
 
             <!--  Appearance Settings  -->
-            <Border Margin="0,0,0,16" Style="{StaticResource CardBorder}">
+            <Border Margin="0,0,0,16" Style="{ThemeResource CardBorder}">
                 <StackPanel>
                     <TextBlock
                         Margin="0,0,0,16"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextPrimaryBrush}"
-                        Text="&#xE771; Appearance" />
+                        Foreground="{ThemeResource TextPrimaryBrush}">
+                        <Run FontFamily="Segoe Fluent Icons" Text="&#xE771;" />
+                        <Run Text=" Appearance" />
+                    </TextBlock>
 
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -65,11 +67,12 @@
                                 FontSize="16"
                                 Text="&#x2600;" />
                             <ToggleSwitch
+                                MinWidth="0"
+                                Margin="8,0"
                                 VerticalAlignment="Center"
                                 IsOn="{Binding IsDarkTheme, Mode=TwoWay}"
-                                OnContent="" OffContent=""
-                                MinWidth="0"
-                                Margin="8,0"/>
+                                OffContent=""
+                                OnContent="" />
                             <TextBlock
                                 Margin="8,0,0,0"
                                 VerticalAlignment="Center"
@@ -81,14 +84,16 @@
             </Border>
 
             <!--  API Settings  -->
-            <Border Margin="0,0,0,16" Style="{StaticResource CardBorder}">
+            <Border Margin="0,0,0,16" Style="{ThemeResource CardBorder}">
                 <StackPanel>
                     <TextBlock
                         Margin="0,0,0,16"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextPrimaryBrush}"
-                        Text="&#xE714; API Server" />
+                        Foreground="{ThemeResource TextPrimaryBrush}">
+                        <Run FontFamily="Segoe Fluent Icons" Text="&#xE714;" />
+                        <Run Text=" API Server" />
+                    </TextBlock>
 
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -110,11 +115,12 @@
 
                         <ToggleSwitch
                             Grid.Column="1"
+                            MinWidth="0"
                             VerticalAlignment="Center"
-                            IsOn="{Binding IsApiEnabled, Mode=TwoWay}"
                             IsEnabled="{Binding CanEnableApi}"
-                            OnContent="" OffContent=""
-                            MinWidth="0"/>
+                            IsOn="{Binding IsApiEnabled, Mode=TwoWay}"
+                            OffContent=""
+                            OnContent="" />
                     </Grid>
 
                     <StackPanel Margin="0,16,0,0">
@@ -126,7 +132,7 @@
                             Width="100"
                             Margin="0,8,0,0"
                             HorizontalAlignment="Left"
-                            Style="{StaticResource ModernTextBox}"
+                            Style="{ThemeResource ModernTextBox}"
                             Text="{Binding ApiPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
 
@@ -147,11 +153,23 @@
                                 Background="{ThemeResource AccentBrush}"
                                 BorderThickness="0"
                                 Click="OpenApiUrl_Click"
-                                Content="&#xE8A7; Open"
+                                CornerRadius="4"
                                 FontSize="11"
                                 Foreground="White"
-                                CornerRadius="4"
-                                Visibility="{Binding IsApiEnabled, Converter={StaticResource BoolToVis}}"/>
+                                Visibility="{Binding IsApiEnabled, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon
+                                        Margin="0,0,4,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="Segoe Fluent Icons"
+                                        FontSize="11"
+                                        Glyph="&#xE8A7;" />
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontSize="11"
+                                        Text="Open" />
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                     </StackPanel>
 
@@ -165,14 +183,16 @@
             </Border>
 
             <!--  Hardware Information  -->
-            <Border Margin="0,0,0,16" Style="{StaticResource CardBorder}">
+            <Border Margin="0,0,0,16" Style="{ThemeResource CardBorder}">
                 <StackPanel>
                     <TextBlock
                         Margin="0,0,0,16"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextPrimaryBrush}"
-                        Text="&#xE7F4; Hardware Information" />
+                        Foreground="{ThemeResource TextPrimaryBrush}">
+                        <Run FontFamily="Segoe Fluent Icons" Text="&#xE7F4;" />
+                        <Run Text=" Hardware Information" />
+                    </TextBlock>
 
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -209,20 +229,31 @@
                         Margin="0,16,0,0"
                         HorizontalAlignment="Left"
                         Command="{Binding RefreshHardwareInfoCommand}"
-                        Content="&#xE72C; Refresh Hardware Info"
-                        Style="{StaticResource SecondaryButton}" />
+                        Style="{ThemeResource SecondaryButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon
+                                Margin="0,0,6,0"
+                                VerticalAlignment="Center"
+                                FontFamily="Segoe Fluent Icons"
+                                FontSize="13"
+                                Glyph="&#xE72C;" />
+                            <TextBlock VerticalAlignment="Center" Text="Refresh Hardware Info" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Border>
 
             <!--  Execution Backend  -->
-            <Border Margin="0,0,0,16" Style="{StaticResource CardBorder}">
+            <Border Margin="0,0,0,16" Style="{ThemeResource CardBorder}">
                 <StackPanel>
                     <TextBlock
                         Margin="0,0,0,8"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextPrimaryBrush}"
-                        Text="&#xE945; Execution Backend" />
+                        Foreground="{ThemeResource TextPrimaryBrush}">
+                        <Run FontFamily="Segoe Fluent Icons" Text="&#xE945;" />
+                        <Run Text=" Execution Backend" />
+                    </TextBlock>
 
                     <TextBlock
                         Margin="0,0,0,16"
@@ -236,10 +267,11 @@
                             Foreground="{ThemeResource TextSecondaryBrush}"
                             Text="Available Backends:" />
 
-                        <ListBox ItemsSource="{Binding AvailableBackends}"
-                                 SelectedItem="{Binding SelectedBackend, Mode=TwoWay}"
-                                 Background="Transparent"
-                                 BorderThickness="0">
+                        <ListBox
+                            Background="Transparent"
+                            BorderThickness="0"
+                            ItemsSource="{Binding AvailableBackends}"
+                            SelectedItem="{Binding SelectedBackend, Mode=TwoWay}">
                             <ListBox.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <StackPanel Orientation="Horizontal" />
@@ -250,34 +282,34 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="ListBoxItem">
-                                                <Border x:Name="border"
-                                                        Margin="0,0,12,0"
-                                                        Padding="16,12"
-                                                        Background="{ThemeResource SurfaceLightBrush}"
-                                                        BorderBrush="{ThemeResource BorderBrush}"
-                                                        BorderThickness="2"
-                                                        CornerRadius="8">
+                                                <Border
+                                                    x:Name="border"
+                                                    Margin="0,0,12,0"
+                                                    Padding="16,12"
+                                                    Background="{ThemeResource SurfaceLightBrush}"
+                                                    BorderBrush="{ThemeResource BorderBrush}"
+                                                    BorderThickness="2"
+                                                    CornerRadius="8">
+                                                    <TextBlock Foreground="{ThemeResource TextPrimaryBrush}" Text="{Binding Converter={StaticResource BackendToString}}" />
                                                     <VisualStateManager.VisualStateGroups>
                                                         <VisualStateGroup x:Name="SelectionStates">
-                                                            <VisualState x:Name="Unselected"/>
+                                                            <VisualState x:Name="Unselected" />
                                                             <VisualState x:Name="Selected">
                                                                 <VisualState.Setters>
-                                                                    <Setter Target="border.BorderBrush" Value="{ThemeResource PrimaryBrush}"/>
-                                                                    <Setter Target="border.Background" Value="{ThemeResource PrimaryBrush}"/>
+                                                                    <Setter Target="border.BorderBrush" Value="{ThemeResource PrimaryBrush}" />
+                                                                    <Setter Target="border.Background" Value="{ThemeResource PrimaryBrush}" />
                                                                 </VisualState.Setters>
                                                             </VisualState>
                                                         </VisualStateGroup>
                                                         <VisualStateGroup x:Name="CommonStates">
-                                                            <VisualState x:Name="Normal"/>
+                                                            <VisualState x:Name="Normal" />
                                                             <VisualState x:Name="PointerOver">
                                                                 <VisualState.Setters>
-                                                                    <Setter Target="border.BorderBrush" Value="{ThemeResource PrimaryLightBrush}"/>
+                                                                    <Setter Target="border.BorderBrush" Value="{ThemeResource PrimaryLightBrush}" />
                                                                 </VisualState.Setters>
                                                             </VisualState>
                                                         </VisualStateGroup>
                                                     </VisualStateManager.VisualStateGroups>
-                                                    <TextBlock Foreground="{ThemeResource TextPrimaryBrush}" 
-                                                               Text="{Binding Converter={StaticResource BackendToString}}" />
                                                 </Border>
                                             </ControlTemplate>
                                         </Setter.Value>
@@ -291,24 +323,24 @@
                             <Button
                                 Margin="0,0,8,0"
                                 Content="CPU"
-                                Style="{StaticResource SecondaryButton}"
+                                Style="{ThemeResource SecondaryButton}"
                                 Tag="Cpu" />
                             <Button
                                 Margin="0,0,8,0"
                                 Content="CUDA (NVIDIA)"
                                 IsEnabled="{Binding Hardware.HasCuda}"
-                                Style="{StaticResource SecondaryButton}"
+                                Style="{ThemeResource SecondaryButton}"
                                 Tag="Cuda" />
                             <Button
                                 Margin="0,0,8,0"
                                 Content="DirectML"
                                 IsEnabled="{Binding Hardware.HasDirectML}"
-                                Style="{StaticResource SecondaryButton}"
+                                Style="{ThemeResource SecondaryButton}"
                                 Tag="DirectML" />
                             <Button
                                 Content="NPU"
                                 IsEnabled="{Binding Hardware.HasNpu}"
-                                Style="{StaticResource SecondaryButton}"
+                                Style="{ThemeResource SecondaryButton}"
                                 Tag="Npu" />
                         </StackPanel>
                     </StackPanel>
@@ -328,20 +360,31 @@
                         Margin="0,16,0,0"
                         HorizontalAlignment="Left"
                         Command="{Binding UseRecommendedBackendCommand}"
-                        Content="&#xE735; Use Recommended"
-                        Style="{StaticResource AccentButton}" />
+                        Style="{ThemeResource AccentButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon
+                                Margin="0,0,6,0"
+                                VerticalAlignment="Center"
+                                FontFamily="Segoe Fluent Icons"
+                                FontSize="13"
+                                Glyph="&#xE735;" />
+                            <TextBlock VerticalAlignment="Center" Text="Use Recommended" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Border>
 
             <!--  Storage Settings  -->
-            <Border Margin="0,0,0,16" Style="{StaticResource CardBorder}">
+            <Border Margin="0,0,0,16" Style="{ThemeResource CardBorder}">
                 <StackPanel>
                     <TextBlock
                         Margin="0,0,0,8"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextPrimaryBrush}"
-                        Text="&#xED25; Model Storage" />
+                        Foreground="{ThemeResource TextPrimaryBrush}">
+                        <Run FontFamily="Segoe Fluent Icons" Text="&#xED25;" />
+                        <Run Text=" Model Storage" />
+                    </TextBlock>
 
                     <TextBlock
                         Margin="0,0,0,16"
@@ -357,28 +400,39 @@
 
                         <TextBox
                             IsReadOnly="True"
-                            Style="{StaticResource ModernTextBox}"
+                            Style="{ThemeResource ModernTextBox}"
                             Text="{Binding ModelsDirectory}" />
 
                         <Button
                             Grid.Column="1"
                             Margin="12,0,0,0"
                             Command="{Binding BrowseModelsDirectoryCommand}"
-                            Content="&#xED25; Browse"
-                            Style="{StaticResource SecondaryButton}" />
+                            Style="{ThemeResource SecondaryButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon
+                                    Margin="0,0,6,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="Segoe Fluent Icons"
+                                    FontSize="13"
+                                    Glyph="&#xED25;" />
+                                <TextBlock VerticalAlignment="Center" Text="Browse" />
+                            </StackPanel>
+                        </Button>
                     </Grid>
                 </StackPanel>
             </Border>
 
             <!--  System Prompt  -->
-            <Border Margin="0,0,0,16" Style="{StaticResource CardBorder}">
+            <Border Margin="0,0,0,16" Style="{ThemeResource CardBorder}">
                 <StackPanel>
                     <TextBlock
                         Margin="0,0,0,8"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextPrimaryBrush}"
-                        Text="&#xE8BD; System Prompt" />
+                        Foreground="{ThemeResource TextPrimaryBrush}">
+                        <Run FontFamily="Segoe Fluent Icons" Text="&#xE8BD;" />
+                        <Run Text=" System Prompt" />
+                    </TextBlock>
 
                     <TextBlock
                         Margin="0,0,0,16"
@@ -390,30 +444,41 @@
                         MinHeight="100"
                         MaxHeight="200"
                         AcceptsReturn="True"
-                        Style="{StaticResource ModernTextBox}"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"
+                        Style="{ThemeResource ModernTextBox}"
                         Text="{Binding SystemPrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        TextWrapping="Wrap"
-                        ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                        TextWrapping="Wrap" />
 
                     <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
                         <Button
                             Margin="0,0,8,0"
                             Command="{Binding ResetSystemPromptCommand}"
-                            Content="&#xE72C; Reset to Default"
-                            Style="{StaticResource SecondaryButton}" />
+                            Style="{ThemeResource SecondaryButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon
+                                    Margin="0,0,6,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="Segoe Fluent Icons"
+                                    FontSize="13"
+                                    Glyph="&#xE72C;" />
+                                <TextBlock VerticalAlignment="Center" Text="Reset to Default" />
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                 </StackPanel>
             </Border>
 
             <!--  About Section  -->
-            <Border Margin="0,16,0,0" Style="{StaticResource CardBorder}">
+            <Border Margin="0,16,0,0" Style="{ThemeResource CardBorder}">
                 <StackPanel>
                     <TextBlock
                         Margin="0,0,0,16"
                         FontSize="18"
                         FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextPrimaryBrush}"
-                        Text="&#xE946; About KaiROS AI" />
+                        Foreground="{ThemeResource TextPrimaryBrush}">
+                        <Run FontFamily="Segoe Fluent Icons" Text="&#xE946;" />
+                        <Run Text=" About KaiROS AI" />
+                    </TextBlock>
 
                     <TextBlock Foreground="{ThemeResource TextSecondaryBrush}" TextWrapping="Wrap">
                         <Run Text="KaiROS AI" />
@@ -426,7 +491,7 @@
                         Margin="0,12,0,0"
                         FontSize="12"
                         Foreground="{ThemeResource TextMutedBrush}">
-                        <Run Text="Version 1.0.4 • Built with .NET 9 • " />
+                        <Run Text="Version 1.0.4 ï¿½ Built with .NET 9 ï¿½ " />
                     </TextBlock>
 
                     <Button
@@ -436,9 +501,18 @@
                         Background="{ThemeResource AccentBrush}"
                         BorderThickness="0"
                         Click="FeedbackHub_Click"
-                        Content="&#xE8BD; Send Feedback"
                         CornerRadius="6"
-                        Foreground="White"/>
+                        Foreground="White">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon
+                                Margin="0,0,6,0"
+                                VerticalAlignment="Center"
+                                FontFamily="Segoe Fluent Icons"
+                                FontSize="13"
+                                Glyph="&#xE8BD;" />
+                            <TextBlock VerticalAlignment="Center" Text="Send Feedback" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Border>
         </StackPanel>

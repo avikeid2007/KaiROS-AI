@@ -308,6 +308,7 @@
                                     Foreground="{ThemeResource TextSecondaryBrush}"
                                     FontSize="12"/>
                          <ToggleSwitch IsOn="{Binding IsWebSearchEnabled, Mode=TwoWay}"
+                                      OnContent="" OffContent="" MinWidth="0"
                                       ToolTipService.ToolTip="Enable Web Search to fetch real-time info"/>
                      </StackPanel>
 
@@ -319,6 +320,7 @@
                                     Foreground="{ThemeResource TextSecondaryBrush}"
                                     FontSize="12"/>
                          <ToggleSwitch IsOn="{Binding IsEnterToSendEnabled, Mode=TwoWay}"
+                                      OnContent="" OffContent="" MinWidth="0"
                                       ToolTipService.ToolTip="Press Enter to send message"/>
                      </StackPanel>
                  </StackPanel>

@@ -17,23 +17,32 @@ public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
     private readonly IApiService _apiService;
+    private readonly IThemeService _themeService;
     private bool _isExiting = false;
     private bool _initialized = false;
     private AppWindow? _appWindow;
 
-    public MainWindow(MainViewModel viewModel, IApiService apiService)
+    public MainWindow(MainViewModel viewModel, IApiService apiService, IThemeService themeService)
     {
         InitializeComponent();
         _viewModel = viewModel;
         _apiService = apiService;
+        _themeService = themeService;
 
         // WinUI 3: set DataContext on the root FrameworkElement (Window has no DataContext itself)
         if (Content is FrameworkElement root)
-        {
             root.DataContext = viewModel;
-            // Expose root for runtime theme switching via ThemeService
-            App.Current.MainWindowRoot = root;
-        }
+
+        // Subscribe to theme changes.
+        // RootGrid covers the status bar and any content outside NavView.
+        // NavView must be set explicitly because its pane renders in an internal SplitView
+        // visual tree that does NOT inherit RequestedTheme from a parent FrameworkElement.
+        _themeService.ThemeChanged += (_, theme) =>
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                RootGrid.RequestedTheme = theme;
+                NavView.RequestedTheme = theme;
+            });
 
         // Extend content under the title bar for Mica to show through
         ExtendsContentIntoTitleBar = true;
@@ -73,7 +82,6 @@ public partial class MainWindow : Window
                 SyncNavViewSelection(_viewModel.SelectedNavigationIndex);
         };
 
-        // NavigationView backgrounds use ThemeDictionaries in XAML — no code-behind needed.
     }
 
     private async void OnFirstActivated(object sender, WindowActivatedEventArgs e)
@@ -81,6 +89,10 @@ public partial class MainWindow : Window
         if (_initialized) return;
         _initialized = true;
         Activated -= OnFirstActivated;
+
+        // Load and apply persisted theme — fires ThemeChanged which sets NavView.RequestedTheme
+        _themeService.LoadSavedTheme();
+
         await _viewModel.InitializeAsync();
     }
 
@@ -140,25 +152,30 @@ public partial class MainWindow : Window
         this.Close();
     }
 
+    private MicaController? _micaController;
+    private SystemBackdropConfiguration? _micaConfig;
+
     private void TrySetMicaBackdrop()
     {
         if (!MicaController.IsSupported()) return;
 
-        var config = new SystemBackdropConfiguration { IsInputActive = true };
+        _micaConfig = new SystemBackdropConfiguration { IsInputActive = true };
 
-        ((FrameworkElement)Content).ActualThemeChanged += (s, _) =>
+        // Ensure the initial theme is set based on the theme service (not system theme)
+        _micaConfig.Theme = _themeService.CurrentTheme == "Light" ? SystemBackdropTheme.Light : SystemBackdropTheme.Dark;
+
+        _micaController = new MicaController();
+        _micaController.AddSystemBackdropTarget(this.As<ICompositionSupportsSystemBackdrop>());
+        _micaController.SetSystemBackdropConfiguration(_micaConfig);
+
+        // Also subscribe to ThemeChanged directly to update the backdrop configuration!
+        _themeService.ThemeChanged += (_, theme) =>
         {
-            config.Theme = ((FrameworkElement)Content).ActualTheme switch
+            if (_micaConfig != null)
             {
-                ElementTheme.Dark  => SystemBackdropTheme.Dark,
-                ElementTheme.Light => SystemBackdropTheme.Light,
-                _                  => SystemBackdropTheme.Default
-            };
+                _micaConfig.Theme = theme == ElementTheme.Light ? SystemBackdropTheme.Light : SystemBackdropTheme.Dark;
+            }
         };
-
-        var micaController = new MicaController();
-        micaController.AddSystemBackdropTarget(this.As<ICompositionSupportsSystemBackdrop>());
-        micaController.SetSystemBackdropConfiguration(config);
     }
 
     private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
