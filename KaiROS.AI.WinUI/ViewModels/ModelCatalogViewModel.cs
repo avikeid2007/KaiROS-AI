@@ -195,6 +195,24 @@ public partial class ModelCatalogViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void CollapseAll()
+    {
+        foreach (var group in GroupedModels)
+        {
+            group.IsExpanded = false;
+        }
+    }
+
+    [RelayCommand]
+    private void ExpandAll()
+    {
+        foreach (var group in GroupedModels)
+        {
+            group.IsExpanded = true;
+        }
+    }
+
+    [RelayCommand]
     private void FilterByCategory(string category)
     {
         SelectedCategory = category;

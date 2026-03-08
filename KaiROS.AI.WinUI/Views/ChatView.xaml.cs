@@ -75,7 +75,7 @@ public partial class ChatView : UserControl
 
     // â”€â”€â”€ MessageInput events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    private void MessageInput_KeyDown(object sender, KeyRoutedEventArgs e)
+    private void MessageInput_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
         // Enter to Send (no Shift)
         if (e.Key == VirtualKey.Enter &&

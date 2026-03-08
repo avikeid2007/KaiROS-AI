@@ -61,11 +61,12 @@
                             Grid.Column="1"
                             VerticalAlignment="Center"
                             Orientation="Horizontal">
-                            <TextBlock
+                            <FontIcon
                                 Margin="8,0,0,0"
                                 VerticalAlignment="Center"
+                                FontFamily="Segoe Fluent Icons"
                                 FontSize="16"
-                                Text="&#x2600;" />
+                                Glyph="&#xE706;" />
                             <ToggleSwitch
                                 MinWidth="0"
                                 Margin="8,0"
@@ -73,11 +74,12 @@
                                 IsOn="{Binding IsDarkTheme, Mode=TwoWay}"
                                 OffContent=""
                                 OnContent="" />
-                            <TextBlock
+                            <FontIcon
                                 Margin="8,0,0,0"
                                 VerticalAlignment="Center"
+                                FontFamily="Segoe Fluent Icons"
                                 FontSize="16"
-                                Text="&#x263D;" />
+                                Glyph="&#xE708;" />
                         </StackPanel>
                     </Grid>
                 </StackPanel>
@@ -494,25 +496,81 @@
                         <Run Text="Version 1.0.4 � Built with .NET 9 � " />
                     </TextBlock>
 
-                    <Button
-                        Margin="0,20,0,0"
-                        Padding="16,10"
-                        HorizontalAlignment="Left"
-                        Background="{ThemeResource AccentBrush}"
-                        BorderThickness="0"
-                        Click="FeedbackHub_Click"
-                        CornerRadius="6"
-                        Foreground="White">
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon
-                                Margin="0,0,6,0"
-                                VerticalAlignment="Center"
-                                FontFamily="Segoe Fluent Icons"
-                                FontSize="13"
-                                Glyph="&#xE8BD;" />
-                            <TextBlock VerticalAlignment="Center" Text="Send Feedback" />
+                    <StackPanel Margin="0,20,0,0" Spacing="16">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button
+                                Padding="16,10"
+                                HorizontalAlignment="Left"
+                                Background="{ThemeResource AccentBrush}"
+                                BorderThickness="0"
+                                Click="FeedbackHub_Click"
+                                CornerRadius="6"
+                                Foreground="White">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon
+                                        Margin="0,0,6,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="Segoe Fluent Icons"
+                                        FontSize="13"
+                                        Glyph="&#xE8BD;" />
+                                    <TextBlock VerticalAlignment="Center" Text="Send Feedback" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button
+                                Padding="16,10"
+                                HorizontalAlignment="Left"
+                                Style="{ThemeResource SecondaryButton}"
+                                Click="RateApp_Click"
+                                CornerRadius="6">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon
+                                        Margin="0,0,6,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="Segoe Fluent Icons"
+                                        FontSize="13"
+                                        Glyph="&#xE339;" />
+                                    <TextBlock VerticalAlignment="Center" Text="Rate in Microsoft Store" />
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
-                    </Button>
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button
+                                Padding="16,10"
+                                HorizontalAlignment="Left"
+                                Style="{ThemeResource SecondaryButton}"
+                                Click="GitHubIssues_Click"
+                                CornerRadius="6">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon
+                                        Margin="0,0,6,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="Segoe Fluent Icons"
+                                        FontSize="13"
+                                        Glyph="&#xEBE8;" />
+                                    <TextBlock VerticalAlignment="Center" Text="Feature Request &amp; Bug Report" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button
+                                Padding="16,10"
+                                HorizontalAlignment="Left"
+                                Style="{ThemeResource SecondaryButton}"
+                                Click="GitHubRepo_Click"
+                                CornerRadius="6">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon
+                                        Margin="0,0,6,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="Segoe Fluent Icons"
+                                        FontSize="13"
+                                        Glyph="&#xE734;" />
+                                    <TextBlock VerticalAlignment="Center" Text="Star on GitHub" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
                 </StackPanel>
             </Border>
         </StackPanel>

@@ -33,6 +33,37 @@ public partial class SettingsView : UserControl
             Process.Start(new ProcessStartInfo("mailto:support@kairosai.app?subject=KaiROS AI Feedback") { UseShellExecute = true });
         }
     }
+
+    private async void RateApp_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Open Microsoft Store
+            await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-windows-store://pdp/?productid=9N0L64ZR0ZND"));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to open store for rating: {ex.Message}");
+        }
+    }
+
+    private async void GitHubIssues_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/avikeid2007/KaiROS-AI/issues"));
+        }
+        catch { }
+    }
+
+    private async void GitHubRepo_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/avikeid2007/KaiROS-AI"));
+        }
+        catch { }
+    }
 }
 
 

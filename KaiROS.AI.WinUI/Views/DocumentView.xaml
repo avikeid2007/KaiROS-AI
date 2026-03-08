@@ -21,141 +21,59 @@
         </Grid.ColumnDefinitions>
 
         <!--  Left: Service List  -->
-        <Border
-            Grid.Column="0"
-            Margin="0,0,16,0"
-            Padding="16"
-            Background="{ThemeResource CardBrush}"
-            CornerRadius="12">
+        <Border Grid.Column="0" Margin="0,0,16,0" Background="{ThemeResource CardBrush}" CornerRadius="12" BorderBrush="{ThemeResource BorderBrush}" BorderThickness="1">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <Grid Margin="0,0,0,12">
+                <!-- Header -->
+                <Grid Padding="16,16,16,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextPrimaryBrush}"
-                        Text="Your RaaS Services" />
-                    <Button
-                        Grid.Column="1"
-                        Width="30"
-                        Height="30"
-                        Padding="0"
-                        Command="{Binding StartCreatingServiceCommand}"
-                        Content="+"
-                        Style="{StaticResource SecondaryButton}"
-                        ToolTipService.ToolTip="Add New Service" />
+                    <TextBlock VerticalAlignment="Center" FontSize="18" FontWeight="SemiBold" Foreground="{ThemeResource TextPrimaryBrush}" Text="RaaS Services" />
+                    <Button Grid.Column="1" Command="{Binding StartCreatingServiceCommand}" Style="{StaticResource AccentButton}" Padding="8,4" CornerRadius="6" ToolTipService.ToolTip="Create a new Retrieval as a Service endpoint">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12" Margin="0,0,4,0"/>
+                            <TextBlock Text="New" FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                 </Grid>
 
-                <ListBox
-                    Grid.Row="1"
-                    HorizontalContentAlignment="Stretch"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    ItemsSource="{Binding RaasConfigurations}"
-                    SelectedItem="{Binding SelectedConfiguration, Mode=TwoWay}">
-                    <ListBox.ItemTemplate>
+                <!-- List -->
+                <ListView Grid.Row="1" Margin="8,0,8,8"
+                          ItemsSource="{Binding RaasConfigurations}"
+                          SelectedItem="{Binding SelectedConfiguration, Mode=TwoWay}"
+                          SelectionMode="Single"
+                          HorizontalContentAlignment="Stretch">
+                    <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Border
-                                Margin="0,0,0,8"
-                                Padding="12"
-                                Background="{ThemeResource SurfaceLightBrush}"
-                                CornerRadius="8">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-
-                                    <TextBlock
-                                        FontWeight="Bold"
-                                        Foreground="{ThemeResource TextPrimaryBrush}"
-                                        Text="{Binding Name}" />
-                                    <TextBlock
-                                        Grid.Row="1"
-                                        FontSize="12"
-                                        Foreground="{ThemeResource TextSecondaryBrush}"
-                                        Text="{Binding Port, Converter={StaticResource StringFmt}, ConverterParameter='Port: {0}'}" />
-
-                                    <StackPanel
-                                        Grid.Row="2"
-                                        Margin="0,8,0,0"
-                                        Orientation="Horizontal">
-                                        <!--  Start Button  -->
-                                        <Button
-                                            Width="30"
-                                            Height="30"
-                                            Padding="0"
-                                            Click="StartService_Click"
-                                            Tag="{Binding}"
-                                            Content="&#x25B6;"
-                                            Style="{StaticResource AccentButton}"
-                                            ToolTipService.ToolTip="Start Service"
-                                            Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-
-                                        <!--  Stop Button  -->
-                                        <Button
-                                            Width="30"
-                                            Height="30"
-                                            Padding="0"
-                                            Background="{ThemeResource ErrorBrush}"
-                                            Click="StopService_Click"
-                                            Tag="{Binding}"
-                                            Content="&#x25A0;"
-                                            Style="{StaticResource AccentButton}"
-                                            ToolTipService.ToolTip="Stop Service"
+                            <Grid Padding="4,8" HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                
+                                <Grid Width="36" Height="36" Margin="0,0,12,0" Background="{ThemeResource SurfaceLightBrush}" CornerRadius="6">
+                                    <FontIcon Glyph="&#xE8FB;" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="{ThemeResource TextPrimaryBrush}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                    <!-- Running indicator dot -->
+                                    <Border Width="12" Height="12" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-4,-4"
+                                            Background="{ThemeResource AccentBrush}" CornerRadius="6"
+                                            BorderThickness="2" BorderBrush="{ThemeResource CardBrush}"
                                             Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
-
-                                        <!--  View API Button  -->
-                                        <Button
-                                            Width="30"
-                                            Height="30"
-                                            Margin="8,0,0,0"
-                                            Padding="0"
-                                            Click="ViewApiService_Click"
-                                            Tag="{Binding}"
-                                            Content="&#xE8A7;"
-                                            Style="{StaticResource SecondaryButton}"
-                                            ToolTipService.ToolTip="View API Dashboard"
-                                            Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
-
-                                        <!--  Delete Button  -->
-                                        <Button
-                                            Width="30"
-                                            Height="30"
-                                            Margin="8,0,0,0"
-                                            Padding="0"
-                                            Click="DeleteService_Click"
-                                            Tag="{Binding}"
-                                            Content="&#xE74D;"
-                                            Style="{StaticResource SecondaryButton}" />
-                                    </StackPanel>
-
-                                    <!--  Running Indicator  -->
-                                    <Border
-                                        Grid.Row="0"
-                                        Width="10"
-                                        Height="10"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Top"
-                                        Background="{ThemeResource AccentBrush}"
-                                        CornerRadius="5"
-                                        ToolTipService.ToolTip="Running"
-                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
                                 </Grid>
-                            </Border>
+                                
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock FontWeight="SemiBold" Foreground="{ThemeResource TextPrimaryBrush}" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" />
+                                    <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="{Binding Port, Converter={StaticResource StringFmt}, ConverterParameter='Port: {0}'}" />
+                                </StackPanel>
+                            </Grid>
                         </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                    </ListView.ItemTemplate>
+                </ListView>
             </Grid>
         </Border>
 
@@ -163,243 +81,218 @@
         <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
 
-                <!--  Create New Service Form  -->
-                <Border
-                    Margin="0,0,0,16"
-                    Padding="20"
-                    Background="{ThemeResource CardBrush}"
-                    CornerRadius="12"
-                    Visibility="{Binding IsCreatingService, Converter={StaticResource BoolToVis}}">
+                <!-- Create New Service Form -->
+                <Border Padding="24" Background="{ThemeResource CardBrush}" CornerRadius="12" BorderBrush="{ThemeResource BorderBrush}" BorderThickness="1" Margin="0,0,0,16"
+                        Visibility="{Binding IsCreatingService, Converter={StaticResource BoolToVis}}">
                     <StackPanel>
-                        <TextBlock
-                            Margin="0,0,0,16"
-                            FontSize="16"
-                            FontWeight="Bold"
-                            Foreground="{ThemeResource TextPrimaryBrush}"
-                            Text="Create New Service" />
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
+                            <FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="{ThemeResource AccentBrush}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                            <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource TextPrimaryBrush}" Text="Create New Service" VerticalAlignment="Center"/>
+                        </StackPanel>
 
-                        <Grid>
+                        <Grid Margin="0,0,0,16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="150" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Margin="0,0,16,0">
-                                <TextBlock Foreground="{ThemeResource TextSecondaryBrush}" Text="Name" />
-                                <TextBox
-                                    Margin="0,4,0,12"
-                                    Style="{StaticResource ModernTextBox}"
-                                    Text="{Binding NewServiceName, Mode=TwoWay}" />
+                                <TextBlock FontWeight="Medium" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" Text="Service Name" Margin="0,0,0,8"/>
+                                <TextBox Style="{StaticResource ModernTextBox}" PlaceholderText="e.g. My Knowledge Base" Text="{Binding NewServiceName, Mode=TwoWay}" />
                             </StackPanel>
                             <StackPanel Grid.Column="1">
-                                <TextBlock Foreground="{ThemeResource TextSecondaryBrush}" Text="Port" />
-                                <TextBox
-                                    Margin="0,4,0,12"
-                                    Style="{StaticResource ModernTextBox}"
-                                    Text="{Binding NewServicePort, Mode=TwoWay}" />
+                                <TextBlock FontWeight="Medium" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" Text="Port" Margin="0,0,0,8"/>
+                                <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding NewServicePort, Mode=TwoWay}" />
                             </StackPanel>
                         </Grid>
 
-                        <TextBlock Foreground="{ThemeResource TextSecondaryBrush}" Text="Description" />
-                        <TextBox
-                            Margin="0,4,0,12"
-                            Style="{StaticResource ModernTextBox}"
-                            Text="{Binding NewServiceDescription, Mode=TwoWay}" />
+                        <StackPanel Margin="0,0,0,16">
+                            <TextBlock FontWeight="Medium" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" Text="Description (Optional)" Margin="0,0,0,8"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" PlaceholderText="Brief description of data or purpose" Text="{Binding NewServiceDescription, Mode=TwoWay}" />
+                        </StackPanel>
 
-                        <TextBlock Foreground="{ThemeResource TextSecondaryBrush}" Text="System Prompt" />
-                        <TextBox
-                            Height="60"
-                            Margin="0,4,0,16"
-                            Style="{StaticResource ModernTextBox}"
-                            Text="{Binding NewServiceSystemPrompt, Mode=TwoWay}"
-                            TextWrapping="Wrap" />
+                        <StackPanel Margin="0,0,0,24">
+                            <TextBlock FontWeight="Medium" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" Text="System Prompt" Margin="0,0,0,8"/>
+                            <TextBox Height="80" Style="{StaticResource ModernTextBox}" AcceptsReturn="True" TextWrapping="Wrap" 
+                                     PlaceholderText="Instructions for how the model should behave when answering via this service" 
+                                     Text="{Binding NewServiceSystemPrompt, Mode=TwoWay}" />
+                        </StackPanel>
 
-                        <Button
-                            HorizontalAlignment="Right"
-                            Command="{Binding CreateServiceCommand}"
-                            Content="Create Service"
-                            Style="{StaticResource AccentButton}" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Command="{Binding CreateServiceCommand}" Style="{StaticResource AccentButton}" Padding="16,8" CornerRadius="6">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon Glyph="&#xE73E;" FontFamily="Segoe Fluent Icons" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Save Service" FontWeight="Medium" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
-                <!--  Selected Service Details  -->
-                <Border
-                    Padding="20"
-                    Background="{ThemeResource CardBrush}"
-                    CornerRadius="12"
-                    Visibility="{Binding SelectedConfiguration, Converter={StaticResource BoolToVis}}">
+                <!-- Selected Service Details -->
+                <Border Padding="24" Background="{ThemeResource CardBrush}" CornerRadius="12" BorderBrush="{ThemeResource BorderBrush}" BorderThickness="1" 
+                        Visibility="{Binding SelectedConfiguration, Converter={StaticResource BoolToVis}}">
                     <StackPanel>
+                        <!-- Top Header Area -->
+                        <Grid Margin="0,0,0,24">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock FontSize="24" FontWeight="Bold" Foreground="{ThemeResource TextPrimaryBrush}" Text="{Binding SelectedConfiguration.Name}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                    <Border Margin="12,0,0,0" Padding="8,4" VerticalAlignment="Center" Background="{ThemeResource AccentBrush}" CornerRadius="6" Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <FontIcon Glyph="&#xE768;" FontFamily="Segoe Fluent Icons" FontSize="9" Foreground="White" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                            <TextBlock FontSize="10" FontWeight="Bold" Foreground="White" Text="RUNNING" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                                <!-- URL Link -->
+                                <Button Padding="0" HorizontalAlignment="Left" Background="Transparent" BorderThickness="0" 
+                                        Command="{Binding OpenServiceUrlCommand}" CommandParameter="{Binding SelectedConfiguration}"
+                                        Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <StackPanel Orientation="Horizontal" Background="Transparent">
+                                                <FontIcon Glyph="&#xE71B;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="{ThemeResource AccentBrush}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                <TextBlock Foreground="{ThemeResource AccentBrush}" Text="{Binding SelectedConfiguration.Port, Converter={StaticResource StringFmt}, ConverterParameter='http://localhost:{0}'}" TextDecorations="Underline" FontSize="13" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </StackPanel>
+                            
+                            <!-- Action Buttons -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Spacing="8">
+                                <Button Command="{Binding StartServiceCommand}" CommandParameter="{Binding SelectedConfiguration}"
+                                        Style="{StaticResource AccentButton}" Padding="16,8" CornerRadius="6"
+                                        Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <FontIcon Glyph="&#xE768;" FontFamily="Segoe Fluent Icons" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Start Service" FontWeight="Medium" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                
+                                <Button Command="{Binding OpenServiceUrlCommand}" CommandParameter="{Binding SelectedConfiguration}"
+                                        Style="{StaticResource SecondaryButton}" Padding="16,8" CornerRadius="6"
+                                        Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <FontIcon Glyph="&#xE8A7;" FontFamily="Segoe Fluent Icons" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="View API" FontWeight="Medium" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Command="{Binding StopServiceCommand}" CommandParameter="{Binding SelectedConfiguration}"
+                                        Style="{StaticResource SecondaryButton}" Padding="16,8" CornerRadius="6"
+                                        Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <FontIcon Glyph="&#xE71A;" FontFamily="Segoe Fluent Icons" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="{ThemeResource ErrorBrush}"/>
+                                        <TextBlock Text="Stop Service" FontWeight="Medium" VerticalAlignment="Center" Foreground="{ThemeResource ErrorBrush}"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Command="{Binding DeleteServiceCommand}" CommandParameter="{Binding SelectedConfiguration}"
+                                        Style="{StaticResource SecondaryButton}" Padding="12,8" CornerRadius="6" ToolTipService.ToolTip="Delete Service">
+                                    <FontIcon Glyph="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{ThemeResource TextSecondaryBrush}"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                        
+                        <!-- Configuration Info -->
+                        <Border Background="{ThemeResource SurfaceLightBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,24">
+                            <StackPanel>
+                                <TextBlock Text="System Prompt" FontSize="12" FontWeight="Medium" Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding SelectedConfiguration.SystemPrompt}" Foreground="{ThemeResource TextPrimaryBrush}" TextWrapping="Wrap" FontStyle="Italic"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <TextBlock Text="Description:" FontSize="12" FontWeight="Medium" Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding SelectedConfiguration.Description}" Foreground="{ThemeResource TextPrimaryBrush}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Sources Section -->
                         <Grid Margin="0,0,0,16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-
-                            <StackPanel Orientation="Horizontal">
-                                <FontIcon
-                                    FontFamily="Segoe Fluent Icons"
-                                    Glyph="&#xE8FB;"
-                                    FontSize="16"
-                                    Margin="0,0,6,0"
-                                    VerticalAlignment="Center"
-                                    Foreground="{ThemeResource TextPrimaryBrush}" />
-                                <TextBlock
-                                    FontSize="16"
-                                    FontWeight="Bold"
-                                    Foreground="{ThemeResource TextPrimaryBrush}"
-                                    Text="{Binding SelectedConfiguration.Name}" />
-                                <!--  Status Badge  -->
-                                <Border
-                                    Margin="12,0,0,20"
-                                    Padding="8,2"
-                                    VerticalAlignment="Center"
-                                    Background="{ThemeResource AccentBrush}"
-                                    CornerRadius="4"
-                                    Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock
-                                        VerticalAlignment="Center"
-                                        FontSize="10"
-                                        FontWeight="Bold"
-                                        Foreground="White"
-                                        Text="RUNNING" />
-                                </Border>
+                            
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock FontSize="18" FontWeight="SemiBold" Foreground="{ThemeResource TextPrimaryBrush}" Text="Data Sources" />
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Documents and links used by this service for RAG." Margin="0,4,0,0"/>
                             </StackPanel>
 
-                            <!--  URL Link  -->
-                            <Button
-                                Margin="28,4,0,0"
-                                Padding="0"
-                                HorizontalAlignment="Left"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Command="{Binding OpenServiceUrlCommand}"
-                                CommandParameter="{Binding SelectedConfiguration}"
-                                Content="{Binding SelectedConfiguration.Port, Converter={StaticResource StringFmt}, ConverterParameter='http://localhost:{0}'}"
-                                FontSize="12"
-                                Foreground="{ThemeResource AccentBrush}"
-                                Style="{StaticResource SecondaryButton}"
-                                Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <TextBlock
-                                            
-                                            Foreground="{TemplateBinding Foreground}"
-                                            Text="{TemplateBinding Content}"
-                                            TextDecorations="Underline" />
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-
-                            <StackPanel
-                                Grid.Column="1"
-                                VerticalAlignment="Top"
-                                Orientation="Horizontal">
-                                <Button
-                                    Margin="0,0,8,0"
-                                    Command="{Binding OpenServiceUrlCommand}"
-                                    CommandParameter="{Binding SelectedConfiguration}"
-                                    Content="View API"
-                                    Style="{StaticResource SecondaryButton}"
-                                    Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}" />
-                                <Button
-                                    Margin="0,0,8,0"
-                                    Command="{Binding StartServiceCommand}"
-                                    CommandParameter="{Binding SelectedConfiguration}"
-                                    Content="&#x25B6; Start"
-                                    Style="{StaticResource AccentButton}"
-                                    Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-
-                                <Button
-                                    Margin="0,0,8,0"
-                                    Background="{ThemeResource ErrorBrush}"
-                                    Command="{Binding StopServiceCommand}"
-                                    CommandParameter="{Binding SelectedConfiguration}"
-                                    Content="&#x25A0; Stop"
-                                    Style="{StaticResource AccentButton}"
-                                    Visibility="{Binding SelectedConfiguration.IsRunning, Converter={StaticResource BoolToVis}}" />
-
-                                <Button
-                                    Command="{Binding DeleteServiceCommand}"
-                                    CommandParameter="{Binding SelectedConfiguration}"
-                                    Content="Delete"
-                                    Style="{StaticResource SecondaryButton}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                FontWeight="SemiBold"
-                                Foreground="{ThemeResource TextPrimaryBrush}"
-                                Text="Sources (Documents/Links)" />
-                            <Button
-                                Grid.Column="1"
-                                Content="+ Add Source &#x25BE;"
-                                Style="{StaticResource SecondaryButton}">
+                            <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Padding="12,6" CornerRadius="6" VerticalAlignment="Top">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Add Source" FontWeight="Medium" VerticalAlignment="Center"/>
+                                    <FontIcon Glyph="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="10" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
                                 <Button.Flyout>
                                     <MenuFlyout>
-                                        <MenuFlyoutItem Text="File" Click="AddFileSource_Click"/>
-                                        <MenuFlyoutItem Text="Web URL" Click="AddWebSource_Click"/>
+                                        <MenuFlyoutItem Text="Local File" Click="AddFileSource_Click">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE8A5;" FontFamily="Segoe Fluent Icons"/>
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutItem Text="Web URL" Click="AddWebSource_Click">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE71B;" FontFamily="Segoe Fluent Icons"/>
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
                                         <MenuFlyoutSeparator/>
-                                        <MenuFlyoutItem Text="Database (Reset soon)" IsEnabled="False"/>
-                                        <MenuFlyoutItem Text="GitHub (Reset soon)" IsEnabled="False"/>
+                                        <MenuFlyoutItem Text="Database (Coming soon)" IsEnabled="False">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE9F4;" FontFamily="Segoe Fluent Icons"/>
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
                                     </MenuFlyout>
                                 </Button.Flyout>
                             </Button>
                         </Grid>
 
-                        <!--  Sources List  -->
-                        <ItemsControl ItemsSource="{Binding SelectedConfiguration.Sources}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border
-                                        Margin="0,0,0,8"
-                                        Padding="12"
-                                        Background="{ThemeResource SurfaceBrush}"
-                                        CornerRadius="6">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock
-                                                Margin="0,0,12,0"
-                                                FontSize="16"
-                                                Foreground="{ThemeResource TextPrimaryBrush}"
-                                                Text="{Binding DisplayIcon}" />
-                                            <StackPanel Grid.Column="1">
-                                                <TextBlock
-                                                    FontWeight="SemiBold"
-                                                    Foreground="{ThemeResource TextPrimaryBrush}"
-                                                    Text="{Binding Name}" />
-                                                <TextBlock
-                                                    FontSize="11"
-                                                    Foreground="{ThemeResource TextMutedBrush}"
-                                                    Text="{Binding Value}"
-                                                    TextTrimming="CharacterEllipsis" />
-                                            </StackPanel>
-                                            <Button
-                                                Grid.Column="2"
-                                                Click="RemoveSource_Click"
-                                                Tag="{Binding}"
-                                                Content="&#xE711;"
-                                                Style="{StaticResource IconButton}" />
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <!-- Sources List -->
+                        <Border Background="{ThemeResource SurfaceLightBrush}" CornerRadius="8" BorderBrush="{ThemeResource BorderBrush}" BorderThickness="1">
+                            <StackPanel>
+                                <ItemsControl ItemsSource="{Binding SelectedConfiguration.Sources}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{ThemeResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,12">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    
+                                                    <Border Width="32" Height="32" Background="{ThemeResource CardBrush}" CornerRadius="6" Margin="0,0,16,0">
+                                                        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16" Text="{Binding DisplayIcon}" />
+                                                    </Border>
+                                                    
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource TextPrimaryBrush}" Text="{Binding Name}" Margin="0,0,0,2"/>
+                                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="{Binding Value}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{Binding Value}"/>
+                                                    </StackPanel>
+                                                    
+                                                    <Button Grid.Column="2" Click="RemoveSource_Click" Tag="{Binding}" Style="{StaticResource IconButton}" ToolTipService.ToolTip="Remove source" VerticalAlignment="Center">
+                                                        <FontIcon Glyph="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{ThemeResource TextSecondaryBrush}"/>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
 
-                        <TextBlock
-                            Margin="0,8,0,0"
-                            FontStyle="Italic"
-                            Foreground="{ThemeResource TextMutedBrush}"
-                            Text="No sources added yet."
-                            Visibility="{Binding SelectedConfiguration.Sources.Count, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                                <!-- Empty State -->
+                                <StackPanel Padding="32" HorizontalAlignment="Center" Visibility="{Binding SelectedConfiguration.Sources.Count, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                                    <FontIcon Glyph="&#xE71C;" FontFamily="Segoe Fluent Icons" FontSize="32" Foreground="{ThemeResource TextMutedBrush}" Margin="0,0,0,12"/>
+                                    <TextBlock FontWeight="Medium" Foreground="{ThemeResource TextSecondaryBrush}" Text="No data sources added yet" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                    <TextBlock FontSize="12" Foreground="{ThemeResource TextMutedBrush}" Text="Add a file or web link to enrich the AI responses." HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </Border>
 

@@ -248,7 +248,7 @@
                                                       Stretch="Uniform"/>
                                             </Button>
                                         </Grid>
-                                        <ContentPresenter Content="{Binding Content, Converter={StaticResource MarkdownConverter}}"/>
+                                        <ContentPresenter Content="{Binding Content, Converter={StaticResource MarkdownConverter}}" Foreground="{ThemeResource TextPrimaryBrush}"/>
                                         <TextBlock Text="{Binding Timestamp}" 
                                                    Foreground="{ThemeResource TextMutedBrush}"
                                                    FontSize="11"
@@ -379,7 +379,7 @@
                          AllowDrop="True"
                          DragOver="MessageInput_DragOver"
                          Drop="MessageInput_Drop"
-                         KeyDown="MessageInput_KeyDown">
+                         PreviewKeyDown="MessageInput_PreviewKeyDown">
                     <TextBox.KeyboardAccelerators>
                         <KeyboardAccelerator Modifiers="Control" Key="Enter" Invoked="SendAccelerator_Invoked"/>
                         <KeyboardAccelerator Modifiers="Control" Key="N" Invoked="NewSessionAccelerator_Invoked"/>

@@ -97,7 +97,6 @@ public class MarkdownContentConverter : IValueConverter
             Text = text,
             FontSize = fontSize,
             FontWeight = FontWeights.Bold,
-            Foreground = GetResource("TextPrimaryBrush"),
             Margin = new Thickness(0, 12, 0, 4),
             TextWrapping = TextWrapping.Wrap
         };
@@ -158,7 +157,7 @@ public class MarkdownContentConverter : IValueConverter
         int currentIndex = 0;
         if (matches.Count == 0)
         {
-            textBlock.Inlines.Add(new Run { Text = text, Foreground = GetResource("TextPrimaryBrush") });
+            textBlock.Inlines.Add(new Run { Text = text });
         }
         else
         {
@@ -167,8 +166,7 @@ public class MarkdownContentConverter : IValueConverter
                 if (match.Index > currentIndex)
                     textBlock.Inlines.Add(new Run
                     {
-                        Text = text.Substring(currentIndex, match.Index - currentIndex),
-                        Foreground = GetResource("TextPrimaryBrush")
+                        Text = text.Substring(currentIndex, match.Index - currentIndex)
                     });
 
                 if (match.Type == "bold")
@@ -176,8 +174,7 @@ public class MarkdownContentConverter : IValueConverter
                     textBlock.Inlines.Add(new Run
                     {
                         Text = match.Text,
-                        FontWeight = FontWeights.Bold,
-                        Foreground = GetResource("TextPrimaryBrush")
+                        FontWeight = FontWeights.Bold
                     });
                 }
                 else if (match.Type == "code")
@@ -213,8 +210,7 @@ public class MarkdownContentConverter : IValueConverter
             if (currentIndex < text.Length)
                 textBlock.Inlines.Add(new Run
                 {
-                    Text = text.Substring(currentIndex),
-                    Foreground = GetResource("TextPrimaryBrush")
+                    Text = text.Substring(currentIndex)
                 });
         }
 
