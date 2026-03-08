@@ -35,7 +35,7 @@
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
     <!-- Suppress duplicate native lib warning from multiple LLamaSharp backends -->
     <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
-    <Platforms>AnyCPU;x64</Platforms>
+    <Platforms>AnyCPU;x64;x86;ARM64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>

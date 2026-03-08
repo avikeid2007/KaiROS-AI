@@ -7,7 +7,7 @@ using System.IO;
 
 namespace KaiROS.AI.WinUI.Services;
 
-public class ModelManagerService : IModelManagerService
+public class ModelManagerService : IModelManagerService, IDisposable
 {
     private readonly IDownloadService _downloadService;
     private readonly IConfiguration _configuration;
@@ -522,5 +522,18 @@ public class ModelManagerService : IModelManagerService
         System.Diagnostics.Debug.WriteLine($"[GPU] Calculated optimal layers: {optimalLayers} (max by VRAM: {maxLayersByVram})");
 
         return optimalLayers;
+    }
+
+    public void Dispose()
+    {
+        try { _loadedLlavaWeights?.Dispose(); } catch { }
+        _loadedLlavaWeights = null;
+        try { _loadedWeights?.Dispose(); } catch { }
+        _loadedWeights = null;
+        if (_activeModel != null)
+        {
+            _activeModel.IsActive = false;
+            _activeModel = null;
+        }
     }
 }

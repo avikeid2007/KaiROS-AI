@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     private readonly IThemeService _themeService;
     private bool _isExiting = false;
     private bool _initialized = false;
+    private bool _isShuttingDown = false;
     private AppWindow? _appWindow;
 
     public MainWindow(MainViewModel viewModel, IApiService apiService, IThemeService themeService)
@@ -99,16 +100,35 @@ public partial class MainWindow : Window
 
     private void AppWindow_Closing(AppWindow sender, AppWindowClosingEventArgs args)
     {
-        // Only minimize to tray if API is running, otherwise close normally
+        // Only minimize to tray if API is running (and not explicitly exiting)
         if (!_isExiting && _apiService.IsRunning)
         {
             args.Cancel = true;
             MinimizeToTray();
+            return;
         }
-        else
+
+        // If cleanup already finished, allow the close through
+        if (_isShuttingDown) return;
+
+        // Defer close: cancel this event, run async cleanup, then re-close
+        args.Cancel = true;
+        _isShuttingDown = true;
+        TrayIcon.Dispose();
+        _ = ShutdownAsync();
+    }
+
+    private async Task ShutdownAsync()
+    {
+        try
         {
-            TrayIcon.Dispose();
-            App.Current.Services.GetService(typeof(IServiceProvider)); // trigger DI disposal
+            await App.Current.DisposeServicesAsync();
+        }
+        catch { }
+        finally
+        {
+            _micaController?.Dispose();
+            this.Close();
         }
     }
 

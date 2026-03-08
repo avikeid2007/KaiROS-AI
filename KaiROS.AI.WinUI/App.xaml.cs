@@ -16,6 +16,28 @@ public partial class App : Application
     public static new App Current => (App)Application.Current;
     public IServiceProvider Services => _serviceProvider!;
 
+    public async Task DisposeServicesAsync()
+    {
+        if (_serviceProvider == null) return;
+        try
+        {
+            var apiService = _serviceProvider.GetService(typeof(IApiService)) as IApiService;
+            if (apiService?.IsRunning == true)
+                await apiService.StopAsync();
+        }
+        catch { }
+        try
+        {
+            var modelManager = _serviceProvider.GetService(typeof(ModelManagerService)) as ModelManagerService;
+            if (modelManager != null)
+                await modelManager.UnloadModelAsync();
+        }
+        catch { }
+        var sp = _serviceProvider;
+        _serviceProvider = null;
+        try { sp.Dispose(); } catch { }
+    }
+
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         // Build configuration

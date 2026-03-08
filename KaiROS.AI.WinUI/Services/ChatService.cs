@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 
 namespace KaiROS.AI.WinUI.Services;
 
-public class ChatService : IChatService
+public class ChatService : IChatService, IDisposable
 {
     private readonly ModelManagerService _modelManager;
     private readonly IDocumentService _documentService;
@@ -112,12 +112,14 @@ public class ChatService : IChatService
     private void DisposeContext()
     {
         _executor = null;
-        _context?.Dispose();
+        try { _context?.Dispose(); } catch { }
         _context = null;
         _cachedWeights = null;
         _supportsNativeTemplate = false;
         _isSystemPromptSent = false;
     }
+
+    public void Dispose() => DisposeContext();
 
     public void ClearContext()
     {
