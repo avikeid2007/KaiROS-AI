@@ -17,7 +17,8 @@ permissions:
 
 env:
   DOTNET_VERSION: '9.0.x'
-  PROJECT_PATH: 'KaiROS.AI/KaiROS.AI.csproj'
+  PROJECT_PATH: 'KaiROS.AI.WinUI/KaiROS.AI.WinUI.csproj'
+  MANIFEST_PATH: 'KaiROS.AI.WinUI/Package.appxmanifest'
 
 jobs:
   build-windows:
@@ -30,6 +31,9 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
 
     - name: Get version
       id: version
@@ -46,18 +50,38 @@ jobs:
       shell: pwsh
       run: |
         $version = "${{ steps.version.outputs.VERSION }}"
-        $csproj = Get-Content ${{ env.PROJECT_PATH }}
+        $appxVersion = "$version.0"
+
+        # Update csproj
+        $csproj = Get-Content "${{ env.PROJECT_PATH }}"
         $csproj = $csproj -replace '<Version>.*</Version>', "<Version>$version</Version>"
-        $csproj = $csproj -replace '<AssemblyVersion>.*</AssemblyVersion>', "<AssemblyVersion>$version.0</AssemblyVersion>"
-        $csproj = $csproj -replace '<FileVersion>.*</FileVersion>', "<FileVersion>$version.0</FileVersion>"
-        $csproj | Set-Content ${{ env.PROJECT_PATH }}
+        $csproj = $csproj -replace '<AssemblyVersion>.*</AssemblyVersion>', "<AssemblyVersion>$appxVersion</AssemblyVersion>"
+        $csproj = $csproj -replace '<FileVersion>.*</FileVersion>', "<FileVersion>$appxVersion</FileVersion>"
+        $csproj | Set-Content "${{ env.PROJECT_PATH }}"
+
+        # Update Package.appxmanifest (requires 4-part version x.x.x.x)
+        [xml]$manifest = Get-Content "${{ env.MANIFEST_PATH }}"
+        $manifest.Package.Identity.Version = $appxVersion
+        $manifest.Save((Resolve-Path "${{ env.MANIFEST_PATH }}"))
 
     - name: Restore dependencies
       run: dotnet restore ${{ env.PROJECT_PATH }}
 
-    - name: Publish .NET app
-      run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -r win-x64 --self-contained true -o ./publish
+    - name: Publish WinUI app (self-contained, x64)
+      run: dotnet publish "${{ env.PROJECT_PATH }}" -c Release -r win-x64 --self-contained true -o ./publish -p:Platform=x64
 
+    - name: Build MSIX for Microsoft Store
+      shell: pwsh
+      run: |
+        msbuild "${{ env.PROJECT_PATH }}" `
+          /restore `
+          /p:Configuration=Release `
+          /p:Platform=x64 `
+          /p:GenerateAppxPackageOnBuild=true `
+          /p:UapAppxPackageBuildMode=StoreUpload `
+          /p:AppxBundle=Always `
+          /p:AppxBundlePlatforms="x86|x64|ARM64" `
+          /p:AppxPackageSigningEnabled=false
 
     # Installer Generation Steps
     - name: Build Installer (EXE)
@@ -72,6 +96,20 @@ jobs:
         (Get-Content $issFile) -replace '#define MyAppVersion ".*"', "#define MyAppVersion `"$version`"" | Set-Content $issFile
         
         & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" $issFile
+
+    - name: Collect Windows Artifacts
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Name artifacts -Force
+        $version = "${{ steps.version.outputs.VERSION }}"
+
+        # EXE Installer (InnoSetup default output dir)
+        $installer = Get-ChildItem -Path "installer/Output" -Filter "*.exe" | Select-Object -First 1
+        if ($installer) { Copy-Item $installer.FullName "artifacts/KaiROS-Setup-v$version.exe" }
+
+        # MSIX Store Upload
+        $msixUpload = Get-ChildItem -Path "KaiROS.AI.WinUI/AppPackages" -Recurse -Filter "*.msixupload" | Select-Object -First 1
+        if ($msixUpload) { Copy-Item $msixUpload.FullName "artifacts/KaiROS-v$version.msixupload" }
 
     - name: Upload Windows Artifacts
       uses: actions/upload-artifact@v4
