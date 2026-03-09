@@ -68,7 +68,7 @@ jobs:
       run: dotnet restore ${{ env.PROJECT_PATH }}
 
     - name: Publish WinUI app (self-contained, x64)
-      run: dotnet publish "${{ env.PROJECT_PATH }}" -c Release -r win-x64 --self-contained true -o ./publish -p:Platform=x64
+      run: dotnet publish "${{ env.PROJECT_PATH }}" -c Release -r win-x64 --self-contained true -o ./publish -p:Platform=x64 -p:AppxPackageSigningEnabled=false -p:GenerateTemporaryStoreCertificate=false -p:GenerateAppxPackageOnBuild=false
 
     - name: Build MSIX for Microsoft Store
       shell: pwsh
@@ -81,7 +81,8 @@ jobs:
           /p:UapAppxPackageBuildMode=StoreUpload `
           /p:AppxBundle=Always `
           /p:AppxBundlePlatforms="x86|x64|ARM64" `
-          /p:AppxPackageSigningEnabled=false
+          /p:AppxPackageSigningEnabled=false `
+          /p:GenerateTemporaryStoreCertificate=false
 
     # Installer Generation Steps
     - name: Build Installer (EXE)

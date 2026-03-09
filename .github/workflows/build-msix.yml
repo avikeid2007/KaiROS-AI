@@ -67,6 +67,7 @@ jobs:
           /p:AppxBundle=Always `
           /p:AppxBundlePlatforms="x86|x64|ARM64" `
           /p:AppxPackageSigningEnabled=true `
+          /p:GenerateTemporaryStoreCertificate=false `
           /p:PackageCertificateKeyFile="KaiROS.AI.WinUI/KaiROS_CI.pfx" `
           /p:PackageCertificatePassword="${{ secrets.PFX_PASSWORD }}"
 
