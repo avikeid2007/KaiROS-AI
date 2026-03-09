@@ -55,6 +55,7 @@
 | **System Prompt Editing** | ✅ | ✅ |
 | **Custom Model Import** | ✅ | ✅ |
 | **Markdown Rendering** | ✅ | ✅ |
+| **Vision Models Support** | ✅ | ✅ |
 | **RAG (Document Chat)** | ✅ | ✅ |
 | **Local REST API** | ✅ | ❌ |
 | **System Tray Support** | ✅ | ❌ |
@@ -68,10 +69,11 @@ The Desktop version is the full-featured powerhouse, designed for productivity a
 
 ### Key Features
 
-- **RAG (Retrieval Augmented Generation)**: Chat with your PDF, DOCX, and TXT files locally.
+- **RAG (Retrieval Augmented Generation)**: Chat with your PDF, DOCX, and TXT files locally with a redesigned management interface.
 - **Local REST API Server**: Integrate your local models with VS Code (Continue), LM Studio, or your own apps.
 - **System Tray Integration**: Keep your AI assistant running in the background.
 - **Advanced GPU Support**: Full support for CUDA, DirectML, and Vulkan backends.
+- **Modern User Experience**: Rebuilt with WinUI 3 offering proper dark/light themes, flexible hotkeys (like Shift+Enter vs Enter to send), and quick links to the Microsoft Store and GitHub.
 
 ### Desktop Screenshots
 
@@ -117,7 +119,8 @@ The Mobile version brings the power of local AI to your pocket. Optimized for to
 ### Core Capabilities
 
 - 🤖 **Run LLMs Locally** - No internet required after model download
-- 📦 **Model Catalog** - 31 pre-configured models from 9 organizations
+- �️ **Vision Models** - Support for multimodal models to chat about images
+- �📦 **Model Catalog** - 31 pre-configured models from 9 organizations
 - ⬇️ **Download Manager** - Pause, resume, and manage model downloads
 - 💬 **Streaming Responses** - Real-time text generation
 - 📊 **Performance Stats** - Real-time tokens/sec and memory usage
@@ -212,7 +215,7 @@ curl -X POST http://localhost:5000/chat \
 
 ## 🛠️ Tech Stack
 
-- **Framework**: .NET 9 + WPF (Windows) / MAUI (Android)
+- **Framework**: .NET 9 + WinUI 3 / Windows App SDK (Windows) / MAUI (Android)
 - **LLM Runtime**: [LLamaSharp 0.25.0](https://github.com/SciSharp/LLamaSharp)
 - **MVVM**: [CommunityToolkit.Mvvm 8.4.0](https://github.com/CommunityToolkit/dotnet)
 - **GPU Support**: CUDA 12, DirectML, Vulkan
