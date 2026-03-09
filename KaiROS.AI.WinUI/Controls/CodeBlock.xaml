@@ -1,64 +1,69 @@
-<UserControl x:Class="KaiROS.AI.WinUI.Controls.CodeBlock"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    
-    <Border Background="{ThemeResource SurfaceLightBrush}" 
-            CornerRadius="8" 
-            Padding="0"
-            BorderBrush="{ThemeResource BorderBrush}"
-            BorderThickness="1">
+<UserControl
+    x:Class="KaiROS.AI.WinUI.Controls.CodeBlock"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Border
+        Padding="0"
+        Background="{ThemeResource SurfaceLightBrush}"
+        BorderBrush="{ThemeResource BorderBrush}"
+        BorderThickness="1"
+        CornerRadius="8">
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            
-            <!-- Header with language and copy button -->
-            <Border Background="{ThemeResource SurfaceBrush}" 
-                    CornerRadius="8,8,0,0" 
-                    Padding="12,8">
+
+            <!--  Header with language and copy button  -->
+            <Border
+                Padding="12,8"
+                Background="{ThemeResource SurfaceBrush}"
+                CornerRadius="8,8,0,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    
-                    <TextBlock x:Name="LanguageLabel"
-                               Text="code"
-                               Foreground="{ThemeResource TextSecondaryBrush}"
-                               FontSize="12"
-                               FontFamily="Consolas"
-                               VerticalAlignment="Center"/>
-                    
-                    <Button x:Name="CopyButton"
-                            Grid.Column="1"
-                            Click="CopyButton_Click"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Padding="8,4">
+
+                    <TextBlock
+                        x:Name="LanguageLabel"
+                        VerticalAlignment="Center"
+                        FontFamily="Consolas"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextSecondaryBrush}"
+                        Text="code" />
+
+                    <Button
+                        x:Name="CopyButton"
+                        Grid.Column="1"
+                        Padding="8,4"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="CopyButton_Click">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
-                                            <Border x:Name="CopyBtnBorder"
-                                                    Background="{TemplateBinding Background}" 
-                                                    CornerRadius="4"
-                                                    Padding="{TemplateBinding Padding}">
+                                            <Border
+                                                x:Name="CopyBtnBorder"
+                                                Padding="{TemplateBinding Padding}"
+                                                Background="{TemplateBinding Background}"
+                                                CornerRadius="4">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 <VisualStateManager.VisualStateGroups>
                                                     <VisualStateGroup x:Name="CommonStates">
-                                                        <VisualState x:Name="Normal"/>
+                                                        <VisualState x:Name="Normal" />
                                                         <VisualState x:Name="PointerOver">
                                                             <VisualState.Setters>
-                                                                <Setter Target="CopyBtnBorder.Background" Value="#313244"/>
+                                                                <Setter Target="CopyBtnBorder.Background" Value="#313244" />
                                                             </VisualState.Setters>
                                                         </VisualState>
-                                                        <VisualState x:Name="Pressed"/>
-                                                        <VisualState x:Name="Disabled"/>
+                                                        <VisualState x:Name="Pressed" />
+                                                        <VisualState x:Name="Disabled" />
                                                     </VisualStateGroup>
                                                 </VisualStateManager.VisualStateGroups>
-                                                <ContentPresenter HorizontalAlignment="Center" 
-                                                                  VerticalAlignment="Center"/>
                                             </Border>
                                         </ControlTemplate>
                                     </Setter.Value>
@@ -66,24 +71,35 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock x:Name="CopyIcon" Text="&#xE8C8;" FontFamily="Segoe Fluent Icons" FontSize="12" Margin="0,0,4,0"/>
-                            <TextBlock x:Name="CopyText" Text="Copy" Foreground="{ThemeResource TextSecondaryBrush}" FontSize="12"/>
+                            <TextBlock
+                                x:Name="CopyIcon"
+                                Margin="0,0,4,0"
+                                FontFamily="Segoe Fluent Icons"
+                                FontSize="12"
+                                Text="&#xE8C8;" />
+                            <TextBlock
+                                x:Name="CopyText"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextSecondaryBrush}"
+                                Text="Copy" />
                         </StackPanel>
                     </Button>
                 </Grid>
             </Border>
-            
-            <!-- Code content -->
-            <ScrollViewer Grid.Row="1" 
-                          HorizontalScrollBarVisibility="Auto" 
-                          VerticalScrollBarVisibility="Auto"
-                          MaxHeight="400">
-                <TextBlock x:Name="CodeContent"
-                           FontFamily="Consolas, 'Courier New', monospace"
-                           FontSize="13"
-                           Foreground="{ThemeResource TextPrimaryBrush}"
-                           Padding="16,12"
-                           TextWrapping="NoWrap"/>
+
+            <!--  Code content  -->
+            <ScrollViewer
+                Grid.Row="1"
+                MaxHeight="400"
+                HorizontalScrollBarVisibility="Auto"
+                VerticalScrollBarVisibility="Auto">
+                <TextBlock
+                    x:Name="CodeContent"
+                    Padding="16,12"
+                    FontFamily="Consolas, 'Courier New', monospace"
+                    FontSize="13"
+                    Foreground="{ThemeResource TextPrimaryBrush}"
+                    TextWrapping="NoWrap" />
             </ScrollViewer>
         </Grid>
     </Border>

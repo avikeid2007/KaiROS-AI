@@ -25,10 +25,10 @@ public partial class ChatViewModel : ViewModelBase
     private CancellationTokenSource? _currentInferenceCts;
 
     [ObservableProperty]
-    private ObservableCollection<ChatMessageViewModel> _messages = new();
+    private ObservableCollection<ChatMessageViewModel> _messages = [];
 
     [ObservableProperty]
-    private ObservableCollection<ChatSession> _sessions = new();
+    private ObservableCollection<ChatSession> _sessions = [];
 
     [ObservableProperty]
     private ChatSession? _currentSession;
@@ -96,10 +96,10 @@ public partial class ChatViewModel : ViewModelBase
     // --- RAG Selection ---
     
     [ObservableProperty]
-    private ObservableCollection<string> _availableKnowledgeBases = new() 
-    { 
+    private ObservableCollection<string> _availableKnowledgeBases =
+    [
         "None" 
-    };
+    ];
 
     [ObservableProperty]
     private string _selectedKnowledgeBase = "None"; // Default to None
@@ -263,7 +263,7 @@ public partial class ChatViewModel : ViewModelBase
                         
                         if (_currentDocumentContext.Length > 50000)
                         {
-                            _currentDocumentContext = _currentDocumentContext.Substring(0, 50000);
+                            _currentDocumentContext = _currentDocumentContext[..50000];
                         }
                     }
                 }
@@ -368,7 +368,7 @@ public partial class ChatViewModel : ViewModelBase
             }
             else if (SelectedKnowledgeBase.StartsWith("Service: "))
             {
-                var serviceName = SelectedKnowledgeBase.Substring(9);
+                var serviceName = SelectedKnowledgeBase[9..];
                 var config = _raasService.Configurations.FirstOrDefault(c => c.Name == serviceName);
                 if (config != null)
                 {
@@ -576,15 +576,15 @@ public partial class ChatViewModel : ViewModelBase
     private void CopyContent() { /* ... handled in item view model or pass parameter ... */ }
 }
 
-public partial class ChatMessageViewModel : ObservableObject
+public partial class ChatMessageViewModel(ChatMessage message, DispatcherQueue? dispatcherQueue = null) : ObservableObject
 {
-    public ChatMessage Message { get; }
+    public ChatMessage Message { get; } = message;
 
     [ObservableProperty]
-    private string _content;
+    private string _content = message.Content;
 
     [ObservableProperty]
-    private bool _isStreaming;
+    private bool _isStreaming = message.IsStreaming;
 
     public bool IsUser => Message.Role == ChatRole.User;
     public bool IsAssistant => Message.Role == ChatRole.Assistant;
@@ -595,21 +595,13 @@ public partial class ChatMessageViewModel : ObservableObject
     public string? AttachedImagePath => Message.AttachedImagePath;
 
     private readonly System.Text.StringBuilder _tokenBuffer = new();
-    private readonly object _bufferLock = new();
+    private readonly Lock _bufferLock = new();
     private Microsoft.UI.Xaml.DispatcherTimer? _flushTimer;
     private int _pendingTokenCount;
     private const int BATCH_TOKEN_COUNT = 15;
     private const int FLUSH_INTERVAL_MS = 50;
 
-    private readonly DispatcherQueue? _dispatcherQueue;
-
-    public ChatMessageViewModel(ChatMessage message, DispatcherQueue? dispatcherQueue = null)
-    {
-        Message = message;
-        _content = message.Content;
-        _isStreaming = message.IsStreaming;
-        _dispatcherQueue = dispatcherQueue ?? DispatcherQueue.GetForCurrentThread();
-    }
+    private readonly DispatcherQueue? _dispatcherQueue = dispatcherQueue ?? DispatcherQueue.GetForCurrentThread();
 
     /// <summary>
     /// Thread-safe: may be called from background LLamaSharp inference threads.

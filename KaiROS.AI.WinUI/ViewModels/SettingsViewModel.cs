@@ -24,7 +24,7 @@ public partial class SettingsViewModel : ViewModelBase
     private HardwareInfo? _hardware;
 
     [ObservableProperty]
-    private ObservableCollection<ExecutionBackend> _availableBackends = new();
+    private ObservableCollection<ExecutionBackend> _availableBackends = [];
 
     [ObservableProperty]
     private ExecutionBackend _selectedBackend;

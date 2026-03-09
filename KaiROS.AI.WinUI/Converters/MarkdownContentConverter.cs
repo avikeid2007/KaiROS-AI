@@ -47,7 +47,7 @@ public class MarkdownContentConverter : IValueConverter
             }
             else
             {
-                var lines = segment.Content.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                var lines = segment.Content.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
                 foreach (var line in lines)
                 {
                     if (string.IsNullOrWhiteSpace(line))
@@ -152,7 +152,7 @@ public class MarkdownContentConverter : IValueConverter
             matches.Add((m.Index, m.Length, m.Groups[1].Value, "code", null));
         foreach (Match m in LinkPattern.Matches(text))
             matches.Add((m.Index, m.Length, m.Groups[1].Value, "link", m.Groups[2].Value));
-        matches = matches.OrderBy(m => m.Index).ToList();
+        matches = [.. matches.OrderBy(m => m.Index)];
 
         int currentIndex = 0;
         if (matches.Count == 0)
@@ -166,7 +166,7 @@ public class MarkdownContentConverter : IValueConverter
                 if (match.Index > currentIndex)
                     textBlock.Inlines.Add(new Run
                     {
-                        Text = text.Substring(currentIndex, match.Index - currentIndex)
+                        Text = text[currentIndex..match.Index]
                     });
 
                 if (match.Type == "bold")
@@ -210,7 +210,7 @@ public class MarkdownContentConverter : IValueConverter
             if (currentIndex < text.Length)
                 textBlock.Inlines.Add(new Run
                 {
-                    Text = text.Substring(currentIndex)
+                    Text = text[currentIndex..]
                 });
         }
 

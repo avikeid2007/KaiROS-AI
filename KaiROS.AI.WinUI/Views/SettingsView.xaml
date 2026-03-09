@@ -520,9 +520,9 @@
                             <Button
                                 Padding="16,10"
                                 HorizontalAlignment="Left"
-                                Style="{ThemeResource SecondaryButton}"
                                 Click="RateApp_Click"
-                                CornerRadius="6">
+                                CornerRadius="6"
+                                Style="{ThemeResource SecondaryButton}">
                                 <StackPanel Orientation="Horizontal">
                                     <FontIcon
                                         Margin="0,0,6,0"
@@ -539,9 +539,9 @@
                             <Button
                                 Padding="16,10"
                                 HorizontalAlignment="Left"
-                                Style="{ThemeResource SecondaryButton}"
                                 Click="GitHubIssues_Click"
-                                CornerRadius="6">
+                                CornerRadius="6"
+                                Style="{ThemeResource SecondaryButton}">
                                 <StackPanel Orientation="Horizontal">
                                     <FontIcon
                                         Margin="0,0,6,0"
@@ -556,9 +556,9 @@
                             <Button
                                 Padding="16,10"
                                 HorizontalAlignment="Left"
-                                Style="{ThemeResource SecondaryButton}"
                                 Click="GitHubRepo_Click"
-                                CornerRadius="6">
+                                CornerRadius="6"
+                                Style="{ThemeResource SecondaryButton}">
                                 <StackPanel Orientation="Horizontal">
                                     <FontIcon
                                         Margin="0,0,6,0"

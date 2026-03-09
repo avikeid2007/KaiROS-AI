@@ -10,7 +10,7 @@ public class Document
     public string FilePath { get; set; } = string.Empty;
     public DocumentType Type { get; set; }
     public string Content { get; set; } = string.Empty;
-    public List<DocumentChunk> Chunks { get; set; } = new();
+    public List<DocumentChunk> Chunks { get; set; } = [];
     public DateTime LoadedAt { get; set; } = DateTime.Now;
     public long FileSizeBytes { get; set; }
     

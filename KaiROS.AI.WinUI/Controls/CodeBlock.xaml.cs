@@ -160,8 +160,8 @@ public partial class CodeBlock : UserControl
     {
         return language.ToLower() switch
         {
-            "csharp" or "c#" or "cs" => new HashSet<string>
-            {
+            "csharp" or "c#" or "cs" =>
+            [
                 "abstract", "as", "async", "await", "base", "bool", "break", "byte", "case", "catch",
                 "char", "checked", "class", "const", "continue", "decimal", "default", "delegate", "do",
                 "double", "else", "enum", "event", "explicit", "extern", "false", "finally", "fixed",
@@ -171,43 +171,43 @@ public partial class CodeBlock : UserControl
                 "short", "sizeof", "stackalloc", "static", "string", "struct", "switch", "this", "throw",
                 "true", "try", "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "var",
                 "virtual", "void", "volatile", "while", "yield", "record", "init", "required", "get", "set"
-            },
-            "javascript" or "js" or "typescript" or "ts" => new HashSet<string>
-            {
+            ],
+            "javascript" or "js" or "typescript" or "ts" =>
+            [
                 "async", "await", "break", "case", "catch", "class", "const", "continue", "debugger",
                 "default", "delete", "do", "else", "export", "extends", "false", "finally", "for",
                 "function", "if", "import", "in", "instanceof", "let", "new", "null", "return", "static",
                 "super", "switch", "this", "throw", "true", "try", "typeof", "undefined", "var", "void",
                 "while", "with", "yield", "interface", "type", "enum", "implements", "public", "private"
-            },
-            "python" or "py" => new HashSet<string>
-            {
+            ],
+            "python" or "py" =>
+            [
                 "and", "as", "assert", "async", "await", "break", "class", "continue", "def", "del",
                 "elif", "else", "except", "False", "finally", "for", "from", "global", "if", "import",
                 "in", "is", "lambda", "None", "nonlocal", "not", "or", "pass", "raise", "return",
                 "True", "try", "while", "with", "yield", "self", "print"
-            },
-            "sql" => new HashSet<string>
-            {
+            ],
+            "sql" =>
+            [
                 "select", "from", "where", "and", "or", "not", "insert", "update", "delete", "create",
                 "table", "drop", "alter", "index", "join", "left", "right", "inner", "outer", "on",
                 "group", "by", "order", "having", "limit", "offset", "as", "distinct", "count", "sum",
                 "avg", "max", "min", "null", "is", "in", "between", "like", "exists", "case", "when",
                 "then", "else", "end", "primary", "key", "foreign", "references", "unique", "constraint"
-            },
-            "html" or "xml" => new HashSet<string>
-            {
+            ],
+            "html" or "xml" =>
+            [
                 "html", "head", "body", "div", "span", "p", "a", "img", "table", "tr", "td", "th",
                 "form", "input", "button", "select", "option", "ul", "ol", "li", "h1", "h2", "h3",
                 "h4", "h5", "h6", "header", "footer", "nav", "section", "article", "aside", "main"
-            },
-            "css" => new HashSet<string>
-            {
+            ],
+            "css" =>
+            [
                 "color", "background", "margin", "padding", "border", "width", "height", "display",
                 "position", "top", "right", "bottom", "left", "font", "text", "flex", "grid", "align",
                 "justify", "overflow", "opacity", "transform", "transition", "animation", "z-index"
-            },
-            _ => new HashSet<string>()
+            ],
+            _ => []
         };
     }
     
@@ -215,18 +215,18 @@ public partial class CodeBlock : UserControl
     {
         return language.ToLower() switch
         {
-            "csharp" or "c#" or "cs" => new HashSet<string>
-            {
+            "csharp" or "c#" or "cs" =>
+            [
                 "String", "Int32", "Int64", "Boolean", "Double", "Float", "Decimal", "DateTime",
                 "List", "Dictionary", "Task", "Action", "Func", "IEnumerable", "Array", "Object",
                 "StringBuilder", "Exception", "Console", "Math", "File", "Directory", "Path"
-            },
-            "javascript" or "js" or "typescript" or "ts" => new HashSet<string>
-            {
+            ],
+            "javascript" or "js" or "typescript" or "ts" =>
+            [
                 "Array", "Object", "String", "Number", "Boolean", "Date", "Math", "JSON", "Promise",
                 "Map", "Set", "RegExp", "Error", "console", "window", "document"
-            },
-            _ => new HashSet<string>()
+            ],
+            _ => []
         };
     }
     

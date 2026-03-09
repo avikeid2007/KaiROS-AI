@@ -8,7 +8,7 @@
 public class ChatCompletionRequest
 {
     public string Model { get; set; } = string.Empty;
-    public List<ChatCompletionMessage> Messages { get; set; } = new();
+    public List<ChatCompletionMessage> Messages { get; set; } = [];
     public bool Stream { get; set; } = false;
     public double Temperature { get; set; } = 0.7;
     public int MaxTokens { get; set; } = 2048;
@@ -27,7 +27,7 @@ public class ChatCompletionResponse
     public string Object { get; set; } = "chat.completion";
     public long Created { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     public string Model { get; set; } = string.Empty;
-    public List<ChatCompletionChoice> Choices { get; set; } = new();
+    public List<ChatCompletionChoice> Choices { get; set; } = [];
     public UsageInfo Usage { get; set; } = new();
 }
 
@@ -52,7 +52,7 @@ public class ChatCompletionChunk
     public string Object { get; set; } = "chat.completion.chunk";
     public long Created { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     public string Model { get; set; } = string.Empty;
-    public List<ChatCompletionChunkChoice> Choices { get; set; } = new();
+    public List<ChatCompletionChunkChoice> Choices { get; set; } = [];
 }
 
 public class ChatCompletionChunkChoice
@@ -72,7 +72,7 @@ public class ChatCompletionDelta
 public class ModelsListResponse
 {
     public string Object { get; set; } = "list";
-    public List<ModelInfo> Data { get; set; } = new();
+    public List<ModelInfo> Data { get; set; } = [];
 }
 
 public class ModelInfo
@@ -99,7 +99,7 @@ public class ApiError
 // Simplified Request/Response (KaiROS format - no model parameter needed)
 public class SimpleChatRequest
 {
-    public List<ChatCompletionMessage> Messages { get; set; } = new();
+    public List<ChatCompletionMessage> Messages { get; set; } = [];
 }
 
 public class SimpleChatResponse

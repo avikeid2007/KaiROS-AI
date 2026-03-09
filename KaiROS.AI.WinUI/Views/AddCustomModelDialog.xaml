@@ -1,132 +1,160 @@
-<ContentDialog x:Class="KaiROS.AI.WinUI.Views.AddCustomModelDialog"
-               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-               Title="Add Custom Model"
-               PrimaryButtonText="Add Model"
-               CloseButtonText="Cancel"
-               PrimaryButtonClick="AddModel_Click"
-               DefaultButton="Primary">
+<ContentDialog
+    x:Class="KaiROS.AI.WinUI.Views.AddCustomModelDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Add Custom Model"
+    CloseButtonText="Cancel"
+    DefaultButton="Primary"
+    PrimaryButtonClick="AddModel_Click"
+    PrimaryButtonText="Add Model">
 
-    <StackPanel Spacing="16" MinWidth="500">
-        <!-- Subtitle -->
-        <TextBlock Text="Add a local .gguf file or download from URL"
-                   Foreground="{ThemeResource TextSecondaryBrush}"
-                   TextWrapping="Wrap"/>
+    <StackPanel MinWidth="500" Spacing="16">
+        <!--  Subtitle  -->
+        <TextBlock
+            Foreground="{ThemeResource TextSecondaryBrush}"
+            Text="Add a local .gguf file or download from URL"
+            TextWrapping="Wrap" />
 
-        <!-- Validation error -->
-        <TextBlock x:Name="ValidationError"
-                   Foreground="{ThemeResource ErrorBrush}"
-                   TextWrapping="Wrap"
-                   Visibility="Collapsed"/>
+        <!--  Validation error  -->
+        <TextBlock
+            x:Name="ValidationError"
+            Foreground="{ThemeResource ErrorBrush}"
+            TextWrapping="Wrap"
+            Visibility="Collapsed" />
 
-        <!-- Model Name -->
+        <!--  Model Name  -->
         <StackPanel Spacing="8">
-            <TextBlock Text="Display Name *"
-                       Foreground="{ThemeResource TextPrimaryBrush}"
-                       FontWeight="SemiBold"/>
-            <TextBox x:Name="DisplayNameBox"
-                     Style="{StaticResource ModernTextBox}"/>
+            <TextBlock
+                FontWeight="SemiBold"
+                Foreground="{ThemeResource TextPrimaryBrush}"
+                Text="Display Name *" />
+            <TextBox x:Name="DisplayNameBox" Style="{StaticResource ModernTextBox}" />
         </StackPanel>
 
-        <!-- Source Type -->
+        <!--  Source Type  -->
         <StackPanel Spacing="8">
-            <TextBlock Text="Source"
-                       Foreground="{ThemeResource TextPrimaryBrush}"
-                       FontWeight="SemiBold"/>
+            <TextBlock
+                FontWeight="SemiBold"
+                Foreground="{ThemeResource TextPrimaryBrush}"
+                Text="Source" />
             <StackPanel Orientation="Horizontal" Spacing="24">
-                <RadioButton x:Name="LocalFileRadio"
-                             Content="Local File"
-                             IsChecked="True"
-                             GroupName="SourceType"
-                             Foreground="{ThemeResource TextPrimaryBrush}"
-                             Checked="SourceType_Checked"/>
-                <RadioButton x:Name="DownloadUrlRadio"
-                             Content="Download URL"
-                             GroupName="SourceType"
-                             Foreground="{ThemeResource TextPrimaryBrush}"
-                             Checked="SourceType_Checked"/>
+                <RadioButton
+                    x:Name="LocalFileRadio"
+                    Checked="SourceType_Checked"
+                    Content="Local File"
+                    Foreground="{ThemeResource TextPrimaryBrush}"
+                    GroupName="SourceType"
+                    IsChecked="True" />
+                <RadioButton
+                    x:Name="DownloadUrlRadio"
+                    Checked="SourceType_Checked"
+                    Content="Download URL"
+                    Foreground="{ThemeResource TextPrimaryBrush}"
+                    GroupName="SourceType" />
             </StackPanel>
         </StackPanel>
 
-        <!-- Local File Path -->
+        <!--  Local File Path  -->
         <StackPanel x:Name="LocalFilePanel" Spacing="8">
-            <TextBlock Text="File Path *"
-                       Foreground="{ThemeResource TextPrimaryBrush}"
-                       FontWeight="SemiBold"/>
+            <TextBlock
+                FontWeight="SemiBold"
+                Foreground="{ThemeResource TextPrimaryBrush}"
+                Text="File Path *" />
             <Grid ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBox x:Name="FilePathBox"
-                         Style="{StaticResource ModernTextBox}"
-                         IsReadOnly="True"/>
-                <Button Grid.Column="1"
-                        Content="Browse..."
-                        Click="BrowseFile_Click"
-                        Style="{StaticResource SecondaryButton}"/>
+                <TextBox
+                    x:Name="FilePathBox"
+                    IsReadOnly="True"
+                    Style="{StaticResource ModernTextBox}" />
+                <Button
+                    Grid.Column="1"
+                    Click="BrowseFile_Click"
+                    Content="Browse..."
+                    Style="{StaticResource SecondaryButton}" />
             </Grid>
         </StackPanel>
 
-        <!-- Download URL -->
-        <StackPanel x:Name="DownloadUrlPanel" Spacing="4" Visibility="Collapsed">
-            <TextBlock Text="Download URL *"
-                       Foreground="{ThemeResource TextPrimaryBrush}"
-                       FontWeight="SemiBold"/>
-            <TextBox x:Name="DownloadUrlBox"
-                     Style="{StaticResource ModernTextBox}"/>
-            <TextBlock Text="Hugging Face direct link to .gguf file"
-                       Foreground="{ThemeResource TextMutedBrush}"
-                       FontSize="11"/>
+        <!--  Download URL  -->
+        <StackPanel
+            x:Name="DownloadUrlPanel"
+            Spacing="4"
+            Visibility="Collapsed">
+            <TextBlock
+                FontWeight="SemiBold"
+                Foreground="{ThemeResource TextPrimaryBrush}"
+                Text="Download URL *" />
+            <TextBox x:Name="DownloadUrlBox" Style="{StaticResource ModernTextBox}" />
+            <TextBlock
+                FontSize="11"
+                Foreground="{ThemeResource TextMutedBrush}"
+                Text="Hugging Face direct link to .gguf file" />
         </StackPanel>
 
-        <!-- Description -->
+        <!--  Description  -->
         <StackPanel Spacing="8">
-            <TextBlock Text="Description (optional)"
-                       Foreground="{ThemeResource TextPrimaryBrush}"
-                       FontWeight="SemiBold"/>
-            <TextBox x:Name="DescriptionBox"
-                     Style="{StaticResource ModernTextBox}"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     Height="60"/>
+            <TextBlock
+                FontWeight="SemiBold"
+                Foreground="{ThemeResource TextPrimaryBrush}"
+                Text="Description (optional)" />
+            <TextBox
+                x:Name="DescriptionBox"
+                Height="60"
+                AcceptsReturn="True"
+                Style="{StaticResource ModernTextBox}"
+                TextWrapping="Wrap" />
         </StackPanel>
 
-        <!-- Vision Model -->
-        <CheckBox x:Name="IsVisionModelCheck"
-                  Content="Is Vision Model?"
-                  Foreground="{ThemeResource TextPrimaryBrush}"
-                  FontWeight="SemiBold"
-                  Checked="IsVisionModelCheck_Changed"
-                  Unchecked="IsVisionModelCheck_Changed"/>
+        <!--  Vision Model  -->
+        <CheckBox
+            x:Name="IsVisionModelCheck"
+            Checked="IsVisionModelCheck_Changed"
+            Content="Is Vision Model?"
+            FontWeight="SemiBold"
+            Foreground="{ThemeResource TextPrimaryBrush}"
+            Unchecked="IsVisionModelCheck_Changed" />
 
-        <StackPanel x:Name="VisionModelPanel" Visibility="Collapsed" Margin="16,0,0,0" Spacing="8">
-            <TextBlock Text="Multi-Modal Projector (mm-proj) *"
-                       Foreground="{ThemeResource TextPrimaryBrush}"
-                       FontWeight="SemiBold"/>
+        <StackPanel
+            x:Name="VisionModelPanel"
+            Margin="16,0,0,0"
+            Spacing="8"
+            Visibility="Collapsed">
+            <TextBlock
+                FontWeight="SemiBold"
+                Foreground="{ThemeResource TextPrimaryBrush}"
+                Text="Multi-Modal Projector (mm-proj) *" />
 
             <Grid x:Name="LocalMmProjPanel" ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBox x:Name="MmProjFilePathBox"
-                         Style="{StaticResource ModernTextBox}"
-                         IsReadOnly="True"
-                         ToolTipService.ToolTip="Select the matching mm-proj-f16.gguf file"/>
-                <Button Grid.Column="1"
-                        Content="Browse..."
-                        Click="BrowseMmProjFile_Click"
-                        Style="{StaticResource SecondaryButton}"/>
+                <TextBox
+                    x:Name="MmProjFilePathBox"
+                    IsReadOnly="True"
+                    Style="{StaticResource ModernTextBox}"
+                    ToolTipService.ToolTip="Select the matching mm-proj-f16.gguf file" />
+                <Button
+                    Grid.Column="1"
+                    Click="BrowseMmProjFile_Click"
+                    Content="Browse..."
+                    Style="{StaticResource SecondaryButton}" />
             </Grid>
 
-            <StackPanel x:Name="RemoteMmProjPanel" Visibility="Collapsed" Spacing="4">
-                <TextBox x:Name="MmProjDownloadUrlBox"
-                         Style="{StaticResource ModernTextBox}"
-                         ToolTipService.ToolTip="Hugging Face direct link to the mm-proj .gguf file"/>
-                <TextBlock Text="Direct link to the matching mm-proj-f16.gguf file"
-                           Foreground="{ThemeResource TextMutedBrush}"
-                           FontSize="11"/>
+            <StackPanel
+                x:Name="RemoteMmProjPanel"
+                Spacing="4"
+                Visibility="Collapsed">
+                <TextBox
+                    x:Name="MmProjDownloadUrlBox"
+                    Style="{StaticResource ModernTextBox}"
+                    ToolTipService.ToolTip="Hugging Face direct link to the mm-proj .gguf file" />
+                <TextBlock
+                    FontSize="11"
+                    Foreground="{ThemeResource TextMutedBrush}"
+                    Text="Direct link to the matching mm-proj-f16.gguf file" />
             </StackPanel>
         </StackPanel>
     </StackPanel>

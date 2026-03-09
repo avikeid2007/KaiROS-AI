@@ -17,7 +17,7 @@ public interface IDocumentService
 
 public class DocumentService : IDocumentService
 {
-    private readonly List<Models.Document> _documents = new();
+    private readonly List<Models.Document> _documents = [];
     private const int ChunkSize = 1500; // Characters per chunk - increased for better context
     private const int ChunkOverlap = 100; // Overlap between chunks for continuity
     private const int SmallDocumentThreshold = 8000; // Documents smaller than this get full context
@@ -66,7 +66,7 @@ public class DocumentService : IDocumentService
         {
             System.Diagnostics.Debug.WriteLine($"[RAG] ERROR loading file: {ex.Message}");
             document.Content = $"Error reading file: {ex.Message}";
-            document.Chunks = new List<DocumentChunk>();
+            document.Chunks = [];
         }
 
         _documents.Add(document);
