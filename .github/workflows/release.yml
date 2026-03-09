@@ -104,13 +104,15 @@ jobs:
         New-Item -ItemType Directory -Name artifacts -Force
         $version = "${{ steps.version.outputs.VERSION }}"
 
-        # EXE Installer (InnoSetup default output dir)
-        $installer = Get-ChildItem -Path "installer/Output" -Filter "*.exe" | Select-Object -First 1
-        if ($installer) { Copy-Item $installer.FullName "artifacts/KaiROS-Setup-v$version.exe" }
+        # EXE Installer - InnoSetup writes to artifacts/ directly (OutputDir=..\artifacts in .iss)
+        $installer = Get-ChildItem -Path "artifacts" -Filter "*.exe" | Select-Object -First 1
+        if ($installer) { Rename-Item $installer.FullName "KaiROS-Setup-v$version.exe" }
 
         # MSIX Store Upload
-        $msixUpload = Get-ChildItem -Path "KaiROS.AI.WinUI/AppPackages" -Recurse -Filter "*.msixupload" | Select-Object -First 1
-        if ($msixUpload) { Copy-Item $msixUpload.FullName "artifacts/KaiROS-v$version.msixupload" }
+        if (Test-Path "KaiROS.AI.WinUI/AppPackages") {
+          $msixUpload = Get-ChildItem -Path "KaiROS.AI.WinUI/AppPackages" -Recurse -Filter "*.msixupload" | Select-Object -First 1
+          if ($msixUpload) { Copy-Item $msixUpload.FullName "artifacts/KaiROS-v$version.msixupload" }
+        }
 
     - name: Upload Windows Artifacts
       uses: actions/upload-artifact@v4
