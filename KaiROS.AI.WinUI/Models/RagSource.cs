@@ -19,7 +19,7 @@ public class RagSource
     public string Name { get; set; } = string.Empty;
     public string Value { get; set; } = string.Empty; // Path, URL, or Connection String
     public bool IsEnabled { get; set; } = true;
-    public Dictionary<string, string> Metadata { get; set; } = new();
+    public Dictionary<string, string> Metadata { get; set; } = [];
 
     [JsonIgnore]
     public string DisplayIcon => Type switch

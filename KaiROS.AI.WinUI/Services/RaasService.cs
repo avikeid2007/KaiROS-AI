@@ -12,11 +12,11 @@ public class RaasService : IRaasService
     private readonly IEnumerable<IRagSourceProvider> _sourceProviders;
     
     // In-memory store of running servers: ConfigId -> ServerInstance
-    private readonly Dictionary<string, ApiServer> _runningServers = new(); 
+    private readonly Dictionary<string, ApiServer> _runningServers = []; 
     
     private readonly string _raasRootStoragePath;
 
-    public ObservableCollection<RaasConfiguration> Configurations { get; } = new();
+    public ObservableCollection<RaasConfiguration> Configurations { get; } = [];
 
     public RaasService(IDatabaseService databaseService, IChatService chatService, IEnumerable<IRagSourceProvider> sourceProviders)
     {

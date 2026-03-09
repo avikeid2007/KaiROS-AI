@@ -5,7 +5,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- WinUI 3 Fluent Design system resources - must be first -->
+                <!--  WinUI 3 Fluent Design system resources - must be first  -->
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
                 <ResourceDictionary Source="ms-appx:///Themes/ModernTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>

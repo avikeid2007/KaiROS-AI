@@ -10,12 +10,12 @@ using System.Collections.ObjectModel;
 
 namespace KaiROS.AI.WinUI.ViewModels;
 
-public partial class ModelCatalogViewModel : ViewModelBase
+public partial class ModelCatalogViewModel(IModelManagerService modelManager, IDatabaseService databaseService, IHardwareDetectionService hardwareService) : ViewModelBase
 {
-    private readonly IModelManagerService _modelManager;
-    private readonly IDatabaseService _databaseService;
-    private readonly IHardwareDetectionService _hardwareService;
-    private readonly Dictionary<string, CancellationTokenSource> _downloadCts = new();
+    private readonly IModelManagerService _modelManager = modelManager;
+    private readonly IDatabaseService _databaseService = databaseService;
+    private readonly IHardwareDetectionService _hardwareService = hardwareService;
+    private readonly Dictionary<string, CancellationTokenSource> _downloadCts = [];
 
     public event EventHandler? ModelActivated;
 
@@ -29,16 +29,16 @@ public partial class ModelCatalogViewModel : ViewModelBase
     }
 
     [ObservableProperty]
-    private ObservableCollection<ModelItemViewModel> _models = new();
+    private ObservableCollection<ModelItemViewModel> _models = [];
 
     [ObservableProperty]
-    private ObservableCollection<ModelItemViewModel> _filteredModels = new();
+    private ObservableCollection<ModelItemViewModel> _filteredModels = [];
 
     [ObservableProperty]
-    private ObservableCollection<ModelItemViewModel> _downloadedModels = new();
+    private ObservableCollection<ModelItemViewModel> _downloadedModels = [];
 
     [ObservableProperty]
-    private ObservableCollection<OrganizationGroup> _groupedModels = new();
+    private ObservableCollection<OrganizationGroup> _groupedModels = [];
 
     [ObservableProperty]
     private string _selectedCategory = "all";
@@ -62,20 +62,12 @@ public partial class ModelCatalogViewModel : ViewModelBase
     private string _selectedVisionOption = "All";
 
     // Filter dropdown collections
-    public ObservableCollection<string> Organizations { get; } = new() { "all" };
-    public ObservableCollection<string> Families { get; } = new() { "all" };
-    public ObservableCollection<string> Variants { get; } = new() { "all", "All", "CPU-Only", "GPU-Recommended" };
-    public ObservableCollection<string> VisionOptions { get; } = new() { "All", "Vision Only", "Text Only" };
+    public ObservableCollection<string> Organizations { get; } = ["all"];
+    public ObservableCollection<string> Families { get; } = ["all"];
+    public ObservableCollection<string> Variants { get; } = ["all", "All", "CPU-Only", "GPU-Recommended"];
+    public ObservableCollection<string> VisionOptions { get; } = ["All", "Vision Only", "Text Only"];
 
-    private readonly DispatcherQueue _dispatcherQueue;
-
-    public ModelCatalogViewModel(IModelManagerService modelManager, IDatabaseService databaseService, IHardwareDetectionService hardwareService)
-    {
-        _modelManager = modelManager;
-        _databaseService = databaseService;
-        _hardwareService = hardwareService;
-        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-    }
+    private readonly DispatcherQueue _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
     public override async Task InitializeAsync()
     {
@@ -415,15 +407,15 @@ public partial class ModelCatalogViewModel : ViewModelBase
     }
 }
 
-public partial class ModelItemViewModel : ObservableObject
+public partial class ModelItemViewModel(LLMModelInfo model, ModelCatalogViewModel parent) : ObservableObject
 {
-    private readonly ModelCatalogViewModel _parent;
+    private readonly ModelCatalogViewModel _parent = parent;
 
-    public LLMModelInfo Model { get; }
+    public LLMModelInfo Model { get; } = model;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowLoadButton))]
-    private bool _isDownloaded;
+    private bool _isDownloaded = model.IsDownloaded;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowLoadButton))]
@@ -433,14 +425,14 @@ public partial class ModelItemViewModel : ObservableObject
     private bool _isPaused;
 
     [ObservableProperty]
-    private bool _isActive;
+    private bool _isActive = model.IsActive;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(LoadingText))]
     private bool _isLoading;
 
     [ObservableProperty]
-    private double _downloadProgress;
+    private double _downloadProgress = model.DownloadProgress;
 
     [ObservableProperty]
     private string? _errorMessage;
@@ -469,15 +461,6 @@ public partial class ModelItemViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(LoadingText))]
     private double _loadingProgress;
 
-    public ModelItemViewModel(LLMModelInfo model, ModelCatalogViewModel parent)
-    {
-        Model = model;
-        _parent = parent;
-        _isDownloaded = model.IsDownloaded;
-        _downloadProgress = model.DownloadProgress;
-        _isActive = model.IsActive;
-    }
-
     [RelayCommand]
     private async Task Download() => await _parent.DownloadModelAsync(this);
 
@@ -497,21 +480,14 @@ public partial class ModelItemViewModel : ObservableObject
 /// <summary>
 /// Represents a group of models organized by their organization/publisher
 /// </summary>
-public partial class OrganizationGroup : ObservableObject
+public partial class OrganizationGroup(string name, string logoUrl, ObservableCollection<ModelItemViewModel> models) : ObservableObject
 {
-    public string OrganizationName { get; }
-    public string LogoUrl { get; }
-    public ObservableCollection<ModelItemViewModel> Models { get; }
+    public string OrganizationName { get; } = name;
+    public string LogoUrl { get; } = logoUrl;
+    public ObservableCollection<ModelItemViewModel> Models { get; } = models;
     public int ModelCount => Models.Count;
     public int DownloadedCount => Models.Count(m => m.IsDownloaded);
 
     [ObservableProperty]
     private bool _isExpanded = true;
-
-    public OrganizationGroup(string name, string logoUrl, ObservableCollection<ModelItemViewModel> models)
-    {
-        OrganizationName = name;
-        LogoUrl = logoUrl;
-        Models = models;
-    }
 }

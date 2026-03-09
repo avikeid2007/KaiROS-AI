@@ -56,8 +56,13 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <ctk:WrapPanel Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" HorizontalSpacing="16" VerticalSpacing="12">
-                
+            <ctk:WrapPanel
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                HorizontalSpacing="16"
+                Orientation="Horizontal"
+                VerticalSpacing="12">
+
                 <!--  Size Toggle (Segmented style)  -->
                 <Border
                     Padding="4"
@@ -68,32 +73,32 @@
                     <StackPanel Orientation="Horizontal" Spacing="2">
                         <Button
                             Padding="16,8"
-                            BorderThickness="0"
                             Background="Transparent"
+                            BorderThickness="0"
                             Command="{Binding FilterByCategoryCommand}"
                             CommandParameter="all"
                             Content="All"
                             Style="{StaticResource SecondaryButton}" />
                         <Button
                             Padding="16,8"
-                            BorderThickness="0"
                             Background="Transparent"
+                            BorderThickness="0"
                             Command="{Binding FilterByCategoryCommand}"
                             CommandParameter="small"
                             Content="Small"
                             Style="{StaticResource SecondaryButton}" />
                         <Button
                             Padding="16,8"
-                            BorderThickness="0"
                             Background="Transparent"
+                            BorderThickness="0"
                             Command="{Binding FilterByCategoryCommand}"
                             CommandParameter="medium"
                             Content="Medium"
                             Style="{StaticResource SecondaryButton}" />
                         <Button
                             Padding="16,8"
-                            BorderThickness="0"
                             Background="Transparent"
+                            BorderThickness="0"
                             Command="{Binding FilterByCategoryCommand}"
                             CommandParameter="large"
                             Content="Large"
@@ -102,7 +107,10 @@
                 </Border>
 
                 <!--  Filters  -->
-                <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="12">
+                <StackPanel
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="12">
                     <ComboBox
                         Width="120"
                         Header="Organization"
@@ -134,7 +142,11 @@
             </ctk:WrapPanel>
 
             <!--  Right Actions  -->
-            <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="12">
+            <StackPanel
+                Grid.Column="1"
+                VerticalAlignment="Bottom"
+                Orientation="Horizontal"
+                Spacing="12">
                 <ToggleButton
                     x:Name="RecommendedToggle"
                     Content="&#x2605; Recommended"
@@ -334,7 +346,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    
+
                     <TextBlock
                         VerticalAlignment="Center"
                         FontSize="20"
@@ -342,12 +354,27 @@
                         Foreground="{ThemeResource TextPrimaryBrush}"
                         Text="All Models by Organization" />
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                        <Button Style="{StaticResource IconButton}" Command="{Binding ExpandAllCommand}" ToolTipService.ToolTip="Expand all">
-                            <FontIcon Glyph="&#xE70E;" FontFamily="Segoe Fluent Icons" FontSize="14" />
+                    <StackPanel
+                        Grid.Column="1"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button
+                            Command="{Binding ExpandAllCommand}"
+                            Style="{StaticResource IconButton}"
+                            ToolTipService.ToolTip="Expand all">
+                            <FontIcon
+                                FontFamily="Segoe Fluent Icons"
+                                FontSize="14"
+                                Glyph="&#xE70E;" />
                         </Button>
-                        <Button Style="{StaticResource IconButton}" Command="{Binding CollapseAllCommand}" ToolTipService.ToolTip="Collapse all">
-                            <FontIcon Glyph="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="14" />
+                        <Button
+                            Command="{Binding CollapseAllCommand}"
+                            Style="{StaticResource IconButton}"
+                            ToolTipService.ToolTip="Collapse all">
+                            <FontIcon
+                                FontFamily="Segoe Fluent Icons"
+                                FontSize="14"
+                                Glyph="&#xE70D;" />
                         </Button>
                     </StackPanel>
                 </Grid>

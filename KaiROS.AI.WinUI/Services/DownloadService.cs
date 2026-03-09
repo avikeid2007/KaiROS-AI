@@ -8,8 +8,8 @@ public class DownloadService : IDownloadService
 {
     private readonly HttpClient _httpClient;
     private readonly string _modelsDirectory;
-    private readonly Dictionary<string, CancellationTokenSource> _activeDownloads = new();
-    private readonly Dictionary<string, long> _pausedDownloads = new(); // Tracks bytes downloaded
+    private readonly Dictionary<string, CancellationTokenSource> _activeDownloads = [];
+    private readonly Dictionary<string, long> _pausedDownloads = []; // Tracks bytes downloaded
 
     public DownloadService(string modelsDirectory)
     {

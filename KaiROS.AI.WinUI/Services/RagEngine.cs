@@ -7,7 +7,7 @@ namespace KaiROS.AI.WinUI.Services;
 public class RagEngine
 {
     private readonly IEnumerable<IRagSourceProvider> _providers;
-    private readonly List<Models.Document> _documents = new();
+    private readonly List<Models.Document> _documents = [];
     
     private const int ChunkSize = 1500;
     private const int ChunkOverlap = 100;

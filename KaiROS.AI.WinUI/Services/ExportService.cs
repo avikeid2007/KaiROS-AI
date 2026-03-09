@@ -149,7 +149,7 @@ public class ExportService : IExportService
 
         var picker = new FileSavePicker();
         picker.SuggestedFileName = defaultFileName;
-        picker.FileTypeChoices.Add(format.ToString(), new List<string> { fileType });
+        picker.FileTypeChoices.Add(format.ToString(), [fileType]);
         var mainWindow = ((App)Microsoft.UI.Xaml.Application.Current).Services.GetRequiredService<MainWindow>();
         InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(mainWindow));
 

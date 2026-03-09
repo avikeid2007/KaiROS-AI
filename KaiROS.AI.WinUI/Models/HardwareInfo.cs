@@ -5,7 +5,7 @@
 /// </summary>
 public class HardwareInfo
 {
-    public List<ExecutionBackend> AvailableBackends { get; set; } = new();
+    public List<ExecutionBackend> AvailableBackends { get; set; } = [];
     public ExecutionBackend RecommendedBackend { get; set; } = ExecutionBackend.Cpu;
     public ExecutionBackend SelectedBackend { get; set; } = ExecutionBackend.Cpu;
 

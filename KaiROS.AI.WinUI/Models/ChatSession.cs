@@ -14,7 +14,7 @@ public class ChatSession
     public int MessageCount { get; set; }
     
     // Not stored in DB, loaded separately
-    public List<ChatMessage> Messages { get; set; } = new();
+    public List<ChatMessage> Messages { get; set; } = [];
     
     /// <summary>
     /// Generate a title from the first user message

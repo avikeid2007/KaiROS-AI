@@ -15,7 +15,7 @@ public class RaasConfiguration : INotifyPropertyChanged
     public int Port { get; set; } = 5001;
     public string SystemPrompt { get; set; } = "You are a helpful AI assistant.";
     
-    public List<RagSource> Sources { get; set; } = new();
+    public List<RagSource> Sources { get; set; } = [];
 
     [JsonIgnore]
     public bool IsRunning

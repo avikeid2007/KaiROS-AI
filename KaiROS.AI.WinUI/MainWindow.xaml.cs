@@ -180,10 +180,11 @@ public partial class MainWindow : Window
     {
         if (!MicaController.IsSupported()) return;
 
-        _micaConfig = new SystemBackdropConfiguration { IsInputActive = true };
-
-        // Ensure the initial theme is set based on the theme service (not system theme)
-        _micaConfig.Theme = _themeService.CurrentTheme == "Light" ? SystemBackdropTheme.Light : SystemBackdropTheme.Dark;
+        _micaConfig = new SystemBackdropConfiguration
+        {
+            IsInputActive = true,         // Ensure the initial theme is set based on the theme service (not system theme)
+            Theme = _themeService.CurrentTheme == "Light" ? SystemBackdropTheme.Light : SystemBackdropTheme.Dark
+        };
 
         _micaController = new MicaController();
         _micaController.AddSystemBackdropTarget(this.As<ICompositionSupportsSystemBackdrop>());

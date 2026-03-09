@@ -18,7 +18,7 @@ public partial class DocumentViewModel : ViewModelBase
     
     // --- Global Documents (Existing) ---
     [ObservableProperty]
-    private ObservableCollection<Document> _documents = new();
+    private ObservableCollection<Document> _documents = [];
     
     [ObservableProperty]
     private bool _isLoading;

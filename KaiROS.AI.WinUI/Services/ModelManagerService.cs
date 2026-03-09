@@ -13,7 +13,7 @@ public class ModelManagerService : IModelManagerService, IDisposable
     private readonly IConfiguration _configuration;
     private readonly IDatabaseService _databaseService;
     private readonly IHardwareDetectionService _hardwareService;
-    private readonly List<LLMModelInfo> _models = new();
+    private readonly List<LLMModelInfo> _models = [];
     private string _modelsDirectory;
     private LLamaWeights? _loadedWeights;
     private MtmdWeights? _loadedLlavaWeights;
@@ -54,7 +54,7 @@ public class ModelManagerService : IModelManagerService, IDisposable
         await _databaseService.InitializeAsync();
 
         // Load model catalog from configuration
-        var modelConfigs = _configuration.GetSection("LLMModels").Get<List<LLMModelInfo>>() ?? new();
+        var modelConfigs = _configuration.GetSection("LLMModels").Get<List<LLMModelInfo>>() ?? [];
 
         _models.Clear();
         foreach (var model in modelConfigs)
