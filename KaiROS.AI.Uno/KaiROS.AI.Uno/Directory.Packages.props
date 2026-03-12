@@ -1,0 +1,24 @@
+<Project ToolsVersion="15.0">
+  <!--
+    To update the version of Uno, you should instead update the Sdk version in the global.json file.
+
+    See https://aka.platform.uno/using-uno-sdk for more information.
+    See https://aka.platform.uno/using-uno-sdk#implicit-packages for more information regarding the Implicit Packages.
+  -->
+  <ItemGroup>
+    <!-- Cross-platform packages from WinUI project -->
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageVersion Include="DocumentFormat.OpenXml" Version="3.4.1" />
+    <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
+    <PackageVersion Include="itext7" Version="9.5.0" />
+    <PackageVersion Include="LLamaSharp" Version="0.26.0" />
+    <PackageVersion Include="LLamaSharp.Backend.Cpu" Version="0.26.0" />
+    <PackageVersion Include="LLamaSharp.Backend.Cuda12" Version="0.26.0" />
+    <PackageVersion Include="LLamaSharp.Backend.Vulkan" Version="0.26.0" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
+    <PackageVersion Include="System.Management" Version="10.0.3" />
+  </ItemGroup>
+</Project>

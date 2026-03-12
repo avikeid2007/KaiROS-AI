@@ -1,0 +1,273 @@
+<UserControl x:Class="KaiROS.AI.Uno.Views.DocumentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="using:KaiROS.AI.Uno.Converters">
+
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <converters:NullToVisibilityConverter x:Key="NullToVis" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Margin="0,0,0,16"
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                CornerRadius="12">
+            <Grid>
+                <StackPanel>
+                    <TextBlock FontSize="24"
+                               FontWeight="Bold"
+                               Text="RAG as a Service" />
+                    <TextBlock Margin="0,4,0,0"
+                               Opacity="0.7"
+                               Text="Create knowledge bases and expose them via API" />
+                </StackPanel>
+                <Button HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Command="{Binding StartCreatingServiceCommand}"
+                        Style="{StaticResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon Margin="0,0,8,0"
+                                  FontSize="14"
+                                  Glyph="&#xE710;" />
+                        <TextBlock Text="New Service" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Service List -->
+            <Border Margin="0,0,16,0"
+                    Padding="12"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    CornerRadius="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Margin="0,0,0,12"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Text="Services" />
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding RaasConfigurations}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,0,8"
+                                            Padding="12"
+                                            Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                            CornerRadius="8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel>
+                                                <TextBlock FontWeight="Medium" Text="{Binding Name}" />
+                                                <TextBlock Margin="0,2,0,0"
+                                                           FontSize="11"
+                                                           Opacity="0.6">
+                                                    <Run Text="Port:" />
+                                                    <Run Text="{Binding Port}" />
+                                                </TextBlock>
+                                                <Border Margin="0,4,0,0"
+                                                        Padding="4,2"
+                                                        HorizontalAlignment="Left"
+                                                        Background="{ThemeResource SystemFillColorSuccessBrush}"
+                                                        CornerRadius="4"
+                                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock FontSize="10"
+                                                               Foreground="White"
+                                                               Text="Running" />
+                                                </Border>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="1"
+                                                        VerticalAlignment="Center"
+                                                        Orientation="Horizontal">
+                                                <Button Margin="0,0,4,0"
+                                                        Padding="8,4"
+                                                        Command="{Binding StartServiceCommand}"
+                                                        Style="{StaticResource DefaultButtonStyle}"
+                                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                                                    <FontIcon FontSize="12" Glyph="&#xE768;" />
+                                                </Button>
+                                                <Button Margin="0,0,4,0"
+                                                        Padding="8,4"
+                                                        Command="{Binding StopServiceCommand}"
+                                                        Style="{StaticResource DefaultButtonStyle}"
+                                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}">
+                                                    <FontIcon FontSize="12" Glyph="&#xE71A;" />
+                                                </Button>
+                                                <Button Padding="8,4"
+                                                        Command="{Binding DeleteServiceCommand}"
+                                                        Style="{StaticResource DefaultButtonStyle}">
+                                                    <FontIcon FontSize="12"
+                                                              Foreground="{ThemeResource SystemErrorTextColor}"
+                                                              Glyph="&#xE74D;" />
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <TextBlock Grid.Row="1"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Opacity="0.6"
+                               Text="No services created"
+                               Visibility="{Binding RaasConfigurations.Count, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                </Grid>
+            </Border>
+
+            <!-- Service Details -->
+            <Border Grid.Column="1"
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    CornerRadius="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- Create New Service Form -->
+                        <StackPanel Visibility="{Binding IsCreatingService, Converter={StaticResource BoolToVis}}">
+                            <TextBlock FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Text="Create New Service" />
+
+                            <TextBlock Margin="0,16,0,4"
+                                       FontSize="12"
+                                       Text="Service Name" />
+                            <TextBox Text="{Binding NewServiceName, Mode=TwoWay}" />
+
+                            <TextBlock Margin="0,12,0,4"
+                                       FontSize="12"
+                                       Text="Description" />
+                            <TextBox AcceptsReturn="True"
+                                     Text="{Binding NewServiceDescription, Mode=TwoWay}"
+                                     TextWrapping="Wrap" />
+
+                            <TextBlock Margin="0,12,0,4"
+                                       FontSize="12"
+                                       Text="Port" />
+                            <TextBox Text="{Binding NewServicePort, Mode=TwoWay}" />
+
+                            <TextBlock Margin="0,12,0,4"
+                                       FontSize="12"
+                                       Text="System Prompt" />
+                            <TextBox MinHeight="80"
+                                     AcceptsReturn="True"
+                                     Text="{Binding NewServiceSystemPrompt, Mode=TwoWay}"
+                                     TextWrapping="Wrap" />
+
+                            <StackPanel Margin="0,16,0,0"
+                                        Orientation="Horizontal">
+                                <Button Command="{Binding CreateServiceCommand}"
+                                        Style="{StaticResource AccentButtonStyle}"
+                                        Content="Create Service" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Selected Service Details -->
+                        <StackPanel Visibility="{Binding SelectedConfiguration, Converter={StaticResource NullToVis}}">
+                            <TextBlock FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Text="{Binding SelectedConfiguration.Name}" />
+
+                            <TextBlock Margin="0,8,0,0"
+                                       Opacity="0.7"
+                                       Text="{Binding SelectedConfiguration.Description}"
+                                       TextWrapping="Wrap" />
+
+                            <Border Margin="0,16,0,0"
+                                    Padding="12"
+                                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                    CornerRadius="8">
+                                <StackPanel>
+                                    <TextBlock FontSize="12"
+                                               FontWeight="SemiBold"
+                                               Text="API Endpoint" />
+                                    <TextBlock Margin="0,4,0,0"
+                                               IsTextSelectionEnabled="True">
+                                        <Run Text="http://localhost:" />
+                                        <Run Text="{Binding SelectedConfiguration.Port}" />
+                                        <Run Text="/v1/chat/completions" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock Margin="0,16,0,8"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Text="Knowledge Sources" />
+
+                            <ItemsControl ItemsSource="{Binding SelectedConfiguration.Sources}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,0,0,8"
+                                                Padding="12"
+                                                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                CornerRadius="8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Margin="0,0,8,0"
+                                                               Text="{Binding DisplayIcon}" />
+                                                    <TextBlock Text="{Binding Name}" />
+                                                </StackPanel>
+
+                                                <Button Grid.Column="1"
+                                                        Padding="8,4"
+                                                        Command="{Binding RemoveSourceFromServiceCommand}"
+                                                        Style="{StaticResource DefaultButtonStyle}">
+                                                    <FontIcon FontSize="12"
+                                                              Foreground="{ThemeResource SystemErrorTextColor}"
+                                                              Glyph="&#xE74D;" />
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <!-- Empty State -->
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Visibility="{Binding SelectedConfiguration, Converter={StaticResource NullToVis}, ConverterParameter=Invert}">
+                            <FontIcon FontSize="48"
+                                      Glyph="&#xF571;"
+                                      Opacity="0.3" />
+                            <TextBlock Margin="0,12,0,0"
+                                       HorizontalAlignment="Center"
+                                       Opacity="0.6"
+                                       Text="Select a service to view details" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

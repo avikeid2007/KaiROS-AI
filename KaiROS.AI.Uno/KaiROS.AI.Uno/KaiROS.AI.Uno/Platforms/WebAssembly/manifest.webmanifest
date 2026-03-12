@@ -1,0 +1,10 @@
+{
+  "background_color": "#ffffff",
+  "description": "KaiROS.AI.Uno",
+  "display": "standalone",
+  "name": "KaiROS.AI.Uno",
+  "short_name": "KaiROS.AI.Uno",
+  "start_url": "/index.html",
+  "theme_color": "#ffffff",
+  "scope": "/"
+}
