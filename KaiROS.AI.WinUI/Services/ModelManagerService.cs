@@ -317,13 +317,7 @@ public class ModelManagerService : IModelManagerService, IDisposable
             System.Diagnostics.Debug.WriteLine($"[KaiROS] Loading model with backend: {hardwareInfo.SelectedBackend}, GpuLayerCount: {_currentGpuLayers}");
 
             // Try loading with decreasing GPU layers on failure
-            int[] layersToTry = new[]
-            {
-                _currentGpuLayers,
-                Math.Max(1, _currentGpuLayers / 2),  // 50%
-                Math.Max(1, _currentGpuLayers / 4),  // 25%
-                0  // CPU fallback
-            };
+            var layersToTry = GetLayersToTry(_currentGpuLayers);
 
             Exception? lastException = null;
 
@@ -333,10 +327,7 @@ public class ModelManagerService : IModelManagerService, IDisposable
                 {
                     System.Diagnostics.Debug.WriteLine($"[KaiROS] Attempting to load with {layers} GPU layers...");
 
-                    // Strict timeout to prevent hanging on Intel drivers
-                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(45));
-
-                    await Task.Run(() =>
+                    var loadTask = Task.Run(() =>
                     {
                         progress?.Report(20);
                         ModelLoadProgress?.Invoke(this, 20);
@@ -370,12 +361,24 @@ public class ModelManagerService : IModelManagerService, IDisposable
 
                         progress?.Report(90);
                         ModelLoadProgress?.Invoke(this, 90);
-                    }, cts.Token).WaitAsync(TimeSpan.FromSeconds(45));
+                    });
+
+                    var loadTimeout = GetModelLoadTimeout(hardwareInfo, model, layers);
+                    if (loadTimeout is { } timeout)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[KaiROS] Applying model load timeout of {timeout.TotalSeconds:F0}s for {layers} GPU layers.");
+                        await loadTask.WaitAsync(timeout);
+                    }
+                    else
+                    {
+                        await loadTask;
+                    }
 
                     // Success!
                     _currentGpuLayers = layers;
                     _activeModel = model;
                     model.IsActive = true;
+                    model.LoadError = null;
 
                     progress?.Report(100);
                     ModelLoadProgress?.Invoke(this, 100);
@@ -398,6 +401,12 @@ public class ModelManagerService : IModelManagerService, IDisposable
                     {
                         try { _loadedWeights.Dispose(); } catch { }
                         _loadedWeights = null;
+                    }
+
+                    if (_loadedLlavaWeights != null)
+                    {
+                        try { _loadedLlavaWeights.Dispose(); } catch { }
+                        _loadedLlavaWeights = null;
                     }
 
                     // If this was already CPU fallback (0 layers), don't retry
@@ -460,6 +469,34 @@ public class ModelManagerService : IModelManagerService, IDisposable
 
     public LLamaWeights? GetLoadedWeights() => _loadedWeights;
     public MtmdWeights? GetLoadedLlavaWeights() => _loadedLlavaWeights;
+
+    private static int[] GetLayersToTry(int preferredGpuLayers)
+    {
+        return new[]
+        {
+            preferredGpuLayers,
+            preferredGpuLayers > 1 ? preferredGpuLayers / 2 : 0,
+            preferredGpuLayers > 3 ? preferredGpuLayers / 4 : 0,
+            0
+        }
+        .Distinct()
+        .ToArray();
+    }
+
+    private static TimeSpan? GetModelLoadTimeout(HardwareInfo hardwareInfo, LLMModelInfo model, int layers)
+    {
+        ArgumentNullException.ThrowIfNull(hardwareInfo);
+        ArgumentNullException.ThrowIfNull(model);
+
+        if (hardwareInfo.SelectedBackend is ExecutionBackend.Cpu or ExecutionBackend.Npu || layers == 0)
+        {
+            return null;
+        }
+
+        var modelSizeInGb = Math.Max(1d, model.SizeBytes / (1024d * 1024d * 1024d));
+        var timeoutSeconds = 90 + (int)Math.Ceiling(modelSizeInGb * 15);
+        return TimeSpan.FromSeconds(Math.Min(timeoutSeconds, 240));
+    }
 
     /// <summary>
     /// Calculate optimal GPU layers based on available VRAM and model size.
