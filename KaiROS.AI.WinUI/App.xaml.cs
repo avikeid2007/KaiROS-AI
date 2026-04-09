@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using KaiROS.AI.WinUI.Helpers;
 using KaiROS.AI.WinUI.Services;
 using KaiROS.AI.WinUI.ViewModels;
 using KaiROS.AI.WinUI.Models;
@@ -40,6 +41,24 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // Wire global crash handlers before anything else so even DI failures are logged
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+            AppLogger.LogException("AppDomain.UnhandledException", (Exception)e.ExceptionObject);
+
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            AppLogger.LogException("TaskScheduler.UnobservedTaskException", e.Exception);
+            e.SetObserved(); // prevent process termination for fire-and-forget tasks
+        };
+
+        UnhandledException += (_, e) =>
+        {
+            AppLogger.LogException("WinUI.UnhandledException", e.Exception);
+            e.Handled = true; // attempt to keep app alive; remove if you want crash dialog
+        };
+
+        AppLogger.Log($"=== KaiROS.AI starting (PID {Environment.ProcessId}) ===");
+        AppLogger.Log($"Log file: {AppLogger.GetLogPath()}");
         // Build configuration
         var configuration = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)

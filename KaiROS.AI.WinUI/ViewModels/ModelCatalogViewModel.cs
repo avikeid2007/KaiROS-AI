@@ -10,11 +10,11 @@ using System.Collections.ObjectModel;
 
 namespace KaiROS.AI.WinUI.ViewModels;
 
-public partial class ModelCatalogViewModel(IModelManagerService modelManager, IDatabaseService databaseService, IHardwareDetectionService hardwareService) : ViewModelBase
+public partial class ModelCatalogViewModel : ViewModelBase
 {
-    private readonly IModelManagerService _modelManager = modelManager;
-    private readonly IDatabaseService _databaseService = databaseService;
-    private readonly IHardwareDetectionService _hardwareService = hardwareService;
+    private readonly IModelManagerService _modelManager;
+    private readonly IDatabaseService _databaseService;
+    private readonly IHardwareDetectionService _hardwareService;
     private readonly Dictionary<string, CancellationTokenSource> _downloadCts = [];
 
     public event EventHandler? ModelActivated;
@@ -29,37 +29,37 @@ public partial class ModelCatalogViewModel(IModelManagerService modelManager, ID
     }
 
     [ObservableProperty]
-    private ObservableCollection<ModelItemViewModel> _models = [];
+    public partial ObservableCollection<ModelItemViewModel> Models { get; set; }
 
     [ObservableProperty]
-    private ObservableCollection<ModelItemViewModel> _filteredModels = [];
+    public partial ObservableCollection<ModelItemViewModel> FilteredModels { get; set; }
 
     [ObservableProperty]
-    private ObservableCollection<ModelItemViewModel> _downloadedModels = [];
+    public partial ObservableCollection<ModelItemViewModel> DownloadedModels { get; set; }
 
     [ObservableProperty]
-    private ObservableCollection<OrganizationGroup> _groupedModels = [];
+    public partial ObservableCollection<OrganizationGroup> GroupedModels { get; set; }
 
     [ObservableProperty]
-    private string _selectedCategory = "all";
+    public partial string SelectedCategory { get; set; }
 
     [ObservableProperty]
-    private bool _showRecommendedOnly;
+    public partial bool ShowRecommendedOnly { get; set; }
 
     [ObservableProperty]
-    private string _searchText = string.Empty;
+    public partial string SearchText { get; set; }
 
     [ObservableProperty]
-    private string _selectedOrganization = "all";
+    public partial string SelectedOrganization { get; set; }
 
     [ObservableProperty]
-    private string _selectedFamily = "all";
+    public partial string SelectedFamily { get; set; }
 
     [ObservableProperty]
-    private string _selectedVariant = "all";
+    public partial string SelectedVariant { get; set; }
 
     [ObservableProperty]
-    private string _selectedVisionOption = "All";
+    public partial string SelectedVisionOption { get; set; }
 
     // Filter dropdown collections
     public ObservableCollection<string> Organizations { get; } = ["all"];
@@ -68,6 +68,23 @@ public partial class ModelCatalogViewModel(IModelManagerService modelManager, ID
     public ObservableCollection<string> VisionOptions { get; } = ["All", "Vision Only", "Text Only"];
 
     private readonly DispatcherQueue _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+
+    public ModelCatalogViewModel(IModelManagerService modelManager, IDatabaseService databaseService, IHardwareDetectionService hardwareService)
+    {
+        _modelManager = modelManager;
+        _databaseService = databaseService;
+        _hardwareService = hardwareService;
+        Models = [];
+        FilteredModels = [];
+        DownloadedModels = [];
+        GroupedModels = [];
+        SelectedCategory = "all";
+        SearchText = string.Empty;
+        SelectedOrganization = "all";
+        SelectedFamily = "all";
+        SelectedVariant = "all";
+        SelectedVisionOption = "All";
+    }
 
     public override async Task InitializeAsync()
     {
@@ -407,35 +424,44 @@ public partial class ModelCatalogViewModel(IModelManagerService modelManager, ID
     }
 }
 
-public partial class ModelItemViewModel(LLMModelInfo model, ModelCatalogViewModel parent) : ObservableObject
+public partial class ModelItemViewModel : ObservableObject
 {
-    private readonly ModelCatalogViewModel _parent = parent;
+    private readonly ModelCatalogViewModel _parent;
 
-    public LLMModelInfo Model { get; } = model;
+    public LLMModelInfo Model { get; }
+
+    public ModelItemViewModel(LLMModelInfo model, ModelCatalogViewModel parent)
+    {
+        Model = model;
+        _parent = parent;
+        IsDownloaded = model.IsDownloaded;
+        IsActive = model.IsActive;
+        DownloadProgress = model.DownloadProgress;
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowLoadButton))]
-    private bool _isDownloaded = model.IsDownloaded;
+    public partial bool IsDownloaded { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowLoadButton))]
-    private bool _isDownloading;
+    public partial bool IsDownloading { get; set; }
 
     [ObservableProperty]
-    private bool _isPaused;
+    public partial bool IsPaused { get; set; }
 
     [ObservableProperty]
-    private bool _isActive = model.IsActive;
+    public partial bool IsActive { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(LoadingText))]
-    private bool _isLoading;
+    public partial bool IsLoading { get; set; }
 
     [ObservableProperty]
-    private double _downloadProgress = model.DownloadProgress;
+    public partial double DownloadProgress { get; set; }
 
     [ObservableProperty]
-    private string? _errorMessage;
+    public partial string? ErrorMessage { get; set; }
 
     // Computed property that triggers UI update
     public bool ShowLoadButton => IsDownloaded && !IsDownloading;
@@ -459,7 +485,7 @@ public partial class ModelItemViewModel(LLMModelInfo model, ModelCatalogViewMode
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(LoadingText))]
-    private double _loadingProgress;
+    public partial double LoadingProgress { get; set; }
 
     [RelayCommand]
     private async Task Download() => await _parent.DownloadModelAsync(this);
@@ -480,14 +506,22 @@ public partial class ModelItemViewModel(LLMModelInfo model, ModelCatalogViewMode
 /// <summary>
 /// Represents a group of models organized by their organization/publisher
 /// </summary>
-public partial class OrganizationGroup(string name, string logoUrl, ObservableCollection<ModelItemViewModel> models) : ObservableObject
+public partial class OrganizationGroup : ObservableObject
 {
-    public string OrganizationName { get; } = name;
-    public string LogoUrl { get; } = logoUrl;
-    public ObservableCollection<ModelItemViewModel> Models { get; } = models;
+    public string OrganizationName { get; }
+    public string LogoUrl { get; }
+    public ObservableCollection<ModelItemViewModel> Models { get; }
     public int ModelCount => Models.Count;
     public int DownloadedCount => Models.Count(m => m.IsDownloaded);
 
+    public OrganizationGroup(string name, string logoUrl, ObservableCollection<ModelItemViewModel> models)
+    {
+        OrganizationName = name;
+        LogoUrl = logoUrl;
+        Models = models;
+        IsExpanded = true;
+    }
+
     [ObservableProperty]
-    private bool _isExpanded = true;
+    public partial bool IsExpanded { get; set; }
 }

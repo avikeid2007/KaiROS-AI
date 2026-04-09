@@ -6,6 +6,7 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>preview</LangVersion>
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>

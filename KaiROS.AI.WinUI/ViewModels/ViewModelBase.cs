@@ -8,10 +8,10 @@ namespace KaiROS.AI.WinUI.ViewModels;
 public abstract partial class ViewModelBase : ObservableObject
 {
     [ObservableProperty]
-    private bool _isLoading;
-    
+    public partial bool IsLoading { get; set; }
+
     [ObservableProperty]
-    private string? _errorMessage;
-    
+    public partial string? ErrorMessage { get; set; }
+
     public virtual Task InitializeAsync() => Task.CompletedTask;
 }

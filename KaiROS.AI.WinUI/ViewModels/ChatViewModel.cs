@@ -25,87 +25,84 @@ public partial class ChatViewModel : ViewModelBase
     private CancellationTokenSource? _currentInferenceCts;
 
     [ObservableProperty]
-    private ObservableCollection<ChatMessageViewModel> _messages = [];
+    public partial ObservableCollection<ChatMessageViewModel> Messages { get; set; }
 
     [ObservableProperty]
-    private ObservableCollection<ChatSession> _sessions = [];
+    public partial ObservableCollection<ChatSession> Sessions { get; set; }
 
     [ObservableProperty]
-    private ChatSession? _currentSession;
+    public partial ChatSession? CurrentSession { get; set; }
 
     [ObservableProperty]
-    private string _userInput = string.Empty;
+    public partial string UserInput { get; set; }
 
     [ObservableProperty]
-    private bool _isWebSearchEnabled;
+    public partial bool IsWebSearchEnabled { get; set; }
 
     [ObservableProperty]
-    private string _systemPrompt = "You are a helpful, friendly AI assistant. Be concise and clear.";
+    public partial string SystemPrompt { get; set; }
 
     [ObservableProperty]
-    private bool _isGenerating;
+    public partial bool IsGenerating { get; set; }
 
     [ObservableProperty]
-    private bool _isSystemPromptExpanded;
+    public partial bool IsSystemPromptExpanded { get; set; }
 
     [ObservableProperty]
-    private double _tokensPerSecond;
+    public partial double TokensPerSecond { get; set; }
 
     [ObservableProperty]
-    private int _totalTokens;
+    public partial int TotalTokens { get; set; }
 
     [ObservableProperty]
-    private string _memoryUsage = "N/A";
+    public partial string MemoryUsage { get; set; }
 
     [ObservableProperty]
-    private string _elapsedTime = "0s";
+    public partial string ElapsedTime { get; set; }
 
     [ObservableProperty]
-    private string _contextWindow = "N/A";
+    public partial string ContextWindow { get; set; }
 
     [ObservableProperty]
-    private string _gpuLayers = "N/A";
+    public partial string GpuLayers { get; set; }
 
     [ObservableProperty]
-    private bool _hasActiveModel;
+    public partial bool HasActiveModel { get; set; }
 
     [ObservableProperty]
-    private string _activeModelInfo = "No model loaded";
+    public partial string ActiveModelInfo { get; set; }
 
     [ObservableProperty]
-    private bool _isSessionListVisible = true;
+    public partial bool IsSessionListVisible { get; set; }
 
     [ObservableProperty]
-    private bool _isSearchVisible;
+    public partial bool IsSearchVisible { get; set; }
 
     [ObservableProperty]
-    private string _searchText = string.Empty;
+    public partial string SearchText { get; set; }
 
     [ObservableProperty]
-    private bool _isEnterToSendEnabled;
+    public partial bool IsEnterToSendEnabled { get; set; }
 
     [ObservableProperty]
-    private string _currentDocumentName = string.Empty;
+    public partial string CurrentDocumentName { get; set; }
 
     [ObservableProperty]
-    private string? _attachedImagePath;
+    public partial string? AttachedImagePath { get; set; }
 
     [ObservableProperty]
-    private bool _hasAttachedImage;
-    
+    public partial bool HasAttachedImage { get; set; }
+
     // --- RAG Selection ---
-    
-    [ObservableProperty]
-    private ObservableCollection<string> _availableKnowledgeBases =
-    [
-        "None" 
-    ];
 
     [ObservableProperty]
-    private string _selectedKnowledgeBase = "None"; // Default to None
+    public partial ObservableCollection<string> AvailableKnowledgeBases { get; set; }
 
     [ObservableProperty]
-    private int _globalRagDocumentCount;
+    public partial string SelectedKnowledgeBase { get; set; }
+
+    [ObservableProperty]
+    public partial int GlobalRagDocumentCount { get; set; }
 
     private string _currentDocumentContext = string.Empty;
 
@@ -121,6 +118,21 @@ public partial class ChatViewModel : ViewModelBase
         _raasService = raasService;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
+        // Defaults for partial properties (cannot use field initializers)
+        Messages = [];
+        Sessions = [];
+        UserInput = string.Empty;
+        SystemPrompt = "You are a helpful, friendly AI assistant. Be concise and clear.";
+        MemoryUsage = "N/A";
+        ElapsedTime = "0s";
+        ContextWindow = "N/A";
+        GpuLayers = "N/A";
+        ActiveModelInfo = "No model loaded";
+        IsSessionListVisible = true;
+        SearchText = string.Empty;
+        CurrentDocumentName = string.Empty;
+        AvailableKnowledgeBases = ["None"];
+        SelectedKnowledgeBase = "None";
         IsWebSearchEnabled = false;
         IsEnterToSendEnabled = true;
 
@@ -149,10 +161,23 @@ public partial class ChatViewModel : ViewModelBase
             GlobalRagDocumentCount = docCount;
         });
 
-        await _raasService.InitializeAsync().ConfigureAwait(false);
-
-        // UpdateKnowledgeBaseList touches ObservableCollection — must be on UI thread
-        _dispatcherQueue.TryEnqueue(UpdateKnowledgeBaseList);
+        // _raasService.InitializeAsync() modifies ObservableCollection<RaasConfiguration> — must run on UI thread.
+        // Use TaskCompletionSource so we can await completion while dispatching to the UI thread.
+        var tcs = new TaskCompletionSource();
+        _dispatcherQueue.TryEnqueue(async () =>
+        {
+            try
+            {
+                await _raasService.InitializeAsync();
+                UpdateKnowledgeBaseList();
+                tcs.SetResult();
+            }
+            catch (Exception ex)
+            {
+                tcs.SetException(ex);
+            }
+        });
+        await tcs.Task.ConfigureAwait(false);
     }
     
     private void UpdateKnowledgeBaseList()
@@ -576,15 +601,25 @@ public partial class ChatViewModel : ViewModelBase
     private void CopyContent() { /* ... handled in item view model or pass parameter ... */ }
 }
 
-public partial class ChatMessageViewModel(ChatMessage message, DispatcherQueue? dispatcherQueue = null) : ObservableObject
+public partial class ChatMessageViewModel : ObservableObject
 {
-    public ChatMessage Message { get; } = message;
+    private readonly DispatcherQueue? _dispatcherQueue;
+
+    public ChatMessage Message { get; }
+
+    public ChatMessageViewModel(ChatMessage message, DispatcherQueue? dispatcherQueue = null)
+    {
+        Message = message;
+        _dispatcherQueue = dispatcherQueue ?? DispatcherQueue.GetForCurrentThread();
+        Content = message.Content;
+        IsStreaming = message.IsStreaming;
+    }
 
     [ObservableProperty]
-    private string _content = message.Content;
+    public partial string Content { get; set; }
 
     [ObservableProperty]
-    private bool _isStreaming = message.IsStreaming;
+    public partial bool IsStreaming { get; set; }
 
     public bool IsUser => Message.Role == ChatRole.User;
     public bool IsAssistant => Message.Role == ChatRole.Assistant;
@@ -600,8 +635,6 @@ public partial class ChatMessageViewModel(ChatMessage message, DispatcherQueue? 
     private int _pendingTokenCount;
     private const int BATCH_TOKEN_COUNT = 15;
     private const int FLUSH_INTERVAL_MS = 50;
-
-    private readonly DispatcherQueue? _dispatcherQueue = dispatcherQueue ?? DispatcherQueue.GetForCurrentThread();
 
     /// <summary>
     /// Thread-safe: may be called from background LLamaSharp inference threads.

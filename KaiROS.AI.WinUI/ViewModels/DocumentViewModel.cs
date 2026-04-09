@@ -18,34 +18,31 @@ public partial class DocumentViewModel : ViewModelBase
     
     // --- Global Documents (Existing) ---
     [ObservableProperty]
-    private ObservableCollection<Document> _documents = [];
-    
+    public partial ObservableCollection<Document> Documents { get; set; }
+
     [ObservableProperty]
-    private bool _isLoading;
-    
-    [ObservableProperty]
-    private string _statusMessage = "No documents loaded";
-    
+    public partial string StatusMessage { get; set; }
+
     // --- RaaS Management (New) ---
     public ObservableCollection<RaasConfiguration> RaasConfigurations => _raasService.Configurations;
 
     [ObservableProperty]
-    private string _newServiceName = "New Service";
+    public partial string NewServiceName { get; set; }
 
     [ObservableProperty]
-    private string _newServiceDescription = "";
+    public partial string NewServiceDescription { get; set; }
 
     [ObservableProperty]
-    private int _newServicePort = 5001;
+    public partial int NewServicePort { get; set; }
 
     [ObservableProperty]
-    private string _newServiceSystemPrompt = "You are a helpful AI assistant.";
+    public partial string NewServiceSystemPrompt { get; set; }
 
     [ObservableProperty]
-    private RaasConfiguration? _selectedConfiguration;
-    
+    public partial RaasConfiguration? SelectedConfiguration { get; set; }
+
     [ObservableProperty]
-    private bool _isCreatingService;
+    public partial bool IsCreatingService { get; set; }
     
     partial void OnSelectedConfigurationChanged(RaasConfiguration? value)
     {
@@ -56,6 +53,12 @@ public partial class DocumentViewModel : ViewModelBase
     {
         _documentService = documentService;
         _raasService = raasService;
+        Documents = [];
+        StatusMessage = "No documents loaded";
+        NewServiceName = "New Service";
+        NewServiceDescription = string.Empty;
+        NewServicePort = 5001;
+        NewServiceSystemPrompt = "You are a helpful AI assistant.";
     }
     
     // --- Global Document Commands ---

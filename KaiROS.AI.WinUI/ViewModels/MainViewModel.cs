@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using KaiROS.AI.WinUI.Helpers;
 using KaiROS.AI.WinUI.Models;
 using KaiROS.AI.WinUI.Services;
 using Microsoft.UI.Dispatching;
@@ -14,22 +15,22 @@ public partial class MainViewModel : ViewModelBase
     private readonly DispatcherQueue _dispatcherQueue;
 
     [ObservableProperty]
-    private ViewModelBase? _currentView;
+    public partial ViewModelBase? CurrentView { get; set; }
 
     [ObservableProperty]
-    private string _statusText = "Ready";
+    public partial string StatusText { get; set; }
 
     [ObservableProperty]
-    private string _hardwareInfo = "Detecting hardware...";
+    public partial string HardwareInfo { get; set; }
 
     [ObservableProperty]
-    private string? _activeModelName;
+    public partial string? ActiveModelName { get; set; }
 
     [ObservableProperty]
-    private HardwareInfo? _hardware;
+    public partial HardwareInfo? Hardware { get; set; }
 
     [ObservableProperty]
-    private int _selectedNavigationIndex;
+    public partial int SelectedNavigationIndex { get; set; }
 
     public ModelCatalogViewModel CatalogViewModel { get; }
     public ChatViewModel ChatViewModel { get; }
@@ -50,6 +51,9 @@ public partial class MainViewModel : ViewModelBase
         ChatViewModel = chatViewModel;
         SettingsViewModel = settingsViewModel;
         DocumentViewModel = documentViewModel;
+        // Set default values (can't use field initializers with partial properties)
+        StatusText = "Ready";
+        HardwareInfo = "Detecting hardware...";
         // Capture UI thread's DispatcherQueue for cross-thread UI updates
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
@@ -76,49 +80,72 @@ public partial class MainViewModel : ViewModelBase
 
     public override async Task InitializeAsync()
     {
+        AppLogger.Log("[MainViewModel] InitializeAsync — start");
         IsLoading = true;
         StatusText = "Initializing...";
 
         try
         {
-            // Detect hardware
+            AppLogger.Log("[MainViewModel] Detecting hardware...");
             Hardware = await _hardwareService.DetectHardwareAsync();
             HardwareInfo = Hardware.StatusMessage;
+            AppLogger.Log($"[MainViewModel] Hardware detected: {Hardware.StatusMessage}");
 
-            // Initialize model catalog
+            AppLogger.Log("[MainViewModel] Initializing ModelManager...");
             await _modelManager.InitializeAsync();
+            AppLogger.Log("[MainViewModel] ModelManager initialized");
 
-            // Initialize child view models
-            await CatalogViewModel.InitializeAsync();
-            await ChatViewModel.InitializeAsync();
-            await SettingsViewModel.InitializeAsync();
-            await DocumentViewModel.InitializeAsync();
+            AppLogger.Log("[MainViewModel] Initializing CatalogViewModel...");
+            await InitChildVmAsync("CatalogViewModel", CatalogViewModel.InitializeAsync);
 
-            await DocumentViewModel.InitializeAsync();
+            AppLogger.Log("[MainViewModel] Initializing ChatViewModel...");
+            await InitChildVmAsync("ChatViewModel", ChatViewModel.InitializeAsync);
 
-            // If a model was auto-loaded, SelectedNavigationIndex would be 1 (Chat)
-            // But we shouldn't overwrite it blindly.
+            AppLogger.Log("[MainViewModel] Initializing SettingsViewModel...");
+            await InitChildVmAsync("SettingsViewModel", SettingsViewModel.InitializeAsync);
+
+            AppLogger.Log("[MainViewModel] Initializing DocumentViewModel...");
+            await InitChildVmAsync("DocumentViewModel", DocumentViewModel.InitializeAsync);
+
             if (_modelManager.ActiveModel != null)
             {
-                SelectedNavigationIndex = 1; // Ensure UI reflects this
+                AppLogger.Log($"[MainViewModel] Active model: {_modelManager.ActiveModel.DisplayName} — navigating to Chat");
+                SelectedNavigationIndex = 1;
                 CurrentView = ChatViewModel;
             }
             else
             {
+                AppLogger.Log("[MainViewModel] No active model — navigating to Catalog");
                 SelectedNavigationIndex = 0;
                 CurrentView = CatalogViewModel;
             }
 
             StatusText = "Ready";
+            AppLogger.Log("[MainViewModel] InitializeAsync — complete");
         }
         catch (Exception ex)
         {
+            AppLogger.LogException("[MainViewModel] InitializeAsync", ex);
             ErrorMessage = ex.Message;
             StatusText = "Initialization failed";
         }
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private static async Task InitChildVmAsync(string name, Func<Task> init)
+    {
+        try
+        {
+            await init();
+            AppLogger.Log($"[MainViewModel] {name} — OK");
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogException($"[MainViewModel] {name}", ex);
+            throw; // re-throw so outer catch surfaces it
         }
     }
 
