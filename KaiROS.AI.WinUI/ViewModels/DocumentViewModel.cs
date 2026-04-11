@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KaiROS.AI.WinUI;
 using KaiROS.AI.WinUI.Models;
@@ -18,34 +18,31 @@ public partial class DocumentViewModel : ViewModelBase
     
     // --- Global Documents (Existing) ---
     [ObservableProperty]
-    private ObservableCollection<Document> _documents = [];
+    public partial ObservableCollection<Document> Documents { get; set; } = [];
     
     [ObservableProperty]
-    private bool _isLoading;
-    
-    [ObservableProperty]
-    private string _statusMessage = "No documents loaded";
+    public partial string StatusMessage { get; set; } = "No documents loaded";
     
     // --- RaaS Management (New) ---
     public ObservableCollection<RaasConfiguration> RaasConfigurations => _raasService.Configurations;
 
     [ObservableProperty]
-    private string _newServiceName = "New Service";
+    public partial string NewServiceName { get; set; } = "New Service";
 
     [ObservableProperty]
-    private string _newServiceDescription = "";
+    public partial string NewServiceDescription { get; set; } = "";
 
     [ObservableProperty]
-    private int _newServicePort = 5001;
+    public partial int NewServicePort { get; set; } = 5001;
 
     [ObservableProperty]
-    private string _newServiceSystemPrompt = "You are a helpful AI assistant.";
+    public partial string NewServiceSystemPrompt { get; set; } = "You are a helpful AI assistant.";
 
     [ObservableProperty]
-    private RaasConfiguration? _selectedConfiguration;
+    public partial RaasConfiguration? SelectedConfiguration { get; set; }
     
     [ObservableProperty]
-    private bool _isCreatingService;
+    public partial bool IsCreatingService { get; set; }
     
     partial void OnSelectedConfigurationChanged(RaasConfiguration? value)
     {

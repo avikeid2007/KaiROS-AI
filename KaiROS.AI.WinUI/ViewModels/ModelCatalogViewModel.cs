@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KaiROS.AI.WinUI.Models;
 using KaiROS.AI.WinUI.Services;
@@ -29,37 +29,37 @@ public partial class ModelCatalogViewModel(IModelManagerService modelManager, ID
     }
 
     [ObservableProperty]
-    private ObservableCollection<ModelItemViewModel> _models = [];
+    public partial ObservableCollection<ModelItemViewModel> Models { get; set; } = [];
 
     [ObservableProperty]
-    private ObservableCollection<ModelItemViewModel> _filteredModels = [];
+    public partial ObservableCollection<ModelItemViewModel> FilteredModels { get; set; } = [];
 
     [ObservableProperty]
-    private ObservableCollection<ModelItemViewModel> _downloadedModels = [];
+    public partial ObservableCollection<ModelItemViewModel> DownloadedModels { get; set; } = [];
 
     [ObservableProperty]
-    private ObservableCollection<OrganizationGroup> _groupedModels = [];
+    public partial ObservableCollection<OrganizationGroup> GroupedModels { get; set; } = [];
 
     [ObservableProperty]
-    private string _selectedCategory = "all";
+    public partial string SelectedCategory { get; set; } = "all";
 
     [ObservableProperty]
-    private bool _showRecommendedOnly;
+    public partial bool ShowRecommendedOnly { get; set; }
 
     [ObservableProperty]
-    private string _searchText = string.Empty;
+    public partial string SearchText { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string _selectedOrganization = "all";
+    public partial string SelectedOrganization { get; set; } = "all";
 
     [ObservableProperty]
-    private string _selectedFamily = "all";
+    public partial string SelectedFamily { get; set; } = "all";
 
     [ObservableProperty]
-    private string _selectedVariant = "all";
+    public partial string SelectedVariant { get; set; } = "all";
 
     [ObservableProperty]
-    private string _selectedVisionOption = "All";
+    public partial string SelectedVisionOption { get; set; } = "All";
 
     // Filter dropdown collections
     public ObservableCollection<string> Organizations { get; } = ["all"];
@@ -415,27 +415,27 @@ public partial class ModelItemViewModel(LLMModelInfo model, ModelCatalogViewMode
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowLoadButton))]
-    private bool _isDownloaded = model.IsDownloaded;
+    public partial bool IsDownloaded { get; set; } = model.IsDownloaded;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowLoadButton))]
-    private bool _isDownloading;
+    public partial bool IsDownloading { get; set; }
 
     [ObservableProperty]
-    private bool _isPaused;
+    public partial bool IsPaused { get; set; }
 
     [ObservableProperty]
-    private bool _isActive = model.IsActive;
+    public partial bool IsActive { get; set; } = model.IsActive;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(LoadingText))]
-    private bool _isLoading;
+    public partial bool IsLoading { get; set; }
 
     [ObservableProperty]
-    private double _downloadProgress = model.DownloadProgress;
+    public partial double DownloadProgress { get; set; } = model.DownloadProgress;
 
     [ObservableProperty]
-    private string? _errorMessage;
+    public partial string? ErrorMessage { get; set; }
 
     // Computed property that triggers UI update
     public bool ShowLoadButton => IsDownloaded && !IsDownloading;
@@ -459,7 +459,7 @@ public partial class ModelItemViewModel(LLMModelInfo model, ModelCatalogViewMode
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(LoadingText))]
-    private double _loadingProgress;
+    public partial double LoadingProgress { get; set; }
 
     [RelayCommand]
     private async Task Download() => await _parent.DownloadModelAsync(this);
@@ -489,5 +489,5 @@ public partial class OrganizationGroup(string name, string logoUrl, ObservableCo
     public int DownloadedCount => Models.Count(m => m.IsDownloaded);
 
     [ObservableProperty]
-    private bool _isExpanded = true;
+    public partial bool IsExpanded { get; set; } = true;
 }

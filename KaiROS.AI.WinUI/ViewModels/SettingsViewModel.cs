@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KaiROS.AI.WinUI;
 using KaiROS.AI.WinUI.Models;
@@ -21,40 +21,40 @@ public partial class SettingsViewModel : ViewModelBase
     private const string DefaultSystemPrompt = "You are a helpful, friendly AI assistant. Be concise and clear.";
 
     [ObservableProperty]
-    private HardwareInfo? _hardware;
+    public partial HardwareInfo? Hardware { get; set; }
 
     [ObservableProperty]
-    private ObservableCollection<ExecutionBackend> _availableBackends = [];
+    public partial ObservableCollection<ExecutionBackend> AvailableBackends { get; set; } = [];
 
     [ObservableProperty]
-    private ExecutionBackend _selectedBackend;
+    public partial ExecutionBackend SelectedBackend { get; set; }
 
     [ObservableProperty]
-    private string _modelsDirectory = string.Empty;
+    public partial string ModelsDirectory { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string _gpuInfo = "Detecting...";
+    public partial string GpuInfo { get; set; } = "Detecting...";
 
     [ObservableProperty]
-    private string _ramInfo = "Detecting...";
+    public partial string RamInfo { get; set; } = "Detecting...";
 
     [ObservableProperty]
-    private string _backendStatus = string.Empty;
+    public partial string BackendStatus { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string _systemPrompt = DefaultSystemPrompt;
+    public partial string SystemPrompt { get; set; } = DefaultSystemPrompt;
 
     [ObservableProperty]
-    private bool _isDarkTheme = true;
+    public partial bool IsDarkTheme { get; set; } = true;
 
     // API Settings
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ApiStatus))]
     [NotifyPropertyChangedFor(nameof(IsMinimizeToTrayEnabled))]
-    private bool _isApiEnabled = false;
+    public partial bool IsApiEnabled { get; set; } = false;
 
     [ObservableProperty]
-    private int _apiPort = 5000;
+    public partial int ApiPort { get; set; } = 5000;
 
     // API can only be enabled when a model is loaded
     public bool CanEnableApi => _modelManager.ActiveModel != null;
@@ -75,13 +75,13 @@ public partial class SettingsViewModel : ViewModelBase
         _apiService = apiService;
 
         // Initialize system prompt from ChatViewModel
-        _systemPrompt = chatViewModel.SystemPrompt;
+        SystemPrompt = chatViewModel.SystemPrompt;
 
         // Initialize theme from service
-        _isDarkTheme = _themeService.CurrentTheme == "Dark";
+        IsDarkTheme = _themeService.CurrentTheme == "Dark";
 
         // Initialize API status
-        _isApiEnabled = _apiService.IsRunning;
+        IsApiEnabled = _apiService.IsRunning;
 
         // Subscribe to model events to update CanEnableApi
         _modelManager.ModelLoaded += (s, e) =>

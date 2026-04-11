@@ -18,6 +18,11 @@ public class ViewModelTemplateSelector : DataTemplateSelector
 
     protected override DataTemplate? SelectTemplateCore(object item, DependencyObject container)
     {
+        return SelectTemplateCore(item);
+    }
+
+    protected override DataTemplate? SelectTemplateCore(object item)
+    {
         return item switch
         {
             ModelCatalogViewModel => CatalogTemplate,

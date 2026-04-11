@@ -74,8 +74,17 @@ public class DownloadService : IDownloadService
             long totalBytesRead = existingBytes;
             int bytesRead;
 
-            while ((bytesRead = await contentStream.ReadAsync(buffer, cts.Token)) > 0)
+            // Per-read stall timeout: cancel if no data received for 60 seconds.
+            // HttpClient.Timeout only covers the initial request with ResponseHeadersRead,
+            // not individual stream reads which can hang indefinitely on stalled connections.
+            while (true)
             {
+                using var readTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+                using var linked = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, readTimeout.Token);
+
+                bytesRead = await contentStream.ReadAsync(buffer, linked.Token);
+                if (bytesRead == 0) break;
+
                 await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cts.Token);
                 totalBytesRead += bytesRead;
 
@@ -119,9 +128,20 @@ public class DownloadService : IDownloadService
 
             return true;
         }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Read stall timeout or internal cancellation — keep partial for resume
+            System.Diagnostics.Debug.WriteLine($"[Download] Stalled or timed out for {modelName}. Keeping partial file for resume.");
+            if (File.Exists(partialPath))
+            {
+                _pausedDownloads[modelName] = new FileInfo(partialPath).Length;
+            }
+            _activeDownloads.Remove(modelName);
+            return false;
+        }
         catch (OperationCanceledException)
         {
-            // Download was paused or cancelled
+            // Download was paused or cancelled by user
             if (File.Exists(partialPath))
             {
                 _pausedDownloads[modelName] = new FileInfo(partialPath).Length;

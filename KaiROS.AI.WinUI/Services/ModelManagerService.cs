@@ -9,6 +9,8 @@ namespace KaiROS.AI.WinUI.Services;
 
 public class ModelManagerService : IModelManagerService, IDisposable
 {
+    private static bool _nativeLibConfigured;
+
     private readonly IDownloadService _downloadService;
     private readonly IConfiguration _configuration;
     private readonly IDatabaseService _databaseService;
@@ -311,6 +313,10 @@ public class ModelManagerService : IModelManagerService, IDisposable
             // Get hardware info for GPU detection
             var hardwareInfo = await _hardwareService.DetectHardwareAsync();
 
+            // Configure LLamaSharp native library search path and backend BEFORE first use.
+            // In MSIX packages, the default probing may not find runtimes/win-x64/native/.
+            ConfigureNativeLibrary(hardwareInfo);
+
             // Calculate optimal GPU layers based on VRAM and model size
             _currentGpuLayers = CalculateOptimalGpuLayers(hardwareInfo, model);
 
@@ -460,6 +466,42 @@ public class ModelManagerService : IModelManagerService, IDisposable
 
     public LLamaWeights? GetLoadedWeights() => _loadedWeights;
     public MtmdWeights? GetLoadedLlavaWeights() => _loadedLlavaWeights;
+
+    /// <summary>
+    /// Configure LLamaSharp NativeLibraryConfig once before the first native call.
+    /// Ensures the correct search path and backend are used inside MSIX packages.
+    /// </summary>
+    private static void ConfigureNativeLibrary(HardwareInfo hardwareInfo)
+    {
+        if (_nativeLibConfigured) return;
+        _nativeLibConfigured = true;
+
+        try
+        {
+            // In MSIX packages the runtimes/ folder lives under the install dir (AppContext.BaseDirectory).
+            // LLamaSharp's default probing may miss it, so add it explicitly.
+            var baseDir = AppContext.BaseDirectory;
+            var runtimeNativeDir = Path.Combine(baseDir, "runtimes", "win-x64", "native");
+
+            var config = NativeLibraryConfig.All
+                .WithSearchDirectory(baseDir)
+                .WithSearchDirectory(runtimeNativeDir)
+                .WithAutoFallback(true);
+
+            // Only enable CUDA when an NVIDIA GPU is present
+            config.WithCuda(hardwareInfo.HasCuda);
+
+            // Only enable Vulkan when a compatible discrete GPU is available
+            config.WithVulkan(hardwareInfo.HasVulkan);
+
+            System.Diagnostics.Debug.WriteLine(
+                $"[KaiROS] NativeLibraryConfig: base={baseDir}, cuda={hardwareInfo.HasCuda}, vulkan={hardwareInfo.HasVulkan}");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[KaiROS] NativeLibraryConfig setup failed: {ex.Message}");
+        }
+    }
 
     /// <summary>
     /// Calculate optimal GPU layers based on available VRAM and model size.
