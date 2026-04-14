@@ -26,6 +26,11 @@ public class ChatService : IChatService, IDisposable
     private bool _supportsNativeTemplate = false;
     private LLamaWeights? _cachedWeights;
 
+    // Pre-compiled regexes for streaming token processing (avoid JIT cost on every call)
+    private static readonly Regex ThinkStartRegex = new(@"<think>|<\|.*?\|>analysis|^\s*analysis\b", RegexOptions.Compiled);
+    private static readonly Regex ThinkEndRegex = new(@"</think>|<\|.*?\|>assistant|<\|.*?\|>final|assistantfinal", RegexOptions.Compiled);
+    private static readonly Regex StripTagsRegex = new(@"<\|.*?\|>assistant|<\|.*?\|>final|<\|.*?\|>system|<\|.*?\|>user|<\|.*?\|>|assistantfinal|## OUTPUT:|## Response:|\[/INST\]|</s>|<eos>|### |\n### ", RegexOptions.Compiled);
+
     public bool IsModelLoaded => _modelManager.ActiveModel != null && _context != null;
     public InferenceStats LastStats => _lastStats;
     public uint CurrentContextSize => _currentContextSize;
@@ -119,7 +124,13 @@ public class ChatService : IChatService, IDisposable
         _isSystemPromptSent = false;
     }
 
-    public void Dispose() => DisposeContext();
+    public void Dispose()
+    {
+        _modelManager.ModelLoaded -= OnModelLoaded;
+        _modelManager.ModelUnloaded -= OnModelUnloaded;
+        DisposeContext();
+        _inferenceLock.Dispose();
+    }
 
     public void ClearContext()
     {
@@ -263,16 +274,6 @@ public class ChatService : IChatService, IDisposable
         {
             bool isThinking = false;
             string buffer = "";
-            
-            // Regexes for thinking blocks
-            // `^analysis\b` catches when the model starts exactly with 'analysis' (e.g. stripped <|channel|>analysis)
-            var thinkStartRegex = new Regex(@"<think>|<\|.*?\|>analysis|^\s*analysis\b", RegexOptions.Compiled);
-            
-            // `assistantfinal` catches when <|channel|> is stripped between assistant and final tags
-            var thinkEndRegex = new Regex(@"</think>|<\|.*?\|>assistant|<\|.*?\|>final|assistantfinal", RegexOptions.Compiled);
-            
-            // Regex for inline tags we just want to delete
-            var stripTagsRegex = new Regex(@"<\|.*?\|>assistant|<\|.*?\|>final|<\|.*?\|>system|<\|.*?\|>user|<\|.*?\|>|assistantfinal|## OUTPUT:|## Response:|\[/INST\]|</s>|<eos>|### |\n### ", RegexOptions.Compiled);
 
             await foreach (var token in _executor.InferAsync(prompt, inferenceParams, cancellationToken))
             {
@@ -282,14 +283,14 @@ public class ChatService : IChatService, IDisposable
                 // Handle thinking blocks entry
                 if (!isThinking)
                 {
-                    var match = thinkStartRegex.Match(buffer);
+                    var match = ThinkStartRegex.Match(buffer);
                     if (match.Success)
                     {
                         isThinking = true;
                         string before = buffer.Substring(0, match.Index);
                         
                         // Clean up anything before yielding
-                        before = stripTagsRegex.Replace(before, "");
+                        before = StripTagsRegex.Replace(before, "");
                         foreach (var ap in antiPrompts) before = before.Replace(ap, "");
                         
                         if (!string.IsNullOrWhiteSpace(before))
@@ -305,7 +306,7 @@ public class ChatService : IChatService, IDisposable
                 // Handle thinking blocks exit
                 if (isThinking)
                 {
-                    var match = thinkEndRegex.Match(buffer);
+                    var match = ThinkEndRegex.Match(buffer);
                     if (match.Success)
                     {
                         isThinking = false;
@@ -347,7 +348,7 @@ public class ChatService : IChatService, IDisposable
                         if (lastOpenBracket > 0)
                         {
                             string safeToYield = buffer.Substring(0, lastOpenBracket);
-                            safeToYield = stripTagsRegex.Replace(safeToYield, "");
+                            safeToYield = StripTagsRegex.Replace(safeToYield, "");
                             foreach (var ap in antiPrompts) safeToYield = safeToYield.Replace(ap, "");
                             
                             if (!string.IsNullOrEmpty(safeToYield))
@@ -362,7 +363,7 @@ public class ChatService : IChatService, IDisposable
                     {
                         // No tags forming, yield everything
                         string safeToYield = buffer;
-                        safeToYield = stripTagsRegex.Replace(safeToYield, "");
+                        safeToYield = StripTagsRegex.Replace(safeToYield, "");
                         foreach (var ap in antiPrompts) safeToYield = safeToYield.Replace(ap, "");
                         
                         if (!string.IsNullOrEmpty(safeToYield))
@@ -380,7 +381,7 @@ public class ChatService : IChatService, IDisposable
             // Flush any remaining buffer piece
             if (!isThinking && buffer.Length > 0)
             {
-                buffer = stripTagsRegex.Replace(buffer, "");
+                buffer = StripTagsRegex.Replace(buffer, "");
                 foreach (var ap in antiPrompts) buffer = buffer.Replace(ap, "");
                 if (!string.IsNullOrEmpty(buffer))
                 {

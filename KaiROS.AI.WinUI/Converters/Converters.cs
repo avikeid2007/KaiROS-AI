@@ -96,6 +96,7 @@ public class BackendToStringConverter : IValueConverter
         {
             ExecutionBackend.Cpu => "CPU",
             ExecutionBackend.Cuda => "CUDA (NVIDIA)",
+            ExecutionBackend.Vulkan => "Vulkan (AMD/Intel Arc)",
             ExecutionBackend.Npu => "NPU",
             ExecutionBackend.Auto => "Auto-detect",
             _ => "Unknown"

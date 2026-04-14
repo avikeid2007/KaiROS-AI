@@ -114,14 +114,23 @@ public partial class SettingsViewModel : ViewModelBase
 
     async partial void OnIsApiEnabledChanged(bool value)
     {
-        if (value)
+        try
         {
-            await _apiService.StartAsync(ApiPort);
+            if (value)
+            {
+                await _apiService.StartAsync(ApiPort);
+            }
+            else
+            {
+                await _apiService.StopAsync();
+            }
             OnPropertyChanged(nameof(ApiStatus));
         }
-        else
+        catch (Exception ex)
         {
-            await _apiService.StopAsync();
+            System.Diagnostics.Debug.WriteLine($"[KaiROS] API toggle failed: {ex.Message}");
+            // Revert toggle to avoid inconsistent state
+            if (value) IsApiEnabled = false;
             OnPropertyChanged(nameof(ApiStatus));
         }
     }

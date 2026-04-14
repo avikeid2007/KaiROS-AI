@@ -60,22 +60,22 @@ public partial class MainViewModel : ViewModelBase
 
         _modelManager.ModelLoaded += (s, m) =>
         {
-            // Update UI state
-            ActiveModelName = m.DisplayName;
-            StatusText = $"Model loaded: {m.DisplayName}";
-
-            // Auto-navigate to Chat whenever a model is loaded (including auto-load on startup)
-            // Use DispatcherQueue to ensure UI update if event comes from background thread
+            // All property writes must happen on the UI thread to avoid RPC_E_WRONG_THREAD
             _dispatcherQueue.TryEnqueue(() =>
             {
+                ActiveModelName = m.DisplayName;
+                StatusText = $"Model loaded: {m.DisplayName}";
                 SelectedNavigationIndex = 1;
             });
         };
 
         _modelManager.ModelUnloaded += (s, e) =>
         {
-            ActiveModelName = null;
-            StatusText = "Model unloaded";
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                ActiveModelName = null;
+                StatusText = "Model unloaded";
+            });
         };
     }
 

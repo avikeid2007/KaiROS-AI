@@ -162,7 +162,12 @@ public partial class ChatViewModel : ViewModelBase
         
         AvailableKnowledgeBases.Clear();
         AvailableKnowledgeBases.Add("None");
-        // User removed Global Knowledge tab, so we remove it here too
+
+        // Offer global document context when documents are loaded
+        if (_documentService.LoadedDocuments.Any())
+        {
+            AvailableKnowledgeBases.Add("Global Knowledge Base");
+        }
         
         foreach (var config in _raasService.Configurations)
         {
@@ -366,7 +371,7 @@ public partial class ChatViewModel : ViewModelBase
             {
                 ragContext = _documentService.GetContextForQuery(UserInput, 3);
             }
-            else if (SelectedKnowledgeBase.StartsWith("Service: "))
+            else if (SelectedKnowledgeBase != null && SelectedKnowledgeBase.StartsWith("Service: "))
             {
                 var serviceName = SelectedKnowledgeBase[9..];
                 var config = _raasService.Configurations.FirstOrDefault(c => c.Name == serviceName);

@@ -22,7 +22,10 @@ public class HardwareDetectionService : IHardwareDetectionService
                 using var ramSearcher = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem");
                 foreach (ManagementObject obj in ramSearcher.Get())
                 {
-                    info.TotalRamBytes = Convert.ToInt64(obj["TotalPhysicalMemory"]);
+                    using (obj)
+                    {
+                        info.TotalRamBytes = Convert.ToInt64(obj["TotalPhysicalMemory"]);
+                    }
                 }
                 info.AvailableRamBytes = info.TotalRamBytes - Environment.WorkingSet;
             }
@@ -44,6 +47,8 @@ public class HardwareDetectionService : IHardwareDetectionService
 
                 foreach (ManagementObject mo in searcher.Get())
                 {
+                    using (mo)
+                    {
                     var gpuName = mo["Name"]?.ToString() ?? "";
                     long gpuRam = 0;
 
@@ -93,6 +98,7 @@ public class HardwareDetectionService : IHardwareDetectionService
                         bestGpuName = gpuName;
                         bestGpuMemory = gpuRam;
                     }
+                    } // using (mo)
                 }
 
                 info.GpuName = bestGpuName;

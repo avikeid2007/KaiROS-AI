@@ -32,9 +32,6 @@ public class SessionService : ISessionService
         
         _dbPath = Path.Combine(appDataPath, "sessions.db");
         _connectionString = $"Data Source={_dbPath}";
-        
-        // Initialize database synchronously in constructor
-        InitializeDatabase();
     }
     
     private void InitializeDatabase()
@@ -76,13 +73,9 @@ public class SessionService : ISessionService
     
     public async Task InitializeAsync()
     {
-        // Database is already initialized in constructor
-        // This method is kept for interface compatibility
-        if (!_initialized)
-        {
-            InitializeDatabase();
-        }
-        await Task.CompletedTask;
+        if (_initialized) return;
+        // Run DB schema creation off the UI thread to avoid blocking startup
+        await Task.Run(InitializeDatabase);
     }
     
     public async Task<List<ChatSession>> GetAllSessionsAsync()

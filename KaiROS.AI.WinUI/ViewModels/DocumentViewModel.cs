@@ -4,6 +4,7 @@ using KaiROS.AI.WinUI;
 using KaiROS.AI.WinUI.Models;
 using KaiROS.AI.WinUI.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
@@ -15,6 +16,7 @@ public partial class DocumentViewModel : ViewModelBase
 {
     private readonly IDocumentService _documentService;
     private readonly IRaasService _raasService;
+    private readonly DispatcherQueue _dispatcherQueue;
     
     // --- Global Documents (Existing) ---
     [ObservableProperty]
@@ -53,6 +55,7 @@ public partial class DocumentViewModel : ViewModelBase
     {
         _documentService = documentService;
         _raasService = raasService;
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
     }
     
     // --- Global Document Commands ---
@@ -276,10 +279,18 @@ public partial class DocumentViewModel : ViewModelBase
 
     public override async Task InitializeAsync()
     {
-        // Load global documents
-        foreach (var doc in _documentService.LoadedDocuments)
+        // Load global documents — dispatch to UI thread because
+        // InitializeAsync may resume on a background continuation.
+        var docsToAdd = _documentService.LoadedDocuments
+            .Where(doc => !Documents.Any(d => d.Id == doc.Id))
+            .ToList();
+
+        if (docsToAdd.Count > 0)
         {
-            if (!Documents.Any(d => d.Id == doc.Id)) Documents.Add(doc);
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                foreach (var doc in docsToAdd) Documents.Add(doc);
+            });
         }
         
         // Initialize RaaS service

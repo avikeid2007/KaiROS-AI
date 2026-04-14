@@ -4,6 +4,7 @@ using LLama;
 using LLama.Common;
 using LLama.Native;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace KaiROS.AI.WinUI.Services;
 
@@ -313,9 +314,9 @@ public class ModelManagerService : IModelManagerService, IDisposable
             // Get hardware info for GPU detection
             var hardwareInfo = await _hardwareService.DetectHardwareAsync();
 
-            // Configure LLamaSharp native library search path and backend BEFORE first use.
-            // In MSIX packages, the default probing may not find runtimes/win-x64/native/.
-            ConfigureNativeLibrary(hardwareInfo);
+            // Configure LLamaSharp native library search path BEFORE first use.
+            // In MSIX packages, the default probing may not find runtimes/<rid>/native/.
+            ConfigureNativeLibrary();
 
             // Calculate optimal GPU layers based on VRAM and model size
             _currentGpuLayers = CalculateOptimalGpuLayers(hardwareInfo, model);
@@ -342,6 +343,12 @@ public class ModelManagerService : IModelManagerService, IDisposable
                     // Strict timeout to prevent hanging on Intel drivers
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(45));
 
+                    // Use local variables to avoid data race: if WaitAsync times out,
+                    // the Task.Run lambda may still be writing to fields while the
+                    // catch block tries to dispose them.
+                    LLamaWeights? weights = null;
+                    MtmdWeights? llavaWeights = null;
+
                     await Task.Run(() =>
                     {
                         progress?.Report(20);
@@ -357,26 +364,26 @@ public class ModelManagerService : IModelManagerService, IDisposable
                         ModelLoadProgress?.Invoke(this, 30);
 
                         // This is the heavy operation - loading weights
-                        _loadedWeights = LLamaWeights.LoadFromFile(parameters);
+                        weights = LLamaWeights.LoadFromFile(parameters);
 
                         // Load LLava mmproj if this is a vision model
                         if (model.IsVisionModel && !string.IsNullOrEmpty(model.MmProjLocalPath) && File.Exists(model.MmProjLocalPath))
                         {
                             System.Diagnostics.Debug.WriteLine($"[KaiROS] Loading MTMD mm-proj: {model.MmProjLocalPath}");
-                            _loadedLlavaWeights = MtmdWeights.LoadFromFile(
+                            llavaWeights = MtmdWeights.LoadFromFile(
                                 model.MmProjLocalPath,
-                                _loadedWeights,
+                                weights,
                                 MtmdContextParams.Default());
-                            System.Diagnostics.Debug.WriteLine($"[KaiROS] Vision model ready. Supports vision: {_loadedLlavaWeights.SupportsVision}");
-                        }
-                        else
-                        {
-                            _loadedLlavaWeights = null;
+                            System.Diagnostics.Debug.WriteLine($"[KaiROS] Vision model ready. Supports vision: {llavaWeights.SupportsVision}");
                         }
 
                         progress?.Report(90);
                         ModelLoadProgress?.Invoke(this, 90);
                     }, cts.Token).WaitAsync(TimeSpan.FromSeconds(45));
+
+                    // Only assign to fields after the task completes successfully
+                    _loadedWeights = weights;
+                    _loadedLlavaWeights = llavaWeights;
 
                     // Success!
                     _currentGpuLayers = layers;
@@ -469,37 +476,60 @@ public class ModelManagerService : IModelManagerService, IDisposable
 
     /// <summary>
     /// Configure LLamaSharp NativeLibraryConfig once before the first native call.
-    /// Ensures the correct search path and backend are used inside MSIX packages.
+    /// In MSIX packages the default DLL probing may not find runtimes/ subfolders,
+    /// so we register every native directory explicitly and let LLamaSharp auto-detect
+    /// the best backend (matching the behaviour of the passing unpackaged build).
     /// </summary>
-    private static void ConfigureNativeLibrary(HardwareInfo hardwareInfo)
+    private static void ConfigureNativeLibrary()
     {
         if (_nativeLibConfigured) return;
-        _nativeLibConfigured = true;
 
         try
         {
-            // In MSIX packages the runtimes/ folder lives under the install dir (AppContext.BaseDirectory).
-            // LLamaSharp's default probing may miss it, so add it explicitly.
             var baseDir = AppContext.BaseDirectory;
-            var runtimeNativeDir = Path.Combine(baseDir, "runtimes", "win-x64", "native");
+
+            // Detect the RID subfolder for the current process architecture
+            var arch = RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.X86   => "win-x86",
+                Architecture.Arm64 => "win-arm64",
+                _                  => "win-x64"
+            };
 
             var config = NativeLibraryConfig.All
                 .WithSearchDirectory(baseDir)
-                .WithSearchDirectory(runtimeNativeDir)
                 .WithAutoFallback(true);
 
-            // Only enable CUDA when an NVIDIA GPU is present
-            config.WithCuda(hardwareInfo.HasCuda);
+            // Primary path: runtimes/<rid>/native  (and every backend sub-folder)
+            var runtimeNativeDir = Path.Combine(baseDir, "runtimes", arch, "native");
+            if (Directory.Exists(runtimeNativeDir))
+            {
+                config.WithSearchDirectory(runtimeNativeDir);
+                foreach (var subDir in Directory.GetDirectories(runtimeNativeDir))
+                {
+                    config.WithSearchDirectory(subDir);
+                }
+            }
 
-            // Only enable Vulkan when a compatible discrete GPU is available
-            config.WithVulkan(hardwareInfo.HasVulkan);
+            // Fallback: some packaging modes place DLLs directly under a "native" folder
+            var directNativeDir = Path.Combine(baseDir, "native");
+            if (Directory.Exists(directNativeDir))
+            {
+                config.WithSearchDirectory(directNativeDir);
+            }
+
+            // Do NOT force WithCuda / WithVulkan — let auto-fallback pick the
+            // best available backend at runtime (CPU is always safe).
 
             System.Diagnostics.Debug.WriteLine(
-                $"[KaiROS] NativeLibraryConfig: base={baseDir}, cuda={hardwareInfo.HasCuda}, vulkan={hardwareInfo.HasVulkan}");
+                $"[KaiROS] NativeLibraryConfig: base={baseDir}, arch={arch}, nativeDir exists={Directory.Exists(runtimeNativeDir)}");
+
+            _nativeLibConfigured = true;
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[KaiROS] NativeLibraryConfig setup failed: {ex.Message}");
+            // Leave _nativeLibConfigured false so the default probing is used
         }
     }
 

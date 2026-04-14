@@ -1,4 +1,5 @@
 ﻿using KaiROS.AI.WinUI.Models;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net.Http;
 
@@ -8,8 +9,8 @@ public class DownloadService : IDownloadService
 {
     private readonly HttpClient _httpClient;
     private readonly string _modelsDirectory;
-    private readonly Dictionary<string, CancellationTokenSource> _activeDownloads = [];
-    private readonly Dictionary<string, long> _pausedDownloads = []; // Tracks bytes downloaded
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _activeDownloads = new();
+    private readonly ConcurrentDictionary<string, long> _pausedDownloads = new(); // Tracks bytes downloaded
 
     public DownloadService(string modelsDirectory)
     {
@@ -39,6 +40,8 @@ public class DownloadService : IDownloadService
 
             // Create cancellation token source for this download
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            if (_activeDownloads.TryRemove(modelName, out var oldCts))
+                oldCts.Dispose();
             _activeDownloads[modelName] = cts;
 
             // Setup request with range header for resume
@@ -74,24 +77,45 @@ public class DownloadService : IDownloadService
             long totalBytesRead = existingBytes;
             int bytesRead;
 
-            // Per-read stall timeout: cancel if no data received for 60 seconds.
-            // HttpClient.Timeout only covers the initial request with ResponseHeadersRead,
-            // not individual stream reads which can hang indefinitely on stalled connections.
+            // Stall detection: reset a single timer on each successful read.
+            // Previous approach allocated a new CancellationTokenSource pair per read
+            // (~50 000 for a 4 GB model), causing excessive GC pressure and timer overhead.
+            using var stallTimer = new CancellationTokenSource();
+            var stallTimeout = TimeSpan.FromSeconds(60);
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, stallTimer.Token);
+
+            // Throttle progress reports to avoid flooding the UI dispatcher (max ~4/sec).
+            var lastProgressReport = Environment.TickCount64;
+            const int ProgressIntervalMs = 250;
+
             while (true)
             {
-                using var readTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
-                using var linked = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, readTimeout.Token);
+                stallTimer.CancelAfter(stallTimeout); // (re)set the stall deadline
 
                 bytesRead = await contentStream.ReadAsync(buffer, linked.Token);
                 if (bytesRead == 0) break;
+
+                // Reset stall timer for the next read
+                stallTimer.TryReset();
 
                 await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cts.Token);
                 totalBytesRead += bytesRead;
 
                 if (totalBytes > 0)
                 {
-                    progress?.Report((double)totalBytesRead / totalBytes * 100);
+                    var now = Environment.TickCount64;
+                    if (now - lastProgressReport >= ProgressIntervalMs)
+                    {
+                        progress?.Report((double)totalBytesRead / totalBytes * 100);
+                        lastProgressReport = now;
+                    }
                 }
+            }
+
+            // Report final 100 % so the UI isn't stuck at an intermediate value
+            if (totalBytes > 0)
+            {
+                progress?.Report((double)totalBytesRead / totalBytes * 100);
             }
 
             await fileStream.FlushAsync(cts.Token);
@@ -110,7 +134,7 @@ public class DownloadService : IDownloadService
                 if (sizeDifference > toleranceBytes)
                 {
                     System.Diagnostics.Debug.WriteLine($"[Download] INCOMPLETE! Missing {totalBytes - downloadedSize} bytes. Keeping partial file for resume.");
-                    _activeDownloads.Remove(modelName);
+                    _activeDownloads.TryRemove(modelName, out _);
                     _pausedDownloads[modelName] = downloadedSize;
                     return false; // Don't rename incomplete file
                 }
@@ -123,8 +147,8 @@ public class DownloadService : IDownloadService
 
             System.Diagnostics.Debug.WriteLine($"[Download] SUCCESS - File saved to {destinationPath}");
 
-            _activeDownloads.Remove(modelName);
-            _pausedDownloads.Remove(modelName);
+            _activeDownloads.TryRemove(modelName, out _);
+            _pausedDownloads.TryRemove(modelName, out _);
 
             return true;
         }
@@ -136,7 +160,7 @@ public class DownloadService : IDownloadService
             {
                 _pausedDownloads[modelName] = new FileInfo(partialPath).Length;
             }
-            _activeDownloads.Remove(modelName);
+            _activeDownloads.TryRemove(modelName, out _);
             return false;
         }
         catch (OperationCanceledException)
@@ -150,7 +174,7 @@ public class DownloadService : IDownloadService
         }
         catch (Exception)
         {
-            _activeDownloads.Remove(modelName);
+            _activeDownloads.TryRemove(modelName, out _);
             throw;
         }
     }

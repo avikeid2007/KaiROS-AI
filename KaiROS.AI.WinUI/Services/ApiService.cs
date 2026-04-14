@@ -118,8 +118,8 @@ public class ApiService : IApiService
         
         try
         {
-            // Enable CORS
-            response.Headers.Add("Access-Control-Allow-Origin", "*");
+            // Enable CORS — restrict to localhost to prevent cross-origin exfiltration
+            response.Headers.Add("Access-Control-Allow-Origin", "http://localhost");
             response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
             response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
             
