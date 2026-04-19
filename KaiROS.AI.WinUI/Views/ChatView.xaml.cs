@@ -127,21 +127,19 @@ public partial class ChatView : UserControl
             {
                 var streamRef = await dataView.GetBitmapAsync();
                 using var stream = await streamRef.OpenReadAsync();
-                var tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"Kairos_{Guid.NewGuid()}.png");
 
+                // Decode the clipboard bitmap (may be DIB/BMP) and re-encode as PNG
                 var decoder = await Windows.Graphics.Imaging.BitmapDecoder.CreateAsync(stream);
-                using var fileStream = await StorageFile.GetFileFromPathAsync(tempPath)
-                    .AsTask()
-                    .ContinueWith(_ => Task.FromResult<IStorageFile?>(null)); // Will fail â€” use StorageFolder approach
 
-                // Simpler: copy the stream to a temp file
                 var folder = await StorageFolder.GetFolderFromPathAsync(System.IO.Path.GetTempPath());
                 var tempFile = await folder.CreateFileAsync($"Kairos_{Guid.NewGuid()}.png",
                     CreationCollisionOption.GenerateUniqueName);
                 using (var outStream = await tempFile.OpenAsync(FileAccessMode.ReadWrite))
                 {
-                    await Windows.Storage.Streams.RandomAccessStream.CopyAsync(stream, outStream);
+                    var encoder = await Windows.Graphics.Imaging.BitmapEncoder.CreateForTranscodingAsync(outStream, decoder);
+                    await encoder.FlushAsync();
                 }
+
 
                 if (DataContext is ViewModels.ChatViewModel vmBmp)
                 {

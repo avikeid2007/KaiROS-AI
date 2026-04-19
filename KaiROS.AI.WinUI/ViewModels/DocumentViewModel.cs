@@ -1,9 +1,10 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KaiROS.AI.WinUI;
 using KaiROS.AI.WinUI.Models;
 using KaiROS.AI.WinUI.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
@@ -15,37 +16,35 @@ public partial class DocumentViewModel : ViewModelBase
 {
     private readonly IDocumentService _documentService;
     private readonly IRaasService _raasService;
+    private readonly DispatcherQueue _dispatcherQueue;
     
     // --- Global Documents (Existing) ---
     [ObservableProperty]
-    private ObservableCollection<Document> _documents = [];
+    public partial ObservableCollection<Document> Documents { get; set; } = [];
     
     [ObservableProperty]
-    private bool _isLoading;
-    
-    [ObservableProperty]
-    private string _statusMessage = "No documents loaded";
+    public partial string StatusMessage { get; set; } = "No documents loaded";
     
     // --- RaaS Management (New) ---
     public ObservableCollection<RaasConfiguration> RaasConfigurations => _raasService.Configurations;
 
     [ObservableProperty]
-    private string _newServiceName = "New Service";
+    public partial string NewServiceName { get; set; } = "New Service";
 
     [ObservableProperty]
-    private string _newServiceDescription = "";
+    public partial string NewServiceDescription { get; set; } = "";
 
     [ObservableProperty]
-    private int _newServicePort = 5001;
+    public partial int NewServicePort { get; set; } = 5001;
 
     [ObservableProperty]
-    private string _newServiceSystemPrompt = "You are a helpful AI assistant.";
+    public partial string NewServiceSystemPrompt { get; set; } = "You are a helpful AI assistant.";
 
     [ObservableProperty]
-    private RaasConfiguration? _selectedConfiguration;
+    public partial RaasConfiguration? SelectedConfiguration { get; set; }
     
     [ObservableProperty]
-    private bool _isCreatingService;
+    public partial bool IsCreatingService { get; set; }
     
     partial void OnSelectedConfigurationChanged(RaasConfiguration? value)
     {
@@ -56,6 +55,7 @@ public partial class DocumentViewModel : ViewModelBase
     {
         _documentService = documentService;
         _raasService = raasService;
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
     }
     
     // --- Global Document Commands ---
@@ -279,10 +279,18 @@ public partial class DocumentViewModel : ViewModelBase
 
     public override async Task InitializeAsync()
     {
-        // Load global documents
-        foreach (var doc in _documentService.LoadedDocuments)
+        // Load global documents — dispatch to UI thread because
+        // InitializeAsync may resume on a background continuation.
+        var docsToAdd = _documentService.LoadedDocuments
+            .Where(doc => !Documents.Any(d => d.Id == doc.Id))
+            .ToList();
+
+        if (docsToAdd.Count > 0)
         {
-            if (!Documents.Any(d => d.Id == doc.Id)) Documents.Add(doc);
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                foreach (var doc in docsToAdd) Documents.Add(doc);
+            });
         }
         
         // Initialize RaaS service

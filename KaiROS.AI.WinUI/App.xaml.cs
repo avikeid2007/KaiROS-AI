@@ -1,7 +1,9 @@
 ﻿using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using KaiROS.AI.WinUI.Services;
 using KaiROS.AI.WinUI.ViewModels;
 using KaiROS.AI.WinUI.Models;
@@ -38,8 +40,38 @@ public partial class App : Application
         try { sp.Dispose(); } catch { }
     }
 
+    // ── Crash log helpers ─────────────────────────────────────────────────
+    internal static readonly string CrashLogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "KaiROS.AI", "crash.log");
+
+    internal static void WriteCrashLog(string source, Exception? ex)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(CrashLogPath)!);
+            var entry = $"[{DateTimeOffset.Now:o}] UNHANDLED in {source}{Environment.NewLine}{ex}{Environment.NewLine}---{Environment.NewLine}";
+            File.AppendAllText(CrashLogPath, entry);
+        }
+        catch { }
+    }
+
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // Global crash handlers — fire in Release where no debugger is attached
+        UnhandledException += (_, e) =>
+        {
+            e.Handled = true; // prevent silent process termination
+            WriteCrashLog("Application.UnhandledException", e.Exception);
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+            WriteCrashLog("AppDomain.UnhandledException", e.ExceptionObject as Exception);
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            e.SetObserved();
+            WriteCrashLog("TaskScheduler.UnobservedTaskException", e.Exception);
+        };
+
         // Build configuration
         var configuration = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
@@ -66,6 +98,13 @@ public partial class App : Application
         var appSettings = configuration.GetSection("AppSettings").Get<AppSettings>() ?? new AppSettings();
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var modelsDir = Path.Combine(localAppData, "KaiROS.AI", "Models");
+
+        // Logging — file provider works in both Debug and Release without a debugger
+        services.AddLogging(b =>
+        {
+            b.SetMinimumLevel(LogLevel.Debug);
+            b.AddProvider(new FileLoggerProvider(CrashLogPath));
+        });
 
         // Services
         services.AddSingleton<IDatabaseService, DatabaseService>();
@@ -96,5 +135,31 @@ public partial class App : Application
 
         // Views
         services.AddSingleton<MainWindow>();
+    }
+}
+
+// ── Minimal file logger (no extra NuGet required) ──────────────────────────
+internal sealed class FileLoggerProvider(string path) : ILoggerProvider
+{
+    public ILogger CreateLogger(string categoryName) => new FileLogger(path, categoryName);
+    public void Dispose() { }
+}
+
+internal sealed class FileLogger(string path, string category) : ILogger
+{
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+    public bool IsEnabled(LogLevel level) => level >= LogLevel.Warning;
+    public void Log<TState>(LogLevel level, EventId id, TState state, Exception? ex, Func<TState, Exception?, string> formatter)
+    {
+        if (!IsEnabled(level)) return;
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            var line = $"[{DateTimeOffset.Now:o}] [{level}] {category}: {formatter(state, ex)}";
+            if (ex != null) line += $"{Environment.NewLine}{ex}";
+            line += Environment.NewLine;
+            File.AppendAllText(path, line);
+        }
+        catch { }
     }
 }

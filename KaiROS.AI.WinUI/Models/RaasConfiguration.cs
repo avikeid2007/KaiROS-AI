@@ -7,7 +7,7 @@ namespace KaiROS.AI.WinUI.Models;
 public class RaasConfiguration : INotifyPropertyChanged
 {
     private bool _isRunning;
-    private int _requestCount;
+    internal int _requestCount;
 
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public string Name { get; set; } = "New RAG Service";

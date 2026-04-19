@@ -51,7 +51,11 @@ public class FileSourceProvider : IRagSourceProvider
                 }
                 return sb.ToString();
             }
-            catch (Exception ex) { return $"Error reading Word doc: {ex.Message}"; }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error reading Word doc: {ex.Message}");
+                throw;
+            }
         });
     }
 
@@ -76,7 +80,11 @@ public class FileSourceProvider : IRagSourceProvider
                 }
                 return sb.ToString();
             }
-            catch (Exception ex) { return $"Error reading PDF: {ex.Message}"; }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error reading PDF: {ex.Message}");
+                throw;
+            }
         });
     }
 }

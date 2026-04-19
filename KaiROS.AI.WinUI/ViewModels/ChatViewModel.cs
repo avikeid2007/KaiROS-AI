@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KaiROS.AI.WinUI;
 using KaiROS.AI.WinUI.Models;
@@ -25,87 +25,87 @@ public partial class ChatViewModel : ViewModelBase
     private CancellationTokenSource? _currentInferenceCts;
 
     [ObservableProperty]
-    private ObservableCollection<ChatMessageViewModel> _messages = [];
+    public partial ObservableCollection<ChatMessageViewModel> Messages { get; set; } = [];
 
     [ObservableProperty]
-    private ObservableCollection<ChatSession> _sessions = [];
+    public partial ObservableCollection<ChatSession> Sessions { get; set; } = [];
 
     [ObservableProperty]
-    private ChatSession? _currentSession;
+    public partial ChatSession? CurrentSession { get; set; }
 
     [ObservableProperty]
-    private string _userInput = string.Empty;
+    public partial string UserInput { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private bool _isWebSearchEnabled;
+    public partial bool IsWebSearchEnabled { get; set; }
 
     [ObservableProperty]
-    private string _systemPrompt = "You are a helpful, friendly AI assistant. Be concise and clear.";
+    public partial string SystemPrompt { get; set; } = "You are a helpful, friendly AI assistant. Be concise and clear.";
 
     [ObservableProperty]
-    private bool _isGenerating;
+    public partial bool IsGenerating { get; set; }
 
     [ObservableProperty]
-    private bool _isSystemPromptExpanded;
+    public partial bool IsSystemPromptExpanded { get; set; }
 
     [ObservableProperty]
-    private double _tokensPerSecond;
+    public partial double TokensPerSecond { get; set; }
 
     [ObservableProperty]
-    private int _totalTokens;
+    public partial int TotalTokens { get; set; }
 
     [ObservableProperty]
-    private string _memoryUsage = "N/A";
+    public partial string MemoryUsage { get; set; } = "N/A";
 
     [ObservableProperty]
-    private string _elapsedTime = "0s";
+    public partial string ElapsedTime { get; set; } = "0s";
 
     [ObservableProperty]
-    private string _contextWindow = "N/A";
+    public partial string ContextWindow { get; set; } = "N/A";
 
     [ObservableProperty]
-    private string _gpuLayers = "N/A";
+    public partial string GpuLayers { get; set; } = "N/A";
 
     [ObservableProperty]
-    private bool _hasActiveModel;
+    public partial bool HasActiveModel { get; set; }
 
     [ObservableProperty]
-    private string _activeModelInfo = "No model loaded";
+    public partial string ActiveModelInfo { get; set; } = "No model loaded";
 
     [ObservableProperty]
-    private bool _isSessionListVisible = true;
+    public partial bool IsSessionListVisible { get; set; } = true;
 
     [ObservableProperty]
-    private bool _isSearchVisible;
+    public partial bool IsSearchVisible { get; set; }
 
     [ObservableProperty]
-    private string _searchText = string.Empty;
+    public partial string SearchText { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private bool _isEnterToSendEnabled;
+    public partial bool IsEnterToSendEnabled { get; set; }
 
     [ObservableProperty]
-    private string _currentDocumentName = string.Empty;
+    public partial string CurrentDocumentName { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string? _attachedImagePath;
+    public partial string? AttachedImagePath { get; set; }
 
     [ObservableProperty]
-    private bool _hasAttachedImage;
+    public partial bool HasAttachedImage { get; set; }
     
     // --- RAG Selection ---
     
     [ObservableProperty]
-    private ObservableCollection<string> _availableKnowledgeBases =
+    public partial ObservableCollection<string> AvailableKnowledgeBases { get; set; } =
     [
         "None" 
     ];
 
     [ObservableProperty]
-    private string _selectedKnowledgeBase = "None"; // Default to None
+    public partial string SelectedKnowledgeBase { get; set; } = "None";
 
     [ObservableProperty]
-    private int _globalRagDocumentCount;
+    public partial int GlobalRagDocumentCount { get; set; }
 
     private string _currentDocumentContext = string.Empty;
 
@@ -162,7 +162,12 @@ public partial class ChatViewModel : ViewModelBase
         
         AvailableKnowledgeBases.Clear();
         AvailableKnowledgeBases.Add("None");
-        // User removed Global Knowledge tab, so we remove it here too
+
+        // Offer global document context when documents are loaded
+        if (_documentService.LoadedDocuments.Any())
+        {
+            AvailableKnowledgeBases.Add("Global Knowledge Base");
+        }
         
         foreach (var config in _raasService.Configurations)
         {
@@ -366,7 +371,7 @@ public partial class ChatViewModel : ViewModelBase
             {
                 ragContext = _documentService.GetContextForQuery(UserInput, 3);
             }
-            else if (SelectedKnowledgeBase.StartsWith("Service: "))
+            else if (SelectedKnowledgeBase != null && SelectedKnowledgeBase.StartsWith("Service: "))
             {
                 var serviceName = SelectedKnowledgeBase[9..];
                 var config = _raasService.Configurations.FirstOrDefault(c => c.Name == serviceName);
@@ -581,10 +586,10 @@ public partial class ChatMessageViewModel(ChatMessage message, DispatcherQueue? 
     public ChatMessage Message { get; } = message;
 
     [ObservableProperty]
-    private string _content = message.Content;
+    public partial string Content { get; set; } = message.Content;
 
     [ObservableProperty]
-    private bool _isStreaming = message.IsStreaming;
+    public partial bool IsStreaming { get; set; } = message.IsStreaming;
 
     public bool IsUser => Message.Role == ChatRole.User;
     public bool IsAssistant => Message.Role == ChatRole.Assistant;

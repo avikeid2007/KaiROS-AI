@@ -18,6 +18,9 @@ public partial class MainWindow : Window
     private readonly MainViewModel _viewModel;
     private readonly IApiService _apiService;
     private readonly IThemeService _themeService;
+
+    // Exposed for x:Bind in XAML
+    public MainViewModel ViewModel => _viewModel;
     private bool _isExiting = false;
     private bool _initialized = false;
     private bool _isShuttingDown = false;
@@ -82,6 +85,8 @@ public partial class MainWindow : Window
         {
             if (e.PropertyName == nameof(MainViewModel.SelectedNavigationIndex))
                 SyncNavViewSelection(_viewModel.SelectedNavigationIndex);
+            if (e.PropertyName == nameof(MainViewModel.CurrentView))
+                UpdateContentArea();
         };
 
     }
@@ -96,6 +101,9 @@ public partial class MainWindow : Window
         _themeService.LoadSavedTheme();
 
         await _viewModel.InitializeAsync();
+
+        // Ensure the content area shows the correct view after initialization
+        UpdateContentArea();
     }
 
     private void AppWindow_Closing(AppWindow sender, AppWindowClosingEventArgs args)
@@ -221,6 +229,36 @@ public partial class MainWindow : Window
                 return;
             }
         }
+    }
+
+    // Cache views so they aren't recreated on every navigation
+    private readonly Dictionary<Type, UIElement> _viewCache = [];
+
+    private void UpdateContentArea()
+    {
+        var vm = _viewModel.CurrentView;
+        if (vm == null) { ContentArea.Child = null; return; }
+
+        var vmType = vm.GetType();
+        if (!_viewCache.TryGetValue(vmType, out var view))
+        {
+            view = vm switch
+            {
+                ModelCatalogViewModel => new Views.ModelCatalogView(),
+                ChatViewModel => new Views.ChatView(),
+                DocumentViewModel => new Views.DocumentView(),
+                SettingsViewModel => new Views.SettingsView(),
+                _ => null
+            };
+
+            if (view is FrameworkElement fe)
+                fe.DataContext = vm;
+
+            if (view != null)
+                _viewCache[vmType] = view;
+        }
+
+        ContentArea.Child = view;
     }
 }
 

@@ -4,11 +4,14 @@ using LLama;
 using LLama.Common;
 using LLama.Native;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace KaiROS.AI.WinUI.Services;
 
 public class ModelManagerService : IModelManagerService, IDisposable
 {
+    private static bool _nativeLibConfigured;
+
     private readonly IDownloadService _downloadService;
     private readonly IConfiguration _configuration;
     private readonly IDatabaseService _databaseService;
@@ -311,6 +314,14 @@ public class ModelManagerService : IModelManagerService, IDisposable
             // Get hardware info for GPU detection
             var hardwareInfo = await _hardwareService.DetectHardwareAsync();
 
+            // Configure LLamaSharp native library search path BEFORE first use.
+            // In MSIX packages, the default probing may not find runtimes/<rid>/native/.
+            // Must pass the detected backend so we ONLY register directories whose
+            // DLLs can actually load on this hardware.  GPU backend folders lack
+            // ggml-cpu.dll, so loading from cuda12/ on a CPU-only machine fails in the
+            // static constructor and permanently poisons the type (TypeInitializationException).
+            ConfigureNativeLibrary(hardwareInfo.SelectedBackend);
+
             // Calculate optimal GPU layers based on VRAM and model size
             _currentGpuLayers = CalculateOptimalGpuLayers(hardwareInfo, model);
 
@@ -323,6 +334,10 @@ public class ModelManagerService : IModelManagerService, IDisposable
 
             foreach (var layers in layersToTry)
             {
+                // Declared outside try so catch blocks can dispose on failure.
+                LLamaWeights? weights = null;
+                MtmdWeights? llavaWeights = null;
+
                 try
                 {
                     System.Diagnostics.Debug.WriteLine($"[KaiROS] Attempting to load with {layers} GPU layers...");
@@ -342,21 +357,17 @@ public class ModelManagerService : IModelManagerService, IDisposable
                         ModelLoadProgress?.Invoke(this, 30);
 
                         // This is the heavy operation - loading weights
-                        _loadedWeights = LLamaWeights.LoadFromFile(parameters);
+                        weights = LLamaWeights.LoadFromFile(parameters);
 
                         // Load LLava mmproj if this is a vision model
                         if (model.IsVisionModel && !string.IsNullOrEmpty(model.MmProjLocalPath) && File.Exists(model.MmProjLocalPath))
                         {
                             System.Diagnostics.Debug.WriteLine($"[KaiROS] Loading MTMD mm-proj: {model.MmProjLocalPath}");
-                            _loadedLlavaWeights = MtmdWeights.LoadFromFile(
+                            llavaWeights = MtmdWeights.LoadFromFile(
                                 model.MmProjLocalPath,
-                                _loadedWeights,
+                                weights,
                                 MtmdContextParams.Default());
-                            System.Diagnostics.Debug.WriteLine($"[KaiROS] Vision model ready. Supports vision: {_loadedLlavaWeights.SupportsVision}");
-                        }
-                        else
-                        {
-                            _loadedLlavaWeights = null;
+                            System.Diagnostics.Debug.WriteLine($"[KaiROS] Vision model ready. Supports vision: {llavaWeights.SupportsVision}");
                         }
 
                         progress?.Report(90);
@@ -373,6 +384,10 @@ public class ModelManagerService : IModelManagerService, IDisposable
                     {
                         await loadTask;
                     }
+
+                    // Only assign to fields after the task completes successfully
+                    _loadedWeights = weights;
+                    _loadedLlavaWeights = llavaWeights;
 
                     // Success!
                     _currentGpuLayers = layers;
@@ -391,17 +406,29 @@ public class ModelManagerService : IModelManagerService, IDisposable
                     ModelLoaded?.Invoke(this, model);
                     return true;
                 }
+                catch (TypeInitializationException ex)
+                {
+                    // A TypeInitializationException means the native library static
+                    // constructor failed.  The type is permanently poisoned — retrying
+                    // with fewer GPU layers will not help.
+                    lastException = ex;
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[KaiROS] FATAL: Native type initializer failed. " +
+                        $"Backend DLLs may be missing or incompatible. Inner: {ex.InnerException?.Message}");
+
+                    // Clean up the local weights (fields were never assigned)
+                    try { weights?.Dispose(); } catch { }
+                    try { llavaWeights?.Dispose(); } catch { }
+                    break; // No point retrying — type is permanently broken
+                }
                 catch (Exception ex)
                 {
                     lastException = ex;
                     System.Diagnostics.Debug.WriteLine($"[KaiROS] Failed to load with {layers} layers: {ex.Message}");
 
-                    // Clean up any partial state
-                    if (_loadedWeights != null)
-                    {
-                        try { _loadedWeights.Dispose(); } catch { }
-                        _loadedWeights = null;
-                    }
+                    // Clean up local weights (fields were never assigned)
+                    try { weights?.Dispose(); } catch { }
+                    try { llavaWeights?.Dispose(); } catch { }
 
                     if (_loadedLlavaWeights != null)
                     {
@@ -416,7 +443,18 @@ public class ModelManagerService : IModelManagerService, IDisposable
 
             // All attempts failed
             System.Diagnostics.Debug.WriteLine($"Error loading model: {lastException?.Message}");
-            model.LoadError = lastException?.Message ?? "Failed to load model after multiple attempts";
+
+            // Give a user-friendly message for the type initializer crash
+            if (lastException is TypeInitializationException tie)
+            {
+                model.LoadError = $"Failed to load native AI engine. " +
+                    $"This usually means the required backend libraries are missing or incompatible with your hardware. " +
+                    $"Details: {tie.InnerException?.Message ?? tie.Message}";
+            }
+            else
+            {
+                model.LoadError = lastException?.Message ?? "Failed to load model after multiple attempts";
+            }
             progress?.Report(0);
             ModelLoadProgress?.Invoke(this, 0);
             return false;
@@ -496,6 +534,139 @@ public class ModelManagerService : IModelManagerService, IDisposable
         var modelSizeInGb = Math.Max(1d, model.SizeBytes / (1024d * 1024d * 1024d));
         var timeoutSeconds = 90 + (int)Math.Ceiling(modelSizeInGb * 15);
         return TimeSpan.FromSeconds(Math.Min(timeoutSeconds, 240));
+    }
+
+    /// <summary>
+    /// Configure LLamaSharp NativeLibraryConfig once before the first native call.
+    /// In MSIX packages the default DLL probing may not find runtimes/ subfolders,
+    /// so we register every native directory explicitly.
+    ///
+    /// CRITICAL: We only add directories whose compute-backend DLL can actually
+    /// initialise on the current hardware.  The cuda12/ and vulkan/ folders do NOT
+    /// ship ggml-cpu.dll – if LLamaSharp picks one of them on a CPU-only device,
+    /// the native static constructor fails and the type is permanently poisoned
+    /// (TypeInitializationException with no possibility of retry).
+    /// </summary>
+    private static void ConfigureNativeLibrary(ExecutionBackend selectedBackend)
+    {
+        if (_nativeLibConfigured) return;
+
+        try
+        {
+            var baseDir = AppContext.BaseDirectory;
+
+            // Detect the RID subfolder for the current process architecture
+            var arch = RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.X86   => "win-x86",
+                Architecture.Arm64 => "win-arm64",
+                _                  => "win-x64"
+            };
+
+            var config = NativeLibraryConfig.All
+                .WithSearchDirectory(baseDir);
+
+            // ── Explicitly select / disable backends ──────────────────────
+            // This prevents LLamaSharp from probing GPU backend directories
+            // that lack the compute DLLs required for this hardware.
+            switch (selectedBackend)
+            {
+                case ExecutionBackend.Cuda:
+                    config.WithCuda();
+                    break;
+                case ExecutionBackend.Vulkan:
+                    config.WithVulkan();
+                    break;
+                default:
+                    // CPU-only: disable CUDA / Vulkan so LLamaSharp never
+                    // attempts to load from cuda12/ or vulkan/ directories.
+                    config.WithCuda(false).WithVulkan(false);
+                    break;
+            }
+
+            config.WithAutoFallback(true);
+
+            // ── Build the set of allowed sub-directories ──────────────────
+            // CPU variants are always safe; GPU dirs only when hardware matches.
+            var allowedDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                { "noavx", "avx", "avx2", "avx512" };
+
+            if (selectedBackend == ExecutionBackend.Cuda)
+                allowedDirs.Add("cuda12");
+            if (selectedBackend == ExecutionBackend.Vulkan)
+                allowedDirs.Add("vulkan");
+
+            // Primary path: runtimes/<rid>/native  (and filtered sub-folders)
+            var runtimeNativeDir = Path.Combine(baseDir, "runtimes", arch, "native");
+            if (Directory.Exists(runtimeNativeDir))
+            {
+                config.WithSearchDirectory(runtimeNativeDir);
+                foreach (var subDir in Directory.GetDirectories(runtimeNativeDir))
+                {
+                    var dirName = Path.GetFileName(subDir);
+                    if (!allowedDirs.Contains(dirName))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[KaiROS] Skipping backend dir (not needed): {dirName}");
+                        continue;
+                    }
+
+                    config.WithSearchDirectory(subDir);
+                }
+
+                // Add allowed directories to the process PATH so that the Windows
+                // loader can resolve dependent DLLs (ggml.dll, ggml-base.dll, etc.)
+                // when llama.dll is loaded from a subdirectory via NativeLibrary.Load.
+                EnsureDllSearchPaths(runtimeNativeDir, allowedDirs);
+            }
+
+            // Fallback: some packaging modes place DLLs directly under a "native" folder
+            var directNativeDir = Path.Combine(baseDir, "native");
+            if (Directory.Exists(directNativeDir))
+            {
+                config.WithSearchDirectory(directNativeDir);
+            }
+
+            System.Diagnostics.Debug.WriteLine(
+                $"[KaiROS] NativeLibraryConfig: backend={selectedBackend}, arch={arch}, " +
+                $"nativeDir exists={Directory.Exists(runtimeNativeDir)}, allowed=[{string.Join(",", allowedDirs)}]");
+
+            _nativeLibConfigured = true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[KaiROS] NativeLibraryConfig setup failed: {ex.Message}");
+            // Leave _nativeLibConfigured false so the default probing is used
+        }
+    }
+
+    /// <summary>
+    /// Prepend the allowed native sub-directories to the process PATH environment
+    /// variable so that Windows can resolve DLL dependencies (ggml.dll → ggml-base.dll,
+    /// etc.) when LLamaSharp loads llama.dll from a subdirectory.
+    /// </summary>
+    private static void EnsureDllSearchPaths(string runtimeNativeDir, HashSet<string> allowedDirs)
+    {
+        try
+        {
+            var additions = new List<string>();
+            foreach (var subDir in Directory.GetDirectories(runtimeNativeDir))
+            {
+                if (allowedDirs.Contains(Path.GetFileName(subDir)))
+                    additions.Add(subDir);
+            }
+
+            if (additions.Count > 0)
+            {
+                var currentPath = Environment.GetEnvironmentVariable("PATH") ?? "";
+                var newPath = string.Join(Path.PathSeparator.ToString(), additions)
+                            + Path.PathSeparator + currentPath;
+                Environment.SetEnvironmentVariable("PATH", newPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[KaiROS] Failed to update PATH for native DLLs: {ex.Message}");
+        }
     }
 
     /// <summary>

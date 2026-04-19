@@ -53,48 +53,7 @@ public class RaasService : IRaasService
 
     public async Task UpdateConfigurationAsync(RaasConfiguration config)
     {
-        // DB Schema for update not fully implemented in simpler Interface, 
-        // effectively we might just update "Settings" (Name, Port, Prompt).
-        // For simplicity, we can delete and re-add in DB or just assume in-mem update for now?
-        // But persistent storage is key.
-        // Let's rely on Add not failing on PK conflict or better implementation in DB Service previously?
-        // Actually I missed UpdateRaasConfigAsync in interface. 
-        // For now, let's just update the observable collection and maybe "Upsert" logic?
-        // Actually, Sources are separate table. 
-        // If we just editing metadata:
-        // TODO: Add UpdateRaasConfig to DB service strictly or...
-        // Migration Plan said "UpdateRaasConfigAsync". I missed adding it to DB service impl.
-        // I will just use Delete/Add logic for now or skip metadata update persistence if user didn't request?
-        // Wait, "Rename" IS a feature. 
-        // Let's implement a quick inline metadata update via direct DB call or Add/Replace.
-        // Or for this step, just ignore metadata persistence update if mostly Sources are key?
-        // No, I should do it right. I will add Update to DB service later or now?
-        // Let's assume Delete/Add for metadata changes is "Acceptable" but risky for IDs.
-        // I will handle Source addition specifically.
-        
-        // Actually, for adding sources, we have specific methods. 
-        // UpdateConfiguration likely called when adding source in UI? 
-        // Looking at ViewModel: AddSourceToService calls `UpdateConfigurationAsync`.
-        
-        // Correct approach: ViewModel should call `AddSourceAsync` on SERVICE, not modify collection directly and call Update.
-        // StartService/StopService managed here.
-        
-        // Let's FIX the ViewModel logic later, but for now ensure we handle Source addition via checking differences?
-        // Or better: Expose `AddSourceAsync` on IRaasService.
-        
-        // To be safe and compliant with current UI binding (which modifies Config object then calls Update):
-        // We iterate sources and make sure they are in DB.
-        
-        // Actually, let's strictly implement the File Management on "Add Source" command in VM, 
-        // which currently does: config.Sources.Add(source) -> UpdateConfigurationAsync.
-        
-        // We need to change that flow. 
-        // For now, I'll implement `UpdateConfigurationAsync` to just save metadata.
-        // And I'll ADD new methods to `IRaasService` for `AddSourceAsync` and `RemoveSourceAsync` 
-        // so ViewModel can call them to trigger the file Copy + DB insert.
-        
-        // Temporary: UpdateConfigurationAsync only updates metadata in this implementation.
-        // File logic will reside in specific methods.
+        await _databaseService.UpdateRaasConfigAsync(config);
     }
 
     public async Task DeleteConfigurationAsync(string id)

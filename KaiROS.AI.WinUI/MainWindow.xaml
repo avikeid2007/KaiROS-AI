@@ -19,27 +19,6 @@
 
         <Grid.Resources>
             <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
-
-            <!--  View templates � replaces WPF implicit DataType routing  -->
-            <DataTemplate x:Key="CatalogTemplate">
-                <views:ModelCatalogView />
-            </DataTemplate>
-            <DataTemplate x:Key="ChatTemplate">
-                <views:ChatView />
-            </DataTemplate>
-            <DataTemplate x:Key="DocumentTemplate">
-                <views:DocumentView />
-            </DataTemplate>
-            <DataTemplate x:Key="SettingsTemplate">
-                <views:SettingsView />
-            </DataTemplate>
-
-            <helpers:ViewModelTemplateSelector
-                x:Key="ViewModelSelector"
-                CatalogTemplate="{StaticResource CatalogTemplate}"
-                ChatTemplate="{StaticResource ChatTemplate}"
-                DocumentTemplate="{StaticResource DocumentTemplate}"
-                SettingsTemplate="{StaticResource SettingsTemplate}" />
         </Grid.Resources>
 
         <!--  Custom TitleBar mapped to the Window's drag region  -->
@@ -197,13 +176,10 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!--  Content � DataTemplateSelector routes to the correct View  -->
-                <ContentControl
-                    Margin="24,20,24,0"
-                    HorizontalContentAlignment="Stretch"
-                    VerticalContentAlignment="Stretch"
-                    Content="{Binding CurrentView}"
-                    ContentTemplateSelector="{StaticResource ViewModelSelector}" />
+                <!--  Content area — views are swapped in code-behind  -->
+                <Border
+                    x:Name="ContentArea"
+                    Margin="24,20,24,0" />
 
                 <!--  Loading Overlay  -->
                 <Border Background="#80000000" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">

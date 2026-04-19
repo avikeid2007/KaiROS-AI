@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using KaiROS.AI.WinUI.Models;
 
 namespace KaiROS.AI.WinUI.Services;
@@ -98,13 +99,13 @@ public class ApiServer : IDisposable
         var request = context.Request;
         var response = context.Response;
         
-        // Count request
-        _config.RequestCount++;
+        // Count request (atomic — multiple handlers may run concurrently)
+        Interlocked.Increment(ref _config._requestCount);
 
         try
         {
-             // Enable CORS
-            response.Headers.Add("Access-Control-Allow-Origin", "*");
+             // Enable CORS — restrict to localhost to prevent cross-origin exfiltration
+            response.Headers.Add("Access-Control-Allow-Origin", "http://localhost");
             response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
             response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
@@ -167,7 +168,12 @@ public class ApiServer : IDisposable
 
         var messages = chatRequest.Messages.Select(m => new ChatMessage
         {
-            Role = m.Role == "user" ? ChatRole.User : ChatRole.Assistant, 
+            Role = m.Role switch
+            {
+                "user" => ChatRole.User,
+                "system" => ChatRole.System,
+                _ => ChatRole.Assistant
+            }, 
             Content = m.Content
         }).ToList();
         
@@ -222,7 +228,12 @@ public class ApiServer : IDisposable
 
         var messages = chatRequest.Messages.Select(m => new ChatMessage
         {
-            Role = m.Role == "user" ? ChatRole.User : ChatRole.Assistant, 
+            Role = m.Role switch
+            {
+                "user" => ChatRole.User,
+                "system" => ChatRole.System,
+                _ => ChatRole.Assistant
+            }, 
             Content = m.Content
         }).ToList();
         

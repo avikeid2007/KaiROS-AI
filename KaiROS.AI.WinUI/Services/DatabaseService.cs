@@ -15,6 +15,7 @@ public interface IDatabaseService
     // RaaS
     Task<List<RaasConfiguration>> GetRaasConfigsAsync();
     Task AddRaasConfigAsync(RaasConfiguration config);
+    Task UpdateRaasConfigAsync(RaasConfiguration config);
     Task DeleteRaasConfigAsync(string id);
     Task AddRagSourceAsync(string configId, RagSource source);
     Task DeleteRagSourceAsync(string sourceId);
@@ -98,6 +99,7 @@ public class DatabaseService : IDatabaseService
         catch (SqliteException ex)
         {
             System.Diagnostics.Debug.WriteLine($"[KaiROS] Database initialization error: {ex.Message}");
+            throw new InvalidOperationException("Failed to initialize database. The app cannot continue.", ex);
         }
     }
 
@@ -283,6 +285,34 @@ public class DatabaseService : IDatabaseService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[KaiROS] RaaS save error: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task UpdateRaasConfigAsync(RaasConfiguration config)
+    {
+        try
+        {
+            await using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                UPDATE RaasConfigurations
+                SET Name = $name, Port = $port, SystemPrompt = $prompt, Description = $desc
+                WHERE Id = $id";
+
+            command.Parameters.AddWithValue("$id", config.Id);
+            command.Parameters.AddWithValue("$name", config.Name);
+            command.Parameters.AddWithValue("$port", config.Port);
+            command.Parameters.AddWithValue("$prompt", config.SystemPrompt ?? string.Empty);
+            command.Parameters.AddWithValue("$desc", config.Description ?? string.Empty);
+
+            await command.ExecuteNonQueryAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[KaiROS] RaaS update error: {ex.Message}");
             throw;
         }
     }

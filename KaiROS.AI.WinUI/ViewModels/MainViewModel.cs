@@ -1,9 +1,11 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KaiROS.AI.WinUI.Models;
 using KaiROS.AI.WinUI.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using System.Collections.ObjectModel;
+using System.IO;
 
 namespace KaiROS.AI.WinUI.ViewModels;
 
@@ -12,24 +14,25 @@ public partial class MainViewModel : ViewModelBase
     private readonly IModelManagerService _modelManager;
     private readonly IHardwareDetectionService _hardwareService;
     private readonly DispatcherQueue _dispatcherQueue;
+    private readonly ILogger<MainViewModel> _logger;
 
     [ObservableProperty]
-    private ViewModelBase? _currentView;
+    public partial ViewModelBase? CurrentView { get; set; }
 
     [ObservableProperty]
-    private string _statusText = "Ready";
+    public partial string StatusText { get; set; } = "Ready";
 
     [ObservableProperty]
-    private string _hardwareInfo = "Detecting hardware...";
+    public partial string HardwareInfo { get; set; } = "Detecting hardware...";
 
     [ObservableProperty]
-    private string? _activeModelName;
+    public partial string? ActiveModelName { get; set; }
 
     [ObservableProperty]
-    private HardwareInfo? _hardware;
+    public partial HardwareInfo? Hardware { get; set; }
 
     [ObservableProperty]
-    private int _selectedNavigationIndex;
+    public partial int SelectedNavigationIndex { get; set; }
 
     public ModelCatalogViewModel CatalogViewModel { get; }
     public ChatViewModel ChatViewModel { get; }
@@ -42,10 +45,12 @@ public partial class MainViewModel : ViewModelBase
         ModelCatalogViewModel catalogViewModel,
         ChatViewModel chatViewModel,
         SettingsViewModel settingsViewModel,
-        DocumentViewModel documentViewModel)
+        DocumentViewModel documentViewModel,
+        ILogger<MainViewModel> logger)
     {
         _modelManager = modelManager;
         _hardwareService = hardwareService;
+        _logger = logger;
         CatalogViewModel = catalogViewModel;
         ChatViewModel = chatViewModel;
         SettingsViewModel = settingsViewModel;
@@ -55,22 +60,22 @@ public partial class MainViewModel : ViewModelBase
 
         _modelManager.ModelLoaded += (s, m) =>
         {
-            // Update UI state
-            ActiveModelName = m.DisplayName;
-            StatusText = $"Model loaded: {m.DisplayName}";
-
-            // Auto-navigate to Chat whenever a model is loaded (including auto-load on startup)
-            // Use DispatcherQueue to ensure UI update if event comes from background thread
+            // All property writes must happen on the UI thread to avoid RPC_E_WRONG_THREAD
             _dispatcherQueue.TryEnqueue(() =>
             {
+                ActiveModelName = m.DisplayName;
+                StatusText = $"Model loaded: {m.DisplayName}";
                 SelectedNavigationIndex = 1;
             });
         };
 
         _modelManager.ModelUnloaded += (s, e) =>
         {
-            ActiveModelName = null;
-            StatusText = "Model unloaded";
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                ActiveModelName = null;
+                StatusText = "Model unloaded";
+            });
         };
     }
 
@@ -94,8 +99,6 @@ public partial class MainViewModel : ViewModelBase
             await SettingsViewModel.InitializeAsync();
             await DocumentViewModel.InitializeAsync();
 
-            await DocumentViewModel.InitializeAsync();
-
             // If a model was auto-loaded, SelectedNavigationIndex would be 1 (Chat)
             // But we shouldn't overwrite it blindly.
             if (_modelManager.ActiveModel != null)
@@ -113,6 +116,16 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            _logger.LogCritical(ex, "InitializeAsync crashed at {Time}", DateTimeOffset.Now);
+
+            // Write persistent crash log to LocalAppData\KaiROS.AI\crash.log
+            try
+            {
+                var entry = $"[{DateTimeOffset.Now:o}] CRASH in MainViewModel.InitializeAsync{Environment.NewLine}{ex}{Environment.NewLine}---{Environment.NewLine}";
+                await File.AppendAllTextAsync(App.CrashLogPath, entry);
+            }
+            catch { /* never swallow original exception */ }
+
             ErrorMessage = ex.Message;
             StatusText = "Initialization failed";
         }
