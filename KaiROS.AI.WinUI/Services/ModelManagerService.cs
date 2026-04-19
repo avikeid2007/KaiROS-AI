@@ -340,18 +340,16 @@ public class ModelManagerService : IModelManagerService, IDisposable
 
             foreach (var layers in layersToTry)
             {
+                // Declared outside try so catch blocks can dispose on failure.
+                LLamaWeights? weights = null;
+                MtmdWeights? llavaWeights = null;
+
                 try
                 {
                     System.Diagnostics.Debug.WriteLine($"[KaiROS] Attempting to load with {layers} GPU layers...");
 
                     // Strict timeout to prevent hanging on Intel drivers
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(45));
-
-                    // Use local variables to avoid data race: if WaitAsync times out,
-                    // the Task.Run lambda may still be writing to fields while the
-                    // catch block tries to dispose them.
-                    LLamaWeights? weights = null;
-                    MtmdWeights? llavaWeights = null;
 
                     await Task.Run(() =>
                     {
