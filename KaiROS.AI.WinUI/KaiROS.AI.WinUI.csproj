@@ -109,6 +109,6 @@
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
     <AppxBundle>Never</AppxBundle>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-    <PackageCertificateThumbprint>C4ACC814D10FDE6E257D3B5F1610D7D148290578</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>0B823088A076EC4B96C65B0EB603449583165F97</PackageCertificateThumbprint>
   </PropertyGroup>
 </Project>
