@@ -9,4 +9,5 @@ public interface IDownloadService
     Task ResumeDownloadAsync(string modelName);
     Task<bool> VerifyFileIntegrityAsync(string filePath, long expectedSize);
     bool HasPartialDownload(string modelName);
+    void SetModelsDirectory(string path);
 }

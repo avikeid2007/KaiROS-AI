@@ -41,10 +41,15 @@
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.2.0" />
     <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageReference Include="itext7" Version="9.5.0" />
-    <PackageReference Include="LLamaSharp" Version="0.26.0" />
-    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.26.0" />
-    <PackageReference Include="LLamaSharp.Backend.Cuda12" Version="0.26.0" />
-    <PackageReference Include="LLamaSharp.Backend.Vulkan" Version="0.26.0" />
+    <PackageReference Include="LLamaSharp" Version="0.27.0" />
+    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.27.0" />
+    <!--
+      Cuda12 backend: reference the .Windows sub-package directly instead of the
+      meta-package "LLamaSharp.Backend.Cuda12", which pulls in both .Windows AND
+      .Linux as dependencies.  The Linux native .so files have no purpose in a
+      Windows MSIX and historically caused Microsoft Store certification failures.
+    -->
+    <PackageReference Include="LLamaSharp.Backend.Cuda12.Windows" Version="0.27.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
@@ -55,12 +60,74 @@
     <PackageReference Include="System.Management" Version="10.0.3" />
   </ItemGroup>
 
-  <!-- Workaround for MakePri bug with duplicate native DLLs in LLamaSharp backends -->
+  <!--
+    Workaround for MakePri bug with duplicate native DLLs in LLamaSharp backends.
+    Without this, the multiple llama.dll/ggml*.dll files under runtimes/<rid>/native/
+    (noavx, avx, avx2, avx512, cuda12, vulkan) get indexed into the .pri file. Large
+    PRI tables can crash WinUI 3 at startup with 0xc000027b, AND on some hardware can
+    cause LLamaSharp's native type initializer to fail when the loader hits a poisoned
+    resource lookup.  This target excludes runtimes/** entries from PRI generation.
+  -->
   <Target Name="RemoveDuplicateNativeLibsForMakePri" BeforeTargets="_GenerateProjectPriConfigurationFiles">
     <ItemGroup>
       <_OutputsWithTargetPath Include="@(PackagingOutputs)" Condition="'%(PackagingOutputs.TargetPath)' != ''" />
-      <_AppxLayoutAssetPackageFiles Include="@(_OutputsWithTargetPath)" Condition="$([System.String]::new('%(_OutputsWithTargetPath.TargetPath)').StartsWith('runtimes'))" />
+      <PackagingOutputs Remove="@(_OutputsWithTargetPath)" Condition="$([System.String]::new('%(_OutputsWithTargetPath.TargetPath)').StartsWith('runtimes'))" />
+      <PackagingOutputs Include="%(_OutputsWithTargetPath.Identity)" Condition="$([System.String]::new('%(_OutputsWithTargetPath.TargetPath)').StartsWith('runtimes'))">
+        <TargetPath>%(_OutputsWithTargetPath.TargetPath)</TargetPath>
+        <ExcludeFromMakePri>true</ExcludeFromMakePri>
+      </PackagingOutputs>
     </ItemGroup>
+  </Target>
+
+  <!--
+    CRITICAL: Strip foreign-platform native libraries from the MSIX package.
+
+    LLamaSharp NuGet packages (Backend.Cpu / Cuda12 / Vulkan) ship native libraries
+    for Windows + Linux + macOS in runtimes/<rid>/native/.  When building a Windows
+    MSIX, only runtimes/win-<arch> for the current platform should be included.
+    Without this filter, ~488 MB of .so / .dylib files end up in the package, which:
+      * doubles the package size,
+      * pollutes the PRI resource index with hundreds of irrelevant entries,
+      * causes Microsoft Store certification to fail when the cert pipeline
+        re-processes the .msixupload (sideload works because no re-processing).
+
+    Approach: physically delete foreign-platform runtime folders from the build
+    output directory after copy but before the AppX layout is generated.  This is
+    blunt but reliable — works regardless of how the NuGet runtimes get pulled in.
+  -->
+  <PropertyGroup>
+    <_KaiRosKeepRid Condition="'$(Platform)' == 'x64'">win-x64</_KaiRosKeepRid>
+    <_KaiRosKeepRid Condition="'$(Platform)' == 'x86'">win-x86</_KaiRosKeepRid>
+    <_KaiRosKeepRid Condition="'$(Platform)' == 'ARM64'">win-arm64</_KaiRosKeepRid>
+  </PropertyGroup>
+
+  <Target Name="StripForeignPlatformRuntimes"
+          BeforeTargets="_GenerateProjectPriConfigurationFiles;GenerateAppxPackageRecipe;CopyFilesToPublishDirectory"
+          AfterTargets="ComputeFilesToPublish;ComputeResolvedFilesToPublishList"
+          Condition="'$(_KaiRosKeepRid)' != ''">
+    <ItemGroup>
+      <!-- 1. Strip from build output (bin\) -->
+      <_KaiRosForeignBinDirs Include="$([System.IO.Directory]::GetDirectories('$(OutDir)runtimes'))"
+                             Exclude="$(OutDir)runtimes\$(_KaiRosKeepRid);$(OutDir)runtimes/$(_KaiRosKeepRid)"
+                             Condition="Exists('$(OutDir)runtimes')" />
+      <!-- 2. Strip from publish output -->
+      <_KaiRosForeignPubDirs Include="$([System.IO.Directory]::GetDirectories('$(PublishDir)runtimes'))"
+                             Exclude="$(PublishDir)runtimes\$(_KaiRosKeepRid);$(PublishDir)runtimes/$(_KaiRosKeepRid)"
+                             Condition="'$(PublishDir)' != '' and Exists('$(PublishDir)runtimes')" />
+      <!-- 3. Strip from intermediate AppX layout if it already exists -->
+      <_KaiRosForeignAppxDirs Include="$([System.IO.Directory]::GetDirectories('$(OutDir)AppX\runtimes'))"
+                              Exclude="$(OutDir)AppX\runtimes\$(_KaiRosKeepRid);$(OutDir)AppX\runtimes/$(_KaiRosKeepRid)"
+                              Condition="Exists('$(OutDir)AppX\runtimes')" />
+      <!-- 4. Filter publish item lists so subsequent copy steps don't re-add foreign files -->
+      <_KaiRosForeignPublishItems Include="@(ResolvedFileToPublish)"
+                                  Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(ResolvedFileToPublish.RelativePath)', '^runtimes[\\/](?!$(_KaiRosKeepRid)[\\/])'))" />
+      <ResolvedFileToPublish Remove="@(_KaiRosForeignPublishItems)" />
+    </ItemGroup>
+    <Message Importance="high"
+             Text="StripForeignPlatformRuntimes [$(MSBuildProjectName)]: keep=$(_KaiRosKeepRid); bin=@(_KaiRosForeignBinDirs->Count()), publish=@(_KaiRosForeignPubDirs->Count()), appx=@(_KaiRosForeignAppxDirs->Count()), items=@(_KaiRosForeignPublishItems->Count())" />
+    <RemoveDir Directories="@(_KaiRosForeignBinDirs)" />
+    <RemoveDir Directories="@(_KaiRosForeignPubDirs)" />
+    <RemoveDir Directories="@(_KaiRosForeignAppxDirs)" />
   </Target>
 
   <!--

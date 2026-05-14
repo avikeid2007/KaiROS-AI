@@ -70,6 +70,9 @@ public partial class ChatViewModel : ViewModelBase
     public partial bool HasActiveModel { get; set; }
 
     [ObservableProperty]
+    public partial bool IsVisionModelReady { get; set; }
+
+    [ObservableProperty]
     public partial string ActiveModelInfo { get; set; } = "No model loaded";
 
     [ObservableProperty]
@@ -151,6 +154,12 @@ public partial class ChatViewModel : ViewModelBase
 
         await _raasService.InitializeAsync().ConfigureAwait(false);
 
+        _dispatcherQueue.TryEnqueue(() =>
+        {
+            HasActiveModel = _chatService.IsModelLoaded;
+            IsVisionModelReady = _modelManager.IsVisionModelLoaded;
+        });
+
         // UpdateKnowledgeBaseList touches ObservableCollection — must be on UI thread
         _dispatcherQueue.TryEnqueue(UpdateKnowledgeBaseList);
     }
@@ -200,6 +209,7 @@ public partial class ChatViewModel : ViewModelBase
         _dispatcherQueue.TryEnqueue(() =>
         {
             HasActiveModel = true;
+            IsVisionModelReady = _modelManager.IsVisionModelLoaded;
             ActiveModelInfo = $"{model.DisplayName} ({model.SizeText})";
         });
     }
@@ -209,6 +219,7 @@ public partial class ChatViewModel : ViewModelBase
         _dispatcherQueue.TryEnqueue(() =>
         {
             HasActiveModel = false;
+            IsVisionModelReady = false;
             ActiveModelInfo = "No model loaded";
         });
     }

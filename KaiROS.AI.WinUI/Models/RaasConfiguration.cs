@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
@@ -15,7 +16,7 @@ public class RaasConfiguration : INotifyPropertyChanged
     public int Port { get; set; } = 5001;
     public string SystemPrompt { get; set; } = "You are a helpful AI assistant.";
     
-    public List<RagSource> Sources { get; set; } = [];
+    public ObservableCollection<RagSource> Sources { get; set; } = [];
 
     [JsonIgnore]
     public bool IsRunning

@@ -94,10 +94,9 @@ public partial class App : Application
         // Configuration
         services.AddSingleton<IConfiguration>(configuration);
 
-        // Get app settings - Use LocalAppData for MSIX compatibility (installation folder is read-only)
+        // Get app settings - use LocalAppData root for relative paths (MSIX install folder is read-only)
         var appSettings = configuration.GetSection("AppSettings").Get<AppSettings>() ?? new AppSettings();
-        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var modelsDir = Path.Combine(localAppData, "KaiROS.AI", "Models");
+        var modelsDir = ResolveModelsDirectory(appSettings.ModelsDirectory);
 
         // Logging — file provider works in both Debug and Release without a debugger
         services.AddLogging(b =>
@@ -135,6 +134,20 @@ public partial class App : Application
 
         // Views
         services.AddSingleton<MainWindow>();
+    }
+
+    private static string ResolveModelsDirectory(string? configuredPath)
+    {
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var appRoot = Path.Combine(localAppData, "KaiROS.AI");
+
+        if (string.IsNullOrWhiteSpace(configuredPath))
+            return Path.Combine(appRoot, "Models");
+
+        if (Path.IsPathRooted(configuredPath))
+            return configuredPath;
+
+        return Path.Combine(appRoot, configuredPath);
     }
 }
 

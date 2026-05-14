@@ -12,6 +12,18 @@ public class ChatCompletionRequest
     public bool Stream { get; set; } = false;
     public double Temperature { get; set; } = 0.7;
     public int MaxTokens { get; set; } = 2048;
+    public ResponseFormatInfo? ResponseFormat { get; set; }
+    public StreamOptionsInfo? StreamOptions { get; set; }
+}
+
+public class ResponseFormatInfo
+{
+    public string Type { get; set; } = "text";
+}
+
+public class StreamOptionsInfo
+{
+    public bool IncludeUsage { get; set; }
 }
 
 public class ChatCompletionMessage

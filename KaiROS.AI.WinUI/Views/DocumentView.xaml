@@ -208,7 +208,7 @@
                                 Foreground="{ThemeResource TextPrimaryBrush}"
                                 Text="System Prompt" />
                             <TextBox
-                                Height="80"
+                                Height="380"
                                 AcceptsReturn="True"
                                 PlaceholderText="Instructions for how the model should behave when answering via this service"
                                 Style="{StaticResource ModernTextBox}"
@@ -364,6 +364,26 @@
                                             VerticalAlignment="Center"
                                             FontWeight="Medium"
                                             Text="View API" />
+                                    </StackPanel>
+                                </Button>
+
+                                <Button
+                                    Padding="16,8"
+                                    Click="OpenDocs_Click"
+                                    CornerRadius="6"
+                                    Style="{StaticResource SecondaryButton}"
+                                    ToolTipService.ToolTip="Open API documentation for developers">
+                                    <StackPanel Orientation="Horizontal">
+                                        <FontIcon
+                                            Margin="0,0,8,0"
+                                            VerticalAlignment="Center"
+                                            FontFamily="Segoe Fluent Icons"
+                                            FontSize="12"
+                                            Glyph="&#xE736;" />
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontWeight="Medium"
+                                            Text="Docs" />
                                     </StackPanel>
                                 </Button>
 
@@ -554,15 +574,17 @@
 
                                                     <Button
                                                         Grid.Column="2"
+                                                        Padding="6"
                                                         VerticalAlignment="Center"
+                                                        Background="{ThemeResource SurfaceBrush}"
                                                         Click="RemoveSource_Click"
-                                                        Style="{StaticResource IconButton}"
+                                                        CornerRadius="6"
                                                         Tag="{Binding}"
                                                         ToolTipService.ToolTip="Remove source">
                                                         <FontIcon
                                                             FontFamily="Segoe Fluent Icons"
                                                             FontSize="14"
-                                                            Foreground="{ThemeResource TextSecondaryBrush}"
+                                                            Foreground="{ThemeResource ErrorBrush}"
                                                             Glyph="&#xE74D;" />
                                                     </Button>
                                                 </Grid>

@@ -65,6 +65,12 @@ public partial class DocumentViewModel : ViewModelBase
     {
         SelectedConfiguration = null;
         IsCreatingService = true;
+        
+        // Auto-calculate next available port
+        var usedPorts = RaasConfigurations.Select(c => c.Port).ToHashSet();
+        var nextPort = 5001;
+        while (usedPorts.Contains(nextPort)) nextPort++;
+        NewServicePort = nextPort;
     }
 
     [RelayCommand]
@@ -128,7 +134,21 @@ public partial class DocumentViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(NewServiceName))
         {
-            // Validation: caller should ensure name is not empty
+            return;
+        }
+
+        // Validate port uniqueness
+        if (RaasConfigurations.Any(c => c.Port == NewServicePort))
+        {
+            var mainWindow = KaiROS.AI.WinUI.App.Current.Services.GetRequiredService<KaiROS.AI.WinUI.MainWindow>();
+            var dlg = new ContentDialog
+            {
+                Title = "Port Conflict",
+                Content = $"Port {NewServicePort} is already used by another service. Please choose a different port.",
+                CloseButtonText = "OK",
+                XamlRoot = mainWindow.Content.XamlRoot
+            };
+            await dlg.ShowAsync();
             return;
         }
 
@@ -140,15 +160,25 @@ public partial class DocumentViewModel : ViewModelBase
             SystemPrompt = NewServiceSystemPrompt
         };
 
-        await _raasService.CreateConfigurationAsync(config);
+        try
+        {
+            await _raasService.CreateConfigurationAsync(config);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[KaiROS] Failed to create service: {ex.Message}");
+            return;
+        }
         
         // Reset form
         NewServiceName = "New Service";
         NewServiceDescription = "";
-        NewServicePort++;
         NewServiceSystemPrompt = "You are a helpful AI assistant.";
         
         IsCreatingService = false;
+        
+        // Auto-select the newly created service so user sees the details + Add Source
+        SelectedConfiguration = config;
     }
 
     [RelayCommand]

@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Documentation - KaiROS AI</title>
+    <title>RaaS API Documentation - KaiROS AI</title>
     <meta name="description"
-        content="KaiROS AI Local REST API Documentation. Chat and model management endpoints for developers.">
+        content="KaiROS AI RAG-as-a-Service (RaaS) Developer Guide. Turn your local documents into an AI-powered knowledge base API.">
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
@@ -14,7 +14,7 @@
     <style>
         * {
             margin: 0;
-            padding: 0;
+            padding: 0;I. Have too much of a great update if I'm putting up. With another. 1. Load out more than they want to create, but a little bit more than. What will be designed? Skills.
             box-sizing: border-box;
         }
 
@@ -29,6 +29,8 @@
             --get: #2196f3;
             --post: #4caf50;
             --success: #4caf50;
+            --warning: #ff9800;
+            --error: #f44336;
         }
 
         body {
@@ -40,7 +42,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 960px;
             margin: 0 auto;
             padding: 40px 20px;
         }
@@ -104,6 +106,13 @@
             font-size: 1.1rem;
         }
 
+        .header .tagline {
+            font-size: 1.2rem;
+            font-style: italic;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
         /* Quick Start */
         .quick-start {
             background: var(--bg-card);
@@ -125,6 +134,28 @@
 
         .quick-start li {
             margin-bottom: 8px;
+        }
+
+        .quick-start li strong {
+            color: var(--text-primary);
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 48px;
+        }
+
+        .section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+            color: var(--text-primary);
         }
 
         /* Endpoints */
@@ -168,6 +199,12 @@
             color: white;
         }
 
+        .endpoint-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
+
         .endpoint-body {
             padding: 24px;
         }
@@ -192,8 +229,9 @@
             padding: 16px;
             overflow-x: auto;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             margin-bottom: 20px;
+            line-height: 1.5;
         }
 
         code {
@@ -218,6 +256,18 @@
 
         .json-number {
             color: #b5cea8;
+        }
+
+        .comment {
+            color: #6a9955;
+        }
+
+        .keyword {
+            color: #569cd6;
+        }
+
+        .type {
+            color: #4ec9b0;
         }
 
         /* Response */
@@ -268,6 +318,60 @@
             font-size: 0.85rem;
         }
 
+        /* Tabs */
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Info box */
+        .info-box {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .info-box p {
+            color: var(--text-primary);
+            margin: 0;
+        }
+
         /* Footer */
         .footer {
             text-align: center;
@@ -281,6 +385,28 @@
         .footer a {
             color: var(--accent);
             text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .tabs {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: 8px;
+            }
+
+            .endpoint-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .endpoint-desc {
+                margin-left: 0;
+            }
         }
     </style>
 </head>
@@ -301,178 +427,548 @@
         </nav>
 
         <div class="header">
-            <h1>🔌 API Documentation</h1>
-            <p>Local REST API for integration with your tools and workflows</p>
+            <h1>📡 RAG-as-a-Service (RaaS)</h1>
+            <p class="tagline">Turn your local documents into an AI-powered knowledge base API in seconds.</p>
+            <p>Create dedicated endpoints that combine your documents (PDF, DOCX, TXT, CSV, web URLs) with local LLM
+                inference. Each service runs on its own port and can be consumed from <strong>any language or
+                    tool</strong>.</p>
         </div>
 
+        <!-- How It Works -->
         <div class="quick-start">
-            <h2>⚡ Quick Start</h2>
+            <h2>⚡ How It Works</h2>
             <ol>
-                <li>Open KaiROS AI and load a model</li>
-                <li>Go to <strong>Settings → API Server</strong> and enable the API</li>
-                <li>Send requests to <code>http://localhost:5000/</code></li>
+                <li><strong>Create a service</strong> in the app (RAG as a Service → + New)</li>
+                <li><strong>Add data sources</strong> — local files or web URLs</li>
+                <li><strong>Start the service</strong> — it launches on <code>http://localhost:{port}</code></li>
+                <li><strong>Query it from your code</strong> — the model answers using your documents as context</li>
             </ol>
         </div>
 
-        <!-- GET / -->
-        <div class="endpoint">
-            <div class="endpoint-header">
-                <span class="method get">GET</span>
-                <span class="path">/</span>
-            </div>
-            <div class="endpoint-body">
-                <p>Returns a beautiful HTML documentation page with API status.</p>
-                <h4>Response</h4>
-                <span class="response-label success">200 OK</span>
-                <pre><code>HTML page with API documentation and status</code></pre>
-            </div>
+        <!-- API Endpoints Section -->
+        <div class="section">
+            <h2>🔌 API Endpoints</h2>
+
+            <table>
+                <tr>
+                    <th>Method</th>
+                    <th>Endpoint</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>GET</code></td>
+                    <td><code>/</code></td>
+                    <td>Service dashboard (HTML)</td>
+                </tr>
+                <tr>
+                    <td><code>GET</code></td>
+                    <td><code>/health</code></td>
+                    <td>Health check</td>
+                </tr>
+                <tr>
+                    <td><code>POST</code></td>
+                    <td><code>/chat</code></td>
+                    <td>Chat with RAG context (non-streaming)</td>
+                </tr>
+                <tr>
+                    <td><code>POST</code></td>
+                    <td><code>/chat/stream</code></td>
+                    <td>Chat with RAG context (Server-Sent Events)</td>
+                </tr>
+                <tr>
+                    <td><code>GET</code></td>
+                    <td><code>/v1/models</code></td>
+                    <td>OpenAI-compatible model list</td>
+                </tr>
+                <tr>
+                    <td><code>POST</code></td>
+                    <td><code>/v1/chat/completions</code></td>
+                    <td>OpenAI-compatible chat completions (supports <code>stream</code>)</td>
+                </tr>
+            </table>
         </div>
 
-        <!-- GET /health -->
-        <div class="endpoint">
-            <div class="endpoint-header">
-                <span class="method get">GET</span>
-                <span class="path">/health</span>
-            </div>
-            <div class="endpoint-body">
-                <p>Check API status and currently loaded model.</p>
-                <h4>Response</h4>
-                <span class="response-label success">200 OK</span>
-                <pre><code>{
-  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>,
-  <span class="json-key">"model"</span>: <span class="json-string">"phi-3-mini-4k-instruct.Q4_K_M.gguf"</span>,
-  <span class="json-key">"version"</span>: <span class="json-string">"1.0.0"</span>
-}</code></pre>
-            </div>
-        </div>
+        <!-- Request / Response Format -->
+        <div class="section">
+            <h2>📋 Request &amp; Response Format</h2>
 
-        <!-- GET /models -->
-        <div class="endpoint">
-            <div class="endpoint-header">
-                <span class="method get">GET</span>
-                <span class="path">/models</span>
-            </div>
-            <div class="endpoint-body">
-                <p>List all downloaded models available for use.</p>
-                <h4>Response</h4>
-                <span class="response-label success">200 OK</span>
-                <pre><code>{
-  <span class="json-key">"object"</span>: <span class="json-string">"list"</span>,
-  <span class="json-key">"data"</span>: [
-    {
-      <span class="json-key">"id"</span>: <span class="json-string">"phi-3-mini-4k-instruct.Q4_K_M.gguf"</span>,
-      <span class="json-key">"object"</span>: <span class="json-string">"model"</span>,
-      <span class="json-key">"owned_by"</span>: <span class="json-string">"kairos-local"</span>
-    }
+            <!-- POST /chat -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/chat</span>
+                    <span class="endpoint-desc">Non-streaming chat with RAG context</span>
+                </div>
+                <div class="endpoint-body">
+                    <h4>Request Body</h4>
+                    <table>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td><code>messages</code></td>
+                            <td>array</td>
+                            <td>Array of message objects with <code>role</code> and <code>content</code></td>
+                        </tr>
+                    </table>
+
+                    <h4>Example Request</h4>
+                    <pre><code>{
+  <span class="json-key">"messages"</span>: [
+    { <span class="json-key">"role"</span>: <span class="json-string">"system"</span>, <span class="json-key">"content"</span>: <span class="json-string">"Optional system prompt override"</span> },
+    { <span class="json-key">"role"</span>: <span class="json-string">"user"</span>, <span class="json-key">"content"</span>: <span class="json-string">"What does the invoice say about payment terms?"</span> }
   ]
 }</code></pre>
+
+                    <h4>Response</h4>
+                    <span class="response-label success">200 OK</span>
+                    <pre><code>{
+  <span class="json-key">"model"</span>: <span class="json-string">"kairos-raas"</span>,
+  <span class="json-key">"content"</span>: <span class="json-string">"Based on the document, the payment terms are Net 30..."</span>,
+  <span class="json-key">"token_count"</span>: <span class="json-number">42</span>
+}</code></pre>
+                </div>
+            </div>
+
+            <!-- POST /chat/stream -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/chat/stream</span>
+                    <span class="endpoint-desc">Streaming chat (Server-Sent Events)</span>
+                </div>
+                <div class="endpoint-body">
+                    <h4>Request Body</h4>
+                    <p>Same as <code>/chat</code></p>
+
+                    <h4>Response (SSE Stream)</h4>
+                    <span class="response-label success">200 OK</span>
+                    <pre><code>data: {<span class="json-key">"content"</span>: <span class="json-string">"Based"</span>}
+
+data: {<span class="json-key">"content"</span>: <span class="json-string">" on"</span>}
+
+data: {<span class="json-key">"content"</span>: <span class="json-string">" the"</span>}
+
+...
+
+data: [DONE]</code></pre>
+                </div>
+            </div>
+
+            <!-- POST /v1/chat/completions -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/v1/chat/completions</span>
+                    <span class="endpoint-desc">OpenAI-compatible chat completions</span>
+                </div>
+                <div class="endpoint-body">
+                    <h4>Example Request</h4>
+                    <pre><code>{
+  <span class="json-key">"model"</span>: <span class="json-string">"kairos-raas"</span>,
+  <span class="json-key">"stream"</span>: <span class="json-number">true</span>,
+  <span class="json-key">"messages"</span>: [
+    { <span class="json-key">"role"</span>: <span class="json-string">"user"</span>, <span class="json-key">"content"</span>: <span class="json-string">"Summarize this KB"</span> }
+  ]
+}</code></pre>
+
+                    <h4>Streaming Response (SSE)</h4>
+                    <span class="response-label success">200 OK</span>
+                    <pre><code>data: {<span class="json-key">"object"</span>:<span class="json-string">"chat.completion.chunk"</span>,<span class="json-key">"choices"</span>:[{<span class="json-key">"delta"</span>:{<span class="json-key">"role"</span>:<span class="json-string">"assistant"</span>}}]}
+
+data: {<span class="json-key">"object"</span>:<span class="json-string">"chat.completion.chunk"</span>,<span class="json-key">"choices"</span>:[{<span class="json-key">"delta"</span>:{<span class="json-key">"content"</span>:<span class="json-string">"Hello"</span>}}]}
+
+data: {<span class="json-key">"object"</span>:<span class="json-string">"chat.completion.chunk"</span>,<span class="json-key">"choices"</span>:[{<span class="json-key">"finish_reason"</span>:<span class="json-string">"stop"</span>,<span class="json-key">"delta"</span>:{}}]}
+
+data: [DONE]</code></pre>
+                </div>
+            </div>
+
+            <!-- GET /health -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/health</span>
+                    <span class="endpoint-desc">Health check</span>
+                </div>
+                <div class="endpoint-body">
+                    <h4>Response</h4>
+                    <span class="response-label success">200 OK</span>
+                    <pre><code>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>,
+  <span class="json-key">"service"</span>: <span class="json-string">"My Knowledge Base"</span>,
+  <span class="json-key">"port"</span>: <span class="json-number">5001</span>
+}</code></pre>
+                </div>
             </div>
         </div>
 
-        <!-- POST /chat -->
-        <div class="endpoint">
-            <div class="endpoint-header">
-                <span class="method post">POST</span>
-                <span class="path">/chat</span>
+        <!-- Code Examples Section -->
+        <div class="section">
+            <h2>💻 Code Examples</h2>
+
+            <div class="info-box">
+                <p>All examples use <code>http://localhost:5001</code> — replace <code>5001</code> with your service's
+                    configured port.</p>
             </div>
-            <div class="endpoint-body">
-                <p>Send a message and receive a complete response (non-streaming).</p>
 
-                <h4>Request Body</h4>
-                <table>
-                    <tr>
-                        <th>Field</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                    </tr>
-                    <tr>
-                        <td><code>messages</code></td>
-                        <td>array</td>
-                        <td>Array of message objects with <code>role</code> and <code>content</code></td>
-                    </tr>
-                </table>
+            <!-- Language Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('python')">🐍 Python</button>
+                <button class="tab-btn" onclick="showTab('csharp')">🟦 C#</button>
+                <button class="tab-btn" onclick="showTab('javascript')">🌐 JavaScript</button>
+                <button class="tab-btn" onclick="showTab('java')">☕ Java</button>
+                <button class="tab-btn" onclick="showTab('rust')">🦀 Rust</button>
+                <button class="tab-btn" onclick="showTab('curl')">🐚 cURL</button>
+                <button class="tab-btn" onclick="showTab('powershell')">💡 PowerShell</button>
+            </div>
 
-                <h4>Example Request</h4>
-                <pre><code>curl -X POST http://localhost:5000/chat \
+            <!-- Python -->
+            <div class="tab-content active" id="tab-python">
+                <h3>Non-Streaming</h3>
+                <pre><code><span class="keyword">import</span> requests
+
+BASE_URL = <span class="json-string">"http://localhost:5001"</span>
+
+response = requests.post(f<span class="json-string">"{BASE_URL}/chat"</span>, json={
+    <span class="json-string">"messages"</span>: [
+        {<span class="json-string">"role"</span>: <span class="json-string">"user"</span>, <span class="json-string">"content"</span>: <span class="json-string">"Summarize the uploaded document"</span>}
+    ]
+})
+
+data = response.json()
+print(data[<span class="json-string">"content"</span>])</code></pre>
+
+                <h3>Streaming (SSE)</h3>
+                <pre><code><span class="keyword">import</span> requests
+<span class="keyword">import</span> json
+
+response = requests.post(
+    <span class="json-string">"http://localhost:5001/chat/stream"</span>,
+    json={<span class="json-string">"messages"</span>: [{<span class="json-string">"role"</span>: <span class="json-string">"user"</span>, <span class="json-string">"content"</span>: <span class="json-string">"What are the key findings?"</span>}]},
+    stream=True
+)
+
+<span class="keyword">for</span> line <span class="keyword">in</span> response.iter_lines():
+    <span class="keyword">if</span> line:
+        text = line.decode(<span class="json-string">"utf-8"</span>)
+        <span class="keyword">if</span> text.startswith(<span class="json-string">"data: "</span>) <span class="keyword">and</span> text != <span class="json-string">"data: [DONE]"</span>:
+            chunk = json.loads(text[6:])
+            print(chunk[<span class="json-string">"content"</span>], end=<span class="json-string">""</span>, flush=True)</code></pre>
+
+                <h3>Using httpx</h3>
+                <pre><code><span class="keyword">import</span> httpx
+
+<span class="keyword">with</span> httpx.Client(base_url=<span class="json-string">"http://localhost:5001"</span>) <span class="keyword">as</span> client:
+    r = client.post(<span class="json-string">"/chat"</span>, json={
+        <span class="json-string">"messages"</span>: [{<span class="json-string">"role"</span>: <span class="json-string">"user"</span>, <span class="json-string">"content"</span>: <span class="json-string">"List all action items from the document"</span>}]
+    })
+    print(r.json()[<span class="json-string">"content"</span>])</code></pre>
+            </div>
+
+            <!-- C# -->
+            <div class="tab-content" id="tab-csharp">
+                <h3>Non-Streaming</h3>
+                <pre><code><span class="keyword">using</span> System.Net.Http.Json;
+
+<span class="keyword">var</span> client = <span class="keyword">new</span> <span class="type">HttpClient</span> { BaseAddress = <span class="keyword">new</span> <span class="type">Uri</span>(<span class="json-string">"http://localhost:5001"</span>) };
+
+<span class="keyword">var</span> request = <span class="keyword">new</span>
+{
+    messages = <span class="keyword">new</span>[]
+    {
+        <span class="keyword">new</span> { role = <span class="json-string">"user"</span>, content = <span class="json-string">"What is the total amount on this invoice?"</span> }
+    }
+};
+
+<span class="keyword">var</span> response = <span class="keyword">await</span> client.PostAsJsonAsync(<span class="json-string">"/chat"</span>, request);
+<span class="keyword">var</span> result = <span class="keyword">await</span> response.Content.ReadFromJsonAsync&lt;<span class="type">ChatResponse</span>&gt;();
+Console.WriteLine(result?.Content);
+
+<span class="comment">// Response model</span>
+<span class="keyword">record</span> <span class="type">ChatResponse</span>(<span class="keyword">string</span> Model, <span class="keyword">string</span> Content, <span class="keyword">int</span> TokenCount);</code></pre>
+
+                <h3>Streaming (SSE)</h3>
+                <pre><code><span class="keyword">using</span> System.Net.Http.Json;
+<span class="keyword">using</span> System.Text.Json;
+
+<span class="keyword">var</span> client = <span class="keyword">new</span> <span class="type">HttpClient</span> { BaseAddress = <span class="keyword">new</span> <span class="type">Uri</span>(<span class="json-string">"http://localhost:5001"</span>) };
+
+<span class="keyword">var</span> request = <span class="keyword">new</span>
+{
+    messages = <span class="keyword">new</span>[] { <span class="keyword">new</span> { role = <span class="json-string">"user"</span>, content = <span class="json-string">"Explain the contract terms"</span> } }
+};
+
+<span class="keyword">var</span> httpRequest = <span class="keyword">new</span> <span class="type">HttpRequestMessage</span>(HttpMethod.Post, <span class="json-string">"/chat/stream"</span>)
+{
+    Content = JsonContent.Create(request)
+};
+
+<span class="keyword">var</span> response = <span class="keyword">await</span> client.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead);
+<span class="keyword">using var</span> stream = <span class="keyword">await</span> response.Content.ReadAsStreamAsync();
+<span class="keyword">using var</span> reader = <span class="keyword">new</span> <span class="type">StreamReader</span>(stream);
+
+<span class="keyword">while</span> (!reader.EndOfStream)
+{
+    <span class="keyword">var</span> line = <span class="keyword">await</span> reader.ReadLineAsync();
+    <span class="keyword">if</span> (<span class="keyword">string</span>.IsNullOrEmpty(line)) <span class="keyword">continue</span>;
+    <span class="keyword">if</span> (line == <span class="json-string">"data: [DONE]"</span>) <span class="keyword">break</span>;
+    <span class="keyword">if</span> (line.StartsWith(<span class="json-string">"data: "</span>))
+    {
+        <span class="keyword">var</span> json = line[6..];
+        <span class="keyword">var</span> chunk = JsonSerializer.Deserialize&lt;<span class="type">JsonElement</span>&gt;(json);
+        Console.Write(chunk.GetProperty(<span class="json-string">"content"</span>).GetString());
+    }
+}</code></pre>
+            </div>
+
+            <!-- JavaScript -->
+            <div class="tab-content" id="tab-javascript">
+                <h3>Non-Streaming (fetch API)</h3>
+                <pre><code><span class="comment">// Node.js / Browser (fetch API)</span>
+<span class="keyword">const</span> response = <span class="keyword">await</span> fetch(<span class="json-string">"http://localhost:5001/chat"</span>, {
+  method: <span class="json-string">"POST"</span>,
+  headers: { <span class="json-string">"Content-Type"</span>: <span class="json-string">"application/json"</span> },
+  body: JSON.stringify({
+    messages: [{ role: <span class="json-string">"user"</span>, content: <span class="json-string">"What does this document say about deadlines?"</span> }]
+  })
+});
+
+<span class="keyword">const</span> data = <span class="keyword">await</span> response.json();
+console.log(data.content);</code></pre>
+
+                <h3>Streaming (SSE)</h3>
+                <pre><code><span class="keyword">const</span> response = <span class="keyword">await</span> fetch(<span class="json-string">"http://localhost:5001/chat/stream"</span>, {
+  method: <span class="json-string">"POST"</span>,
+  headers: { <span class="json-string">"Content-Type"</span>: <span class="json-string">"application/json"</span> },
+  body: JSON.stringify({
+    messages: [{ role: <span class="json-string">"user"</span>, content: <span class="json-string">"List the key points"</span> }]
+  })
+});
+
+<span class="keyword">const</span> reader = response.body.getReader();
+<span class="keyword">const</span> decoder = <span class="keyword">new</span> TextDecoder();
+
+<span class="keyword">while</span> (true) {
+  <span class="keyword">const</span> { done, value } = <span class="keyword">await</span> reader.read();
+  <span class="keyword">if</span> (done) <span class="keyword">break</span>;
+
+  <span class="keyword">const</span> text = decoder.decode(value);
+  <span class="keyword">for</span> (<span class="keyword">const</span> line of text.split(<span class="json-string">"\n"</span>)) {
+    <span class="keyword">if</span> (line.startsWith(<span class="json-string">"data: "</span>) &amp;&amp; line !== <span class="json-string">"data: [DONE]"</span>) {
+      <span class="keyword">const</span> chunk = JSON.parse(line.slice(6));
+      process.stdout.write(chunk.content);
+    }
+  }
+}</code></pre>
+            </div>
+
+            <!-- Java -->
+            <div class="tab-content" id="tab-java">
+                <h3>Non-Streaming</h3>
+                <pre><code><span class="keyword">import</span> java.net.URI;
+<span class="keyword">import</span> java.net.http.*;
+<span class="keyword">import</span> com.google.gson.JsonParser;
+
+<span class="keyword">public class</span> <span class="type">KairosRaasClient</span> {
+    <span class="keyword">private static final</span> String BASE_URL = <span class="json-string">"http://localhost:5001"</span>;
+
+    <span class="keyword">public static void</span> main(String[] args) <span class="keyword">throws</span> Exception {
+        HttpClient client = HttpClient.newHttpClient();
+
+        String body = <span class="json-string">"""
+            {
+                "messages": [
+                    {"role": "user", "content": "What are the payment terms?"}
+                ]
+            }
+            """</span>;
+
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(BASE_URL + <span class="json-string">"/chat"</span>))
+            .header(<span class="json-string">"Content-Type"</span>, <span class="json-string">"application/json"</span>)
+            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .build();
+
+        HttpResponse&lt;String&gt; response = client.send(request,
+            HttpResponse.BodyHandlers.ofString());
+
+        <span class="keyword">var</span> json = JsonParser.parseString(response.body()).getAsJsonObject();
+        System.out.println(json.get(<span class="json-string">"content"</span>).getAsString());
+    }
+}</code></pre>
+
+                <h3>Streaming (SSE)</h3>
+                <pre><code><span class="keyword">import</span> java.net.URI;
+<span class="keyword">import</span> java.net.http.*;
+<span class="keyword">import</span> java.util.stream.Stream;
+<span class="keyword">import</span> com.google.gson.JsonParser;
+
+HttpClient client = HttpClient.newHttpClient();
+
+String body = <span class="json-string">"""
+    {"messages": [{"role": "user", "content": "Summarize the report"}]}
+    """</span>;
+
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create(<span class="json-string">"http://localhost:5001/chat/stream"</span>))
+    .header(<span class="json-string">"Content-Type"</span>, <span class="json-string">"application/json"</span>)
+    .POST(HttpRequest.BodyPublishers.ofString(body))
+    .build();
+
+HttpResponse&lt;Stream&lt;String&gt;&gt; response = client.send(request,
+    HttpResponse.BodyHandlers.ofLines());
+
+response.body().forEach(line -&gt; {
+    <span class="keyword">if</span> (line.startsWith(<span class="json-string">"data: "</span>) &amp;&amp; !line.equals(<span class="json-string">"data: [DONE]"</span>)) {
+        <span class="keyword">var</span> json = JsonParser.parseString(line.substring(6)).getAsJsonObject();
+        System.out.print(json.get(<span class="json-string">"content"</span>).getAsString());
+    }
+});</code></pre>
+            </div>
+
+            <!-- Rust -->
+            <div class="tab-content" id="tab-rust">
+                <h3>Non-Streaming</h3>
+                <pre><code><span class="keyword">use</span> reqwest::Client;
+<span class="keyword">use</span> serde_json::{json, Value};
+
+#[tokio::main]
+<span class="keyword">async fn</span> main() -&gt; Result&lt;(), Box&lt;<span class="keyword">dyn</span> std::error::Error&gt;&gt; {
+    <span class="keyword">let</span> client = Client::new();
+
+    <span class="keyword">let</span> response = client
+        .post(<span class="json-string">"http://localhost:5001/chat"</span>)
+        .json(&amp;json!({
+            <span class="json-string">"messages"</span>: [
+                {<span class="json-string">"role"</span>: <span class="json-string">"user"</span>, <span class="json-string">"content"</span>: <span class="json-string">"What is the summary?"</span>}
+            ]
+        }))
+        .send()
+        .<span class="keyword">await</span>?;
+
+    <span class="keyword">let</span> data: Value = response.json().<span class="keyword">await</span>?;
+    println!(<span class="json-string">"{}"</span>, data[<span class="json-string">"content"</span>].as_str().unwrap_or_default());
+
+    Ok(())
+}</code></pre>
+            </div>
+
+            <!-- cURL -->
+            <div class="tab-content" id="tab-curl">
+                <h3>Health Check</h3>
+                <pre><code>curl http://localhost:5001/health</code></pre>
+
+                <h3>Non-Streaming Chat</h3>
+                <pre><code>curl -X POST http://localhost:5001/chat \
   -H "Content-Type: application/json" \
   -d '{
-    <span class="json-key">"messages"</span>: [
-      { <span class="json-key">"role"</span>: <span class="json-string">"user"</span>, <span class="json-key">"content"</span>: <span class="json-string">"Hello!"</span> }
+    "messages": [
+      {"role": "user", "content": "Summarize the uploaded document"}
     ]
   }'</code></pre>
 
-                <h4>Response</h4>
-                <span class="response-label success">200 OK</span>
-                <pre><code>{
-  <span class="json-key">"model"</span>: <span class="json-string">"phi-3-mini-4k-instruct.Q4_K_M.gguf"</span>,
-  <span class="json-key">"content"</span>: <span class="json-string">"Hello! How can I help you today?"</span>,
-  <span class="json-key">"token_count"</span>: <span class="json-number">8</span>
-}</code></pre>
-            </div>
-        </div>
-
-        <!-- POST /chat/stream -->
-        <div class="endpoint">
-            <div class="endpoint-header">
-                <span class="method post">POST</span>
-                <span class="path">/chat/stream</span>
-            </div>
-            <div class="endpoint-body">
-                <p>Send a message and receive a streaming response (Server-Sent Events).</p>
-
-                <h4>Request Body</h4>
-                <p>Same as <code>/chat</code></p>
-
-                <h4>Example Request</h4>
-                <pre><code>curl -X POST http://localhost:5000/chat/stream \
+                <h3>Streaming Chat (SSE)</h3>
+                <pre><code>curl -N -X POST http://localhost:5001/chat/stream \
   -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"Hello!"}]}'</code></pre>
+  -d '{
+    "messages": [
+      {"role": "user", "content": "What are the key findings?"}
+    ]
+  }'</code></pre>
+            </div>
 
-                <h4>Response (SSE Stream)</h4>
-                <span class="response-label success">200 OK</span>
-                <pre><code>data: {<span class="json-key">"content"</span>: <span class="json-string">"Hello"</span>}
+            <!-- PowerShell -->
+            <div class="tab-content" id="tab-powershell">
+                <h3>Non-Streaming</h3>
+                <pre><code>$body = @{
+    messages = @(
+        @{ role = <span class="json-string">"user"</span>; content = <span class="json-string">"What does the document say about pricing?"</span> }
+    )
+} | ConvertTo-Json -Depth 3
 
-data: {<span class="json-key">"content"</span>: <span class="json-string">"!"</span>}
+$response = Invoke-RestMethod -Uri <span class="json-string">"http://localhost:5001/chat"</span> `
+    -Method Post -ContentType <span class="json-string">"application/json"</span> -Body $body
 
-data: {<span class="json-key">"content"</span>: <span class="json-string">" How"</span>}
-
-data: {<span class="json-key">"content"</span>: <span class="json-string">" can"</span>}
-
-data: [DONE]</code></pre>
+Write-Host $response.content</code></pre>
             </div>
         </div>
 
-        <!-- Error Responses -->
-        <div class="endpoint">
-            <div class="endpoint-header">
-                <span class="path">Error Responses</span>
-            </div>
-            <div class="endpoint-body">
-                <h4>503 - No Model Loaded</h4>
-                <span class="response-label error">503</span>
-                <pre><code>{
-  <span class="json-key">"error"</span>: {
-    <span class="json-key">"message"</span>: <span class="json-string">"No model loaded. Please load a model first."</span>,
-    <span class="json-key">"type"</span>: <span class="json-string">"invalid_request_error"</span>
-  }
+        <!-- Multi-turn Section -->
+        <div class="section">
+            <h2>📝 Multi-turn Conversation</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">All endpoints support multi-turn
+                conversations. Pass the full message history:</p>
+            <pre><code>{
+  <span class="json-key">"messages"</span>: [
+    { <span class="json-key">"role"</span>: <span class="json-string">"system"</span>, <span class="json-key">"content"</span>: <span class="json-string">"You are a legal assistant. Answer based only on the provided documents."</span> },
+    { <span class="json-key">"role"</span>: <span class="json-string">"user"</span>, <span class="json-key">"content"</span>: <span class="json-string">"What is the contract duration?"</span> },
+    { <span class="json-key">"role"</span>: <span class="json-string">"assistant"</span>, <span class="json-key">"content"</span>: <span class="json-string">"The contract duration is 12 months from the signing date."</span> },
+    { <span class="json-key">"role"</span>: <span class="json-string">"user"</span>, <span class="json-key">"content"</span>: <span class="json-string">"What happens if either party wants to terminate early?"</span> }
+  ]
 }</code></pre>
+        </div>
 
-                <h4>400 - Invalid Request</h4>
-                <span class="response-label error">400</span>
-                <pre><code>{
+        <!-- Error Handling -->
+        <div class="section">
+            <h2>⚠️ Error Handling</h2>
+
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="path">HTTP Status Codes</span>
+                </div>
+                <div class="endpoint-body">
+                    <table>
+                        <tr>
+                            <th>Code</th>
+                            <th>Meaning</th>
+                        </tr>
+                        <tr>
+                            <td><code>200</code></td>
+                            <td>Success</td>
+                        </tr>
+                        <tr>
+                            <td><code>400</code></td>
+                            <td>Bad request (missing/empty messages array)</td>
+                        </tr>
+                        <tr>
+                            <td><code>404</code></td>
+                            <td>Unknown endpoint</td>
+                        </tr>
+                        <tr>
+                            <td><code>500</code></td>
+                            <td>Server error (model not loaded, internal failure)</td>
+                        </tr>
+                    </table>
+
+                    <h4>Example Error Response</h4>
+                    <span class="response-label error">400</span>
+                    <pre><code>{
   <span class="json-key">"error"</span>: {
     <span class="json-key">"message"</span>: <span class="json-string">"Messages array is required"</span>,
     <span class="json-key">"type"</span>: <span class="json-string">"invalid_request_error"</span>
   }
 }</code></pre>
+                </div>
             </div>
         </div>
 
         <div class="footer">
-            <p>KaiROS AI • <a href="https://github.com/avikeid2007/KaiROS-AI">GitHub</a> • Made with ❤️ for local AI
-            </p>
+            <p>KaiROS AI — RAG-as-a-Service • <a href="https://github.com/avikeid2007/KaiROS-AI">GitHub</a> • Made
+                with ❤️ for local AI enthusiasts</p>
         </div>
     </div>
+
+    <script>
+        function showTab(lang) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + lang).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
 </body>
 
 </html>

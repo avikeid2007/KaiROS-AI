@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -16,6 +16,16 @@ public class ApiServer : IDisposable
     private readonly HttpListener _listener;
     private CancellationTokenSource? _cts;
     private Task? _listenerTask;
+
+    private sealed class ParsedChatRequest
+    {
+        public List<ChatMessage> Messages { get; set; } = [];
+        public bool Stream { get; set; }
+        public bool UseOpenAiFormat { get; set; }
+        public string RequestedModel { get; set; } = string.Empty;
+        public ResponseFormatInfo? ResponseFormat { get; set; }
+        public bool IncludeUsageInStream { get; set; }
+    }
     
     public bool IsRunning { get; private set; }
     public RagEngine RagEngine => _ragEngine;
@@ -122,18 +132,26 @@ public class ApiServer : IDisposable
             {
                 await HandleHomeAsync(response);
             }
-            else if (path == "/chat" && request.HttpMethod == "POST")
+            else if ((path == "/chat" || path == "/api/chat") && request.HttpMethod == "POST")
             {
-                await HandleChatAsync(request, response, ct);
+                await HandleChatAsync(request, response, forceStreaming: false, preferOpenAiFormat: false, ct);
             }
-            else if (path == "/chat/stream" && request.HttpMethod == "POST")
+            else if ((path == "/chat/stream" || path == "/api/chat/stream") && request.HttpMethod == "POST")
             {
-                await HandleChatStreamAsync(request, response, ct);
+                await HandleChatAsync(request, response, forceStreaming: true, preferOpenAiFormat: false, ct);
             }
-            else if (path == "/health")
+            else if (path == "/v1/chat/completions" && request.HttpMethod == "POST")
+            {
+                await HandleChatAsync(request, response, forceStreaming: false, preferOpenAiFormat: true, ct);
+            }
+            else if (path == "/health" || path == "/api/health")
             {
                  var health = new { status = "ok", service = _config.Name };
                  await SendJsonAsync(response, health);
+            }
+            else if (path == "/v1/models" || path == "/models" || path == "/api/models")
+            {
+                await HandleModelsAsync(response);
             }
             else
             {
@@ -149,54 +167,264 @@ public class ApiServer : IDisposable
         }
     }
 
-    private async Task HandleChatStreamAsync(HttpListenerRequest request, HttpListenerResponse response, CancellationToken ct)
+    private async Task HandleChatAsync(HttpListenerRequest request, HttpListenerResponse response, bool forceStreaming, bool preferOpenAiFormat, CancellationToken ct)
     {
-        var inputStream = request.InputStream;
-        var encoding = System.Text.Encoding.UTF8;
-        using var reader = new System.IO.StreamReader(inputStream, encoding);
+        using var reader = new StreamReader(request.InputStream, Encoding.UTF8);
         var body = await reader.ReadToEndAsync();
-        
-        SimpleChatRequest? chatRequest = null;
-        try { chatRequest = JsonSerializer.Deserialize<SimpleChatRequest>(body, JsonOptions); } catch { }
 
-        if (chatRequest?.Messages == null || chatRequest.Messages.Count == 0)
+        ParsedChatRequest? parsedRequest;
+        try
+        {
+            parsedRequest = ParseChatRequest(body, preferOpenAiFormat, forceStreaming);
+        }
+        catch (JsonException)
         {
             response.StatusCode = 400;
             response.Close();
             return;
         }
 
-        var messages = chatRequest.Messages.Select(m => new ChatMessage
+        if (parsedRequest == null || parsedRequest.Messages.Count == 0)
         {
-            Role = m.Role switch
+            response.StatusCode = 400;
+            response.Close();
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(parsedRequest.RequestedModel) &&
+            !string.Equals(parsedRequest.RequestedModel, "kairos-raas", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(parsedRequest.RequestedModel, _config.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            await SendJsonAsync(response, new ApiErrorResponse
+            {
+                Error = new ApiError { Message = $"Unknown model '{parsedRequest.RequestedModel}'. Use 'kairos-raas' for this endpoint." }
+            });
+            return;
+        }
+
+        var messages = parsedRequest.Messages;
+        var lastUserMsg = messages.LastOrDefault(m => m.Role == ChatRole.User)?.Content ?? string.Empty;
+        var ragContext = _ragEngine.GetContext(lastUserMsg);
+
+        if (!messages.Any(m => m.Role == ChatRole.System))
+        {
+            messages.Insert(0, new ChatMessage { Role = ChatRole.System, Content = _config.SystemPrompt });
+        }
+
+        if (parsedRequest.Stream)
+        {
+            await HandleStreamingResponseAsync(response, messages, ragContext, ct, parsedRequest.UseOpenAiFormat, parsedRequest.IncludeUsageInStream);
+            return;
+        }
+
+        var fullResponse = new StringBuilder();
+
+        await foreach (var token in _chatService.GenerateResponseStreamAsync(messages, false, null, ragContext, null, ct))
+        {
+            fullResponse.Append(token);
+        }
+
+        if (parsedRequest.UseOpenAiFormat)
+        {
+            var text = ApplyResponseFormat(fullResponse.ToString(), parsedRequest.ResponseFormat);
+            var promptChars = messages.Sum(m => m.Content?.Length ?? 0);
+            var completionChars = text.Length;
+
+            var openAiResponse = new ChatCompletionResponse
+            {
+                Model = "kairos-raas",
+                Choices =
+                [
+                    new ChatCompletionChoice
+                    {
+                        Index = 0,
+                        Message = new ChatCompletionMessage
+                        {
+                            Role = "assistant",
+                            Content = text
+                        },
+                        FinishReason = "stop"
+                    }
+                ],
+                Usage = new UsageInfo
+                {
+                    PromptTokens = Math.Max(1, promptChars / 4),
+                    CompletionTokens = Math.Max(1, completionChars / 4),
+                    TotalTokens = Math.Max(1, (promptChars + completionChars) / 4)
+                }
+            };
+
+            await SendJsonAsync(response, openAiResponse);
+            return;
+        }
+
+        var result = new SimpleChatResponse
+        {
+            Model = "kairos-raas",
+            Content = fullResponse.ToString(),
+            TokenCount = fullResponse.Length / 4
+        };
+
+        await SendJsonAsync(response, result);
+    }
+
+    private static ParsedChatRequest? ParseChatRequest(string body, bool preferOpenAiFormat, bool forceStreaming)
+    {
+        var openAiRequest = JsonSerializer.Deserialize<ChatCompletionRequest>(body, JsonOptions);
+        if (openAiRequest?.Messages?.Count > 0 && (preferOpenAiFormat || !string.IsNullOrWhiteSpace(openAiRequest.Model)))
+        {
+            return new ParsedChatRequest
+            {
+                Messages = openAiRequest.Messages.Select(ToInternalMessage).ToList(),
+                Stream = forceStreaming || openAiRequest.Stream,
+                UseOpenAiFormat = true,
+                RequestedModel = openAiRequest.Model,
+                ResponseFormat = openAiRequest.ResponseFormat,
+                IncludeUsageInStream = openAiRequest.StreamOptions?.IncludeUsage == true
+            };
+        }
+
+        var simpleRequest = JsonSerializer.Deserialize<SimpleChatRequest>(body, JsonOptions);
+        if (simpleRequest?.Messages?.Count > 0)
+        {
+            return new ParsedChatRequest
+            {
+                Messages = simpleRequest.Messages.Select(ToInternalMessage).ToList(),
+                Stream = forceStreaming,
+                UseOpenAiFormat = preferOpenAiFormat
+            };
+        }
+
+        if (openAiRequest?.Messages?.Count > 0)
+        {
+            return new ParsedChatRequest
+            {
+                Messages = openAiRequest.Messages.Select(ToInternalMessage).ToList(),
+                Stream = forceStreaming || openAiRequest.Stream,
+                UseOpenAiFormat = true,
+                RequestedModel = openAiRequest.Model,
+                ResponseFormat = openAiRequest.ResponseFormat,
+                IncludeUsageInStream = openAiRequest.StreamOptions?.IncludeUsage == true
+            };
+        }
+
+        return null;
+    }
+
+    private static ChatMessage ToInternalMessage(ChatCompletionMessage message)
+    {
+        return new ChatMessage
+        {
+            Role = message.Role switch
             {
                 "user" => ChatRole.User,
                 "system" => ChatRole.System,
                 _ => ChatRole.Assistant
-            }, 
-            Content = m.Content
-        }).ToList();
-        
-        // 1. Get Context
-        var lastUserMsg = messages.LastOrDefault(m => m.Role == ChatRole.User)?.Content ?? "";
-        var context = _ragEngine.GetContext(lastUserMsg);
+            },
+            Content = message.Content
+        };
+    }
 
-        // 2. Add System Prompt
-        if (!messages.Any(m => m.Role == ChatRole.System))
-        {
-             messages.Insert(0, new ChatMessage { Role = ChatRole.System, Content = _config.SystemPrompt });
-        }
-
-        // 3. Stream Response
+    private async Task HandleStreamingResponseAsync(HttpListenerResponse response, List<ChatMessage> messages, string ragContext, CancellationToken ct, bool openAiFormat, bool includeUsageInStream)
+    {
         response.ContentType = "text/event-stream";
         response.Headers.Add("Cache-Control", "no-cache");
         response.Headers.Add("Connection", "keep-alive");
-        // CORS headers are already added in HandleRequestAsync generic block? 
-        // Yes, HandleRequestAsync adds them before calling specific handlers.
 
         using var writer = new StreamWriter(response.OutputStream, Encoding.UTF8);
 
-        await foreach (var token in _chatService.GenerateResponseStreamAsync(messages, false, null, context, null, ct))
+        if (openAiFormat)
+        {
+            var completionId = $"chatcmpl-{Guid.NewGuid():N}";
+            var created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var completionChars = 0;
+
+            var startChunk = new ChatCompletionChunk
+            {
+                Id = completionId,
+                Created = created,
+                Model = "kairos-raas",
+                Choices =
+                [
+                    new ChatCompletionChunkChoice
+                    {
+                        Index = 0,
+                        Delta = new ChatCompletionDelta { Role = "assistant" }
+                    }
+                ]
+            };
+
+            await writer.WriteAsync($"data: {JsonSerializer.Serialize(startChunk, JsonOptions)}\n\n");
+            await writer.FlushAsync();
+
+            await foreach (var token in _chatService.GenerateResponseStreamAsync(messages, false, null, ragContext, null, ct))
+            {
+                completionChars += token.Length;
+                var chunk = new ChatCompletionChunk
+                {
+                    Id = completionId,
+                    Created = created,
+                    Model = "kairos-raas",
+                    Choices =
+                    [
+                        new ChatCompletionChunkChoice
+                        {
+                            Index = 0,
+                            Delta = new ChatCompletionDelta { Content = token }
+                        }
+                    ]
+                };
+
+                await writer.WriteAsync($"data: {JsonSerializer.Serialize(chunk, JsonOptions)}\n\n");
+                await writer.FlushAsync();
+            }
+
+            var endChunk = new ChatCompletionChunk
+            {
+                Id = completionId,
+                Created = created,
+                Model = "kairos-raas",
+                Choices =
+                [
+                    new ChatCompletionChunkChoice
+                    {
+                        Index = 0,
+                        Delta = new ChatCompletionDelta(),
+                        FinishReason = "stop"
+                    }
+                ]
+            };
+
+            await writer.WriteAsync($"data: {JsonSerializer.Serialize(endChunk, JsonOptions)}\n\n");
+
+            if (includeUsageInStream)
+            {
+                var promptChars = messages.Sum(m => m.Content?.Length ?? 0);
+                var usageChunk = new
+                {
+                    id = completionId,
+                    @object = "chat.completion.chunk",
+                    created,
+                    model = "kairos-raas",
+                    choices = Array.Empty<object>(),
+                    usage = new UsageInfo
+                    {
+                        PromptTokens = Math.Max(1, promptChars / 4),
+                        CompletionTokens = Math.Max(1, completionChars / 4),
+                        TotalTokens = Math.Max(1, (promptChars + completionChars) / 4)
+                    }
+                };
+
+                await writer.WriteAsync($"data: {JsonSerializer.Serialize(usageChunk, JsonOptions)}\n\n");
+            }
+
+            await writer.WriteAsync("data: [DONE]\n\n");
+            await writer.FlushAsync();
+            response.Close();
+            return;
+        }
+
+        await foreach (var token in _chatService.GenerateResponseStreamAsync(messages, false, null, ragContext, null, ct))
         {
             var chunk = new { content = token };
             var json = JsonSerializer.Serialize(chunk, JsonOptions);
@@ -209,74 +437,45 @@ public class ApiServer : IDisposable
         response.Close();
     }
 
-    private async Task HandleChatAsync(HttpListenerRequest request, HttpListenerResponse response, CancellationToken ct)
+    private static string ApplyResponseFormat(string content, ResponseFormatInfo? responseFormat)
     {
-        var inputStream = request.InputStream;
-        var encoding = System.Text.Encoding.UTF8;
-        using var reader = new System.IO.StreamReader(inputStream, encoding);
-        var body = await reader.ReadToEndAsync();
-        
-        SimpleChatRequest? chatRequest = null;
-        try { chatRequest = JsonSerializer.Deserialize<SimpleChatRequest>(body, JsonOptions); } catch { }
-
-        if (chatRequest?.Messages == null || chatRequest.Messages.Count == 0)
+        if (!string.Equals(responseFormat?.Type, "json_object", StringComparison.OrdinalIgnoreCase))
         {
-            response.StatusCode = 400;
-            response.Close();
-            return;
+            return content;
         }
 
-        var messages = chatRequest.Messages.Select(m => new ChatMessage
+        var trimmed = content.Trim();
+        if (trimmed.StartsWith("{") && trimmed.EndsWith("}"))
         {
-            Role = m.Role switch
+            try
             {
-                "user" => ChatRole.User,
-                "system" => ChatRole.System,
-                _ => ChatRole.Assistant
-            }, 
-            Content = m.Content
-        }).ToList();
-        
-        // 1. Get Context from RagEngine
-        var lastUserMsg = messages.LastOrDefault(m => m.Role == ChatRole.User)?.Content ?? "";
-        var context = _ragEngine.GetContext(lastUserMsg);
-
-        // 2. Add System Prompt from Config
-        if (!messages.Any(m => m.Role == ChatRole.System))
-        {
-             messages.Insert(0, new ChatMessage { Role = ChatRole.System, Content = _config.SystemPrompt });
-        }
-        else
-        {
-            // Or prepend to existing system message?
-            // simpler: Just let the ChatService logic handle it, but we pass the context.
+                using var _ = JsonDocument.Parse(trimmed);
+                return trimmed;
+            }
+            catch
+            {
+                // Fall through and wrap in JSON.
+            }
         }
 
-        // 3. Generate Response (Stream logic omitted for brevity, doing non-streaming for now to ensure reliability first)
-        // Wait, ChatService handles streaming/non-streaming internal logic.
-        // We can just call GenerateResponseAsync.
-        
-        // "context" string needs to be passed to ChatService methods.
-        // I need to Update ChatService.GenerateResponseAsync to accepting 'sessionContext' if it doesn't already expose it publicly in the interface.
-        // Looking at ChatService code:
-        // Public method: GenerateResponseStreamAsync(messages, useWebSearch, sessionContext, ...)
-        
-        var fullResponse = new StringBuilder();
-        
-        // Using streaming internal method to get the semaphore safety
-        await foreach (var token in _chatService.GenerateResponseStreamAsync(messages, false, null, context, null, ct))
-        {
-            fullResponse.Append(token);
-        }
+        return JsonSerializer.Serialize(new { response = content });
+    }
 
-        var result = new SimpleChatResponse
+    private async Task HandleModelsAsync(HttpListenerResponse response)
+    {
+        var models = new ModelsListResponse
         {
-            Model = "kairos-raas",
-            Content = fullResponse.ToString(),
-            TokenCount = fullResponse.Length / 4
+            Data =
+            [
+                new ModelInfo
+                {
+                    Id = "kairos-raas",
+                    OwnedBy = "kairos-local"
+                }
+            ]
         };
 
-        await SendJsonAsync(response, result);
+        await SendJsonAsync(response, models);
     }
 
     private async Task HandleHomeAsync(HttpListenerResponse response)
@@ -374,6 +573,7 @@ public class ApiServer : IDisposable
             <!-- Info Card -->
             <div class=""card"">
                 <div class=""card-title"">⚙️ Configuration</div>
+
                 <div class=""info-row""><span class=""label"">Port</span><span class=""value"">{_config.Port}</span></div>
                 <div class=""info-row""><span class=""label"">Requests Served</span><span class=""value"">{_config.RequestCount}</span></div>
                 <div class=""info-row""><span class=""label"">System Prompt</span></div>
@@ -442,3 +642,4 @@ public class ApiServer : IDisposable
         StopAsync().Wait();
     }
 }
+

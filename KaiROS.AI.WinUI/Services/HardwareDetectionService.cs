@@ -113,15 +113,11 @@ public class HardwareDetectionService : IHardwareDetectionService
             info.HasCuda = !string.IsNullOrEmpty(info.GpuName) &&
                            info.GpuName.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase);
 
-            // Vulkan support is represented by the Vulkan backend package, 
-            // but we check if we have a valid non-basic discrete GPU to recommend it.
-            // Explicitly exclude Intel Integrated Graphics (Iris, UHD, HD) as they are unstable with llama.cpp Vulkan backend.
-            bool isIntelIntegrated = info.GpuName?.Contains("Intel", StringComparison.OrdinalIgnoreCase) == true &&
-                                     info.GpuName?.Contains("Arc", StringComparison.OrdinalIgnoreCase) == false;
-
-            info.HasVulkan = !string.IsNullOrEmpty(info.GpuName) &&
-                              !info.GpuName.Contains("Microsoft Basic", StringComparison.OrdinalIgnoreCase) &&
-                              !isIntelIntegrated;
+            // Vulkan backend was removed from the shipped MSIX (Microsoft Store
+            // certification reliability — Vulkan native libraries shipped foreign
+            // platform .so files that polluted the package).  We keep the enum
+            // value for UI compatibility but always report Vulkan as unavailable.
+            info.HasVulkan = false;
 
             // NPU detection (limited - check for Intel NPU or Qualcomm)
             try
