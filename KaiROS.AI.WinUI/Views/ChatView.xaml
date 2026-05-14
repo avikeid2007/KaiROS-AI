@@ -514,7 +514,7 @@
                             Command="{Binding AttachImageCommand}"
                             Style="{StaticResource SecondaryButton}"
                             ToolTipService.ToolTip="Attach Image (Vision Model Required)"
-                            Visibility="{Binding ModelManager.IsVisionModelLoaded, Converter={StaticResource BoolToVis}}">
+                            Visibility="{Binding IsVisionModelReady, Converter={StaticResource BoolToVis}}">
                             <FontIcon
                                 FontFamily="Segoe Fluent Icons"
                                 FontSize="16"

@@ -56,5 +56,18 @@ public partial class DocumentView : UserControl
             DataContext is ViewModels.DocumentViewModel vm)
             vm.RemoveSourceFromServiceCommand.Execute(btn.Tag);
     }
+
+    private void OpenDocs_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://avikeid2007.github.io/KaiROS-AI/api.html",
+                UseShellExecute = true
+            });
+        }
+        catch { }
+    }
 }
 

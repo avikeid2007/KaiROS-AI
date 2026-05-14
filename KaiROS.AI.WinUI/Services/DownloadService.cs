@@ -8,7 +8,7 @@ namespace KaiROS.AI.WinUI.Services;
 public class DownloadService : IDownloadService
 {
     private readonly HttpClient _httpClient;
-    private readonly string _modelsDirectory;
+    private string _modelsDirectory;
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _activeDownloads = new();
     private readonly ConcurrentDictionary<string, long> _pausedDownloads = new(); // Tracks bytes downloaded
 
@@ -21,6 +21,12 @@ public class DownloadService : IDownloadService
         };
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "KaiROS-AI/1.0");
 
+        Directory.CreateDirectory(_modelsDirectory);
+    }
+
+    public void SetModelsDirectory(string path)
+    {
+        _modelsDirectory = path;
         Directory.CreateDirectory(_modelsDirectory);
     }
 
