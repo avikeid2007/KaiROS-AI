@@ -350,6 +350,52 @@
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
 
+                                            <!--  Deep Research Progress Display  -->
+                                            <StackPanel Margin="0,4,0,8" Visibility="{Binding IsResearchMessage, Converter={StaticResource BoolToVis}}">
+                                                <!-- Phase Header -->
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8" Spacing="8">
+                                                    <ProgressRing Width="16" Height="16" IsActive="True" 
+                                                                  Visibility="{Binding IsResearchComplete, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE73E;" FontSize="14" Foreground="Green" 
+                                                              Visibility="{Binding IsResearchComplete, Converter={StaticResource BoolToVis}}" />
+                                                    <TextBlock FontWeight="SemiBold" Foreground="{ThemeResource PrimaryLightBrush}" FontSize="13">
+                                                        <Run Text="Deep Research Phase: " />
+                                                        <Run Text="{Binding ResearchStatus}" />
+                                                        <Run Text=" (" />
+                                                        <Run Text="{Binding CurrentStep}" />
+                                                        <Run Text="/" />
+                                                        <Run Text="{Binding TotalSteps}" />
+                                                        <Run Text=")" />
+                                                    </TextBlock>
+                                                </StackPanel>
+
+                                                <!-- Sources List -->
+                                                <TextBlock Text="Sources identified:" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,4,0,4" 
+                                                           Visibility="{Binding HasResearchSources, Converter={StaticResource BoolToVis}}" />
+                                                <ItemsControl ItemsSource="{Binding ResearchSources}" Margin="0,0,0,8" 
+                                                              Visibility="{Binding HasResearchSources, Converter={StaticResource BoolToVis}}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Margin="8,2">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <FontIcon Grid.Column="0" FontFamily="Segoe Fluent Icons" Glyph="&#xE73E;" FontSize="12" Foreground="Green" Margin="0,2,8,0" 
+                                                                          Visibility="{Binding IsRead, Converter={StaticResource BoolToVis}}" />
+                                                                <ProgressRing Grid.Column="0" Width="10" Height="10" IsActive="True" Margin="0,2,10,0" 
+                                                                              Visibility="{Binding IsRead, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                                                                <TextBlock Grid.Column="1" FontSize="12" Foreground="{ThemeResource TextPrimaryBrush}" TextWrapping="Wrap" MaxWidth="500">
+                                                                    <Run Text="{Binding Title}" FontWeight="Medium" />
+                                                                    <Run Text=" - " />
+                                                                    <Run Text="{Binding Url}" FontSize="11" Foreground="{ThemeResource TextMutedBrush}" />
+                                                                </TextBlock>
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+
                                             <ContentPresenter Content="{Binding Content, Converter={StaticResource MarkdownConverter}}" Foreground="{ThemeResource TextPrimaryBrush}" />
                                             <TextBlock
                                                 Margin="0,8,0,0"
@@ -436,6 +482,22 @@
                                     OffContent=""
                                     OnContent=""
                                     ToolTipService.ToolTip="Enable Agent Mode (Tool-Using AI)" />
+                            </StackPanel>
+
+                            <!--  Deep Research Toggle  -->
+                            <StackPanel Margin="0,0,16,0" Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="0,0,8,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextSecondaryBrush}"
+                                    Text="Deep Research" />
+                                <ToggleSwitch
+                                    MinWidth="0"
+                                    IsOn="{Binding IsDeepResearchEnabled, Mode=TwoWay}"
+                                    OffContent=""
+                                    OnContent=""
+                                    ToolTipService.ToolTip="Enable Deep Research (Multi-Step search + report)" />
                             </StackPanel>
 
                             <!--  Enter to Send Toggle  -->

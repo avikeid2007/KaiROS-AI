@@ -494,11 +494,23 @@ public class ModelManagerService : IModelManagerService, IDisposable
                         if (model.IsVisionModel && !string.IsNullOrEmpty(model.MmProjLocalPath) && File.Exists(model.MmProjLocalPath))
                         {
                             System.Diagnostics.Debug.WriteLine($"[KaiROS] Loading MTMD mm-proj: {model.MmProjLocalPath}");
-                            llavaWeights = MtmdWeights.LoadFromFile(
-                                model.MmProjLocalPath,
-                                weights,
-                                MtmdContextParams.Default());
-                            System.Diagnostics.Debug.WriteLine($"[KaiROS] Vision model ready. Supports vision: {llavaWeights.SupportsVision}");
+                            try
+                            {
+                                llavaWeights = MtmdWeights.LoadFromFile(
+                                    model.MmProjLocalPath,
+                                    weights,
+                                    MtmdContextParams.Default());
+                                System.Diagnostics.Debug.WriteLine($"[KaiROS] Vision model ready. Supports vision: {llavaWeights.SupportsVision}");
+                            }
+                            catch (Exception mmEx)
+                            {
+                                // Projector file is corrupt, incompatible, or wrong architecture.
+                                // Degrade gracefully to text-only — do NOT fail the whole model load.
+                                llavaWeights = null;
+                                model.MmProjLocalPath = null; // clear so UI reflects text-only state
+                                NativeLog($"[KaiROS] WARNING: mmproj load failed (vision disabled for this session): {mmEx.Message}");
+                                System.Diagnostics.Debug.WriteLine($"[KaiROS] mmproj load failed, running in text-only mode. Error: {mmEx.Message}");
+                            }
                         }
 
                         progress?.Report(90);
@@ -621,6 +633,37 @@ public class ModelManagerService : IModelManagerService, IDisposable
 
     public LLamaWeights? GetLoadedWeights() => _loadedWeights;
     public MtmdWeights? GetLoadedLlavaWeights() => _loadedLlavaWeights;
+
+    /// <summary>
+    /// Reads the model's native context window size from GGUF metadata.
+    /// Returns 4096 as a safe fallback if the model is not loaded or metadata is unavailable.
+    /// </summary>
+    public uint GetModelNativeContextSize()
+    {
+        if (_loadedWeights == null) return 4096;
+
+        try
+        {
+            // LLamaSharp exposes raw GGUF metadata through the Metadata dictionary.
+            // Standard keys vary by model family: e.g. "llama.context_length", "qwen2.context_length", etc.
+            // Finding any key containing "context_length" (case-insensitive) is extremely robust.
+            var metadata = _loadedWeights.Metadata;
+            var key = metadata.Keys.FirstOrDefault(k => k.Contains("context_length", StringComparison.OrdinalIgnoreCase));
+            if (key != null && metadata.TryGetValue(key, out var value) &&
+                uint.TryParse(value, out var nativeSize) && nativeSize > 0)
+            {
+                System.Diagnostics.Debug.WriteLine($"[KaiROS] Found native context length key '{key}': {nativeSize} tokens");
+                return nativeSize;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[KaiROS] Could not read native context size: {ex.Message}");
+        }
+
+        // Safe fallback
+        return 4096;
+    }
 
     // ── Win32 P/Invoke for DLL search path manipulation ─────────────
     // MSIX packaged apps have a restricted DLL search order. The PATH

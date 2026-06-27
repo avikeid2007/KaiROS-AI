@@ -18,6 +18,8 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly IThemeService _themeService;
     private readonly IApiService _apiService;
     private readonly IAgentService _agentService;
+    private readonly IUserPreferencesService _preferences;
+    private readonly IChatService _chatService;
 
     [ObservableProperty]
     public partial bool IsFileReaderEnabled { get; set; }
@@ -78,6 +80,28 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     public partial int ApiPort { get; set; } = 5000;
 
+    // Context Window Settings
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ActiveContextInfo))]
+    public partial ContextWindowOption SelectedContextWindow { get; set; } = ContextWindowOption.Auto;
+
+    public ObservableCollection<ContextWindowOption> ContextWindowOptions { get; } =
+        new(Enum.GetValues<ContextWindowOption>());
+
+    public string ActiveContextInfo
+    {
+        get
+        {
+            if (_chatService == null) return "Load a model to see effective context size";
+            try
+            {
+                var size = ((ChatService)_chatService).CalculateSafeContextSize();
+                return $"Effective size: {size:N0} tokens ({size / 1024.0:F1}K)";
+            }
+            catch { return "N/A"; }
+        }
+    }
+
     // API can only be enabled when a model is loaded
     public bool CanEnableApi => _modelManager.ActiveModel != null;
 
@@ -88,7 +112,15 @@ public partial class SettingsViewModel : ViewModelBase
         ? $"Running on http://localhost:{_apiService.Port}/"
         : CanEnableApi ? "Stopped (ready to start)" : "Disabled (load a model first)";
 
-    public SettingsViewModel(IHardwareDetectionService hardwareService, IModelManagerService modelManager, ChatViewModel chatViewModel, IThemeService themeService, IApiService apiService, IAgentService agentService)
+    public SettingsViewModel(
+        IHardwareDetectionService hardwareService,
+        IModelManagerService modelManager,
+        ChatViewModel chatViewModel,
+        IThemeService themeService,
+        IApiService apiService,
+        IAgentService agentService,
+        IUserPreferencesService preferences,
+        IChatService chatService)
     {
         _hardwareService = hardwareService;
         _modelManager = modelManager;
@@ -96,6 +128,8 @@ public partial class SettingsViewModel : ViewModelBase
         _themeService = themeService;
         _apiService = apiService;
         _agentService = agentService;
+        _preferences = preferences;
+        _chatService = chatService;
 
         // Initialize tool toggles from AgentService
         IsFileReaderEnabled = _agentService.IsFileReaderEnabled;
@@ -115,16 +149,21 @@ public partial class SettingsViewModel : ViewModelBase
         // Initialize API status
         IsApiEnabled = _apiService.IsRunning;
 
+        // Initialize context window from persisted preference
+        SelectedContextWindow = _preferences.ContextWindowPreference;
+
         // Subscribe to model events to update CanEnableApi
         _modelManager.ModelLoaded += (s, e) =>
         {
             OnPropertyChanged(nameof(CanEnableApi));
             OnPropertyChanged(nameof(ApiStatus));
+            OnPropertyChanged(nameof(ActiveContextInfo));
         };
         _modelManager.ModelUnloaded += (s, e) =>
         {
             OnPropertyChanged(nameof(CanEnableApi));
             OnPropertyChanged(nameof(ApiStatus));
+            OnPropertyChanged(nameof(ActiveContextInfo));
             // Disable API if model is unloaded
             if (IsApiEnabled)
             {
@@ -137,6 +176,15 @@ public partial class SettingsViewModel : ViewModelBase
     {
         // Sync to ChatViewModel
         _chatViewModel.SystemPrompt = value;
+        _preferences.SystemPrompt = value;
+    }
+
+    partial void OnSelectedContextWindowChanged(ContextWindowOption value)
+    {
+        _preferences.ContextWindowPreference = value;
+        // Reinitialize context with new size if a model is loaded
+        _chatService.ClearContext();
+        OnPropertyChanged(nameof(ActiveContextInfo));
     }
 
     partial void OnIsDarkThemeChanged(bool value)

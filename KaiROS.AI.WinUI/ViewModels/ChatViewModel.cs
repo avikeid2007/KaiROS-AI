@@ -24,11 +24,15 @@ public partial class ChatViewModel : ViewModelBase
     private readonly IDocumentService _documentService;
     private readonly IRaasService _raasService;
     private readonly IAgentService _agentService;
+    private readonly IDeepResearchService _deepResearchService;
     private readonly DispatcherQueue _dispatcherQueue;
     private CancellationTokenSource? _currentInferenceCts;
 
     [ObservableProperty]
     public partial bool IsAgentModeEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsDeepResearchEnabled { get; set; }
 
     [ObservableProperty]
     public partial ObservableCollection<ChatMessageViewModel> Messages { get; set; } = [];
@@ -120,7 +124,7 @@ public partial class ChatViewModel : ViewModelBase
 
     public IModelManagerService ModelManager => _modelManager;
 
-    public ChatViewModel(IChatService chatService, IModelManagerService modelManager, ISessionService sessionService, IExportService exportService, IDocumentService documentService, IRaasService raasService, IAgentService agentService)
+    public ChatViewModel(IChatService chatService, IModelManagerService modelManager, ISessionService sessionService, IExportService exportService, IDocumentService documentService, IRaasService raasService, IAgentService agentService, IDeepResearchService deepResearchService)
     {
         _chatService = chatService;
         _modelManager = modelManager;
@@ -129,6 +133,7 @@ public partial class ChatViewModel : ViewModelBase
         _documentService = documentService;
         _raasService = raasService;
         _agentService = agentService;
+        _deepResearchService = deepResearchService;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         _agentService.ConfirmationCallback = ConfirmToolApprovalAsync;
@@ -144,6 +149,33 @@ public partial class ChatViewModel : ViewModelBase
         // Always dispatch to UI thread — CollectionChanged may fire from any thread
         _raasService.Configurations.CollectionChanged += (s, e) =>
             _dispatcherQueue.TryEnqueue(UpdateKnowledgeBaseList);
+    }
+
+    partial void OnIsDeepResearchEnabledChanged(bool value)
+    {
+        if (value)
+        {
+            IsAgentModeEnabled = false;
+            IsWebSearchEnabled = false;
+        }
+    }
+
+    partial void OnIsAgentModeEnabledChanged(bool value)
+    {
+        if (value)
+        {
+            IsDeepResearchEnabled = false;
+            IsWebSearchEnabled = false;
+        }
+    }
+
+    partial void OnIsWebSearchEnabledChanged(bool value)
+    {
+        if (value)
+        {
+            IsAgentModeEnabled = false;
+            IsDeepResearchEnabled = false;
+        }
     }
 
     public override async Task InitializeAsync()
@@ -445,7 +477,90 @@ public partial class ChatViewModel : ViewModelBase
             IsGenerating = true;
             _currentInferenceCts = new CancellationTokenSource();
 
-            if (IsAgentModeEnabled)
+            if (IsDeepResearchEnabled)
+            {
+                assistantVm.IsResearchMessage = true;
+
+                try
+                {
+                    var options = new ResearchOptions();
+                    await foreach (var progress in _deepResearchService.RunResearchAsync(
+                        query: userMessage.Content,
+                        options: options,
+                        ct: _currentInferenceCts.Token))
+                    {
+                        var phase = progress.Phase;
+                        var status = progress.StatusMessage;
+                        var stepNum = progress.CurrentStep;
+                        var totalSteps = progress.TotalSteps;
+                        var sources = progress.SourcesFound;
+                        var report = progress.PartialReport;
+
+                        _dispatcherQueue.TryEnqueue(() =>
+                        {
+                            assistantVm.ResearchPhase = phase;
+                            assistantVm.ResearchStatus = status;
+                            assistantVm.CurrentStep = stepNum;
+                            assistantVm.TotalSteps = totalSteps;
+
+                            if (sources != null && sources.Count > 0)
+                            {
+                                if (assistantVm.ResearchSources.Count != sources.Count)
+                                {
+                                    assistantVm.ResearchSources.Clear();
+                                    foreach (var src in sources)
+                                    {
+                                        assistantVm.ResearchSources.Add(src);
+                                    }
+                                    assistantVm.NotifyPropertyChanged(nameof(assistantVm.HasResearchSources));
+                                }
+                                else
+                                {
+                                    for (int i = 0; i < sources.Count; i++)
+                                    {
+                                        if (assistantVm.ResearchSources[i].IsRead != sources[i].IsRead)
+                                        {
+                                            assistantVm.ResearchSources[i] = sources[i];
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (!string.IsNullOrEmpty(report))
+                            {
+                                assistantVm.Content = report;
+                                assistantVm.Message.Content = report;
+                            }
+                        });
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    _dispatcherQueue.TryEnqueue(() => assistantVm.AppendContent("\n[Research stopped by user]"));
+                }
+                catch (Exception ex)
+                {
+                    _dispatcherQueue.TryEnqueue(() => assistantVm.Content = $"Error during deep research: {ex.Message}");
+                }
+                finally
+                {
+                    _dispatcherQueue.TryEnqueue(() =>
+                    {
+                        assistantVm.CleanupContent();
+                        assistantVm.Message.IsStreaming = false;
+                        assistantVm.IsStreaming = false;
+                    });
+                    IsGenerating = false;
+                    _currentInferenceCts = null;
+
+                    if (CurrentSession != null && !string.IsNullOrEmpty(assistantVm.Content))
+                    {
+                        await _sessionService.AddMessageAsync(CurrentSession.Id, assistantVm.Message);
+                        CurrentSession.MessageCount++;
+                    }
+                }
+            }
+            else if (IsAgentModeEnabled)
             {
                 assistantVm.IsAgentMessage = true;
                 AgentStepViewModel? currentThinkingVm = null;
@@ -746,6 +861,29 @@ public partial class ChatMessageViewModel(ChatMessage message, DispatcherQueue? 
     [ObservableProperty]
     public partial bool IsAgentMessage { get; set; }
 
+    [ObservableProperty]
+    public partial bool IsResearchMessage { get; set; }
+
+    [ObservableProperty]
+    public partial string ResearchStatus { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial int CurrentStep { get; set; }
+
+    [ObservableProperty]
+    public partial int TotalSteps { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsResearchComplete))]
+    public partial ResearchPhase ResearchPhase { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasResearchSources))]
+    public partial ObservableCollection<ResearchSource> ResearchSources { get; set; } = [];
+
+    public bool IsResearchComplete => ResearchPhase == ResearchPhase.Complete;
+    public bool HasResearchSources => ResearchSources != null && ResearchSources.Count > 0;
+
     public bool IsUser => Message.Role == ChatRole.User;
     public bool IsAssistant => Message.Role == ChatRole.Assistant;
     public bool IsSystem => Message.Role == ChatRole.System;
@@ -762,6 +900,11 @@ public partial class ChatMessageViewModel(ChatMessage message, DispatcherQueue? 
     private const int FLUSH_INTERVAL_MS = 50;
 
     private readonly DispatcherQueue? _dispatcherQueue = dispatcherQueue ?? DispatcherQueue.GetForCurrentThread();
+
+    public void NotifyPropertyChanged(string propertyName)
+    {
+        OnPropertyChanged(new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+    }
 
     /// <summary>
     /// Thread-safe: may be called from background LLamaSharp inference threads.
