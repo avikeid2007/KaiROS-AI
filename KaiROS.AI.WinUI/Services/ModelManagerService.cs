@@ -1,10 +1,12 @@
-﻿using KaiROS.AI.WinUI.Models;
+using KaiROS.AI.WinUI.Models;
 using Microsoft.Extensions.Configuration;
 using LLama;
 using LLama.Common;
 using LLama.Native;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace KaiROS.AI.WinUI.Services;
 
@@ -36,6 +38,10 @@ public class ModelManagerService : IModelManagerService, IDisposable
     public event EventHandler<double>? ModelLoadProgress;
 
     private string _lastModelSettingsPath;
+    private readonly string _cachedCatalogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "KaiROS.AI", "models_catalog.json");
+    private const string RemoteCatalogUrl = "https://raw.githubusercontent.com/avikeid2007/Kairos.local/main/models.json";
 
     public ModelManagerService(IConfiguration configuration, IDownloadService downloadService, IDatabaseService databaseService, IHardwareDetectionService hardwareService)
     {
@@ -56,8 +62,8 @@ public class ModelManagerService : IModelManagerService, IDisposable
         // Initialize database
         await _databaseService.InitializeAsync();
 
-        // Load model catalog from configuration
-        var modelConfigs = _configuration.GetSection("LLMModels").Get<List<LLMModelInfo>>() ?? [];
+        // Load model catalog dynamically from remote repository, with local caching and appsettings fallback
+        var modelConfigs = await LoadModelCatalogAsync();
 
         _models.Clear();
         foreach (var model in modelConfigs)
@@ -123,6 +129,61 @@ public class ModelManagerService : IModelManagerService, IDisposable
 
         // Auto-load last used model
         await LoadLastUsedModelAsync();
+    }
+
+    private async Task<List<LLMModelInfo>> LoadModelCatalogAsync()
+    {
+        // 1. Try to load from remote endpoint
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            client.DefaultRequestHeaders.Add("User-Agent", "KaiROS-AI/1.0");
+            
+            var json = await client.GetStringAsync(RemoteCatalogUrl);
+            
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var remoteList = JsonSerializer.Deserialize<List<LLMModelInfo>>(json, options);
+                
+                if (remoteList != null && remoteList.Count > 0)
+                {
+                    // Cache the raw JSON string locally in AppData
+                    Directory.CreateDirectory(Path.GetDirectoryName(_cachedCatalogPath)!);
+                    await File.WriteAllTextAsync(_cachedCatalogPath, json);
+                    System.Diagnostics.Debug.WriteLine($"[KaiROS] Successfully fetched and cached remote catalog with {remoteList.Count} models.");
+                    return remoteList;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[KaiROS] Remote catalog fetch failed: {ex.Message}");
+        }
+
+        // 2. Fallback: Local Cached Copy in AppData
+        try
+        {
+            if (File.Exists(_cachedCatalogPath))
+            {
+                var cachedJson = await File.ReadAllTextAsync(_cachedCatalogPath);
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var cachedList = JsonSerializer.Deserialize<List<LLMModelInfo>>(cachedJson, options);
+                if (cachedList != null && cachedList.Count > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[KaiROS] Loaded catalog from local AppData cache with {cachedList.Count} models.");
+                    return cachedList;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[KaiROS] Reading cached catalog failed: {ex.Message}");
+        }
+
+        // 3. Fallback: Hardcoded AppSettings JSON (Offline/First-Run)
+        System.Diagnostics.Debug.WriteLine("[KaiROS] Falling back to built-in appsettings.json model catalog.");
+        return _configuration.GetSection("LLMModels").Get<List<LLMModelInfo>>() ?? [];
     }
 
     private async Task LoadLastUsedModelAsync()

@@ -1,4 +1,4 @@
-﻿namespace KaiROS.AI.WinUI.Models;
+namespace KaiROS.AI.WinUI.Models;
 
 /// <summary>
 /// Represents LLM model information from configuration
@@ -15,6 +15,7 @@ public class LLMModelInfo
     public string MinRam { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public bool IsRecommended { get; set; }
+    public bool IsTopPerformer { get; set; }
 
     // New metadata properties for filtering and display
     public string Organization { get; set; } = string.Empty;

@@ -176,6 +176,6 @@
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
     <AppxBundle>Never</AppxBundle>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-    <PackageCertificateThumbprint>0B823088A076EC4B96C65B0EB603449583165F97</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>05DDF2B375DDBE97A4502E527C8A5E1CD7D484EE</PackageCertificateThumbprint>
   </PropertyGroup>
 </Project>
