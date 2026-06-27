@@ -5,6 +5,7 @@ using LLama.Native;
 using LLama.Transformers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -15,6 +16,8 @@ public class ChatService : IChatService, IDisposable
     private readonly ModelManagerService _modelManager;
     private readonly IDocumentService _documentService;
     private readonly IWebSearchService _webSearchService;
+    private readonly IUserPreferencesService _preferences;
+    private readonly IHardwareDetectionService _hardwareService;
     private LLamaContext? _context;
     private InteractiveExecutor? _executor;
     private InferenceStats _lastStats = new();
@@ -38,18 +41,26 @@ public class ChatService : IChatService, IDisposable
     public event EventHandler<string>? TokenGenerated;
     public event EventHandler<InferenceStats>? StatsUpdated;
 
-    public ChatService(ModelManagerService modelManager, IDocumentService documentService, IWebSearchService webSearchService)
+    public ChatService(
+        ModelManagerService modelManager,
+        IDocumentService documentService,
+        IWebSearchService webSearchService,
+        IUserPreferencesService preferences,
+        IHardwareDetectionService hardwareService)
     {
         _modelManager = modelManager;
         _documentService = documentService;
         _webSearchService = webSearchService;
+        _preferences = preferences;
+        _hardwareService = hardwareService;
         _modelManager.ModelLoaded += OnModelLoaded;
         _modelManager.ModelUnloaded += OnModelUnloaded;
     }
 
     private void OnModelLoaded(object? sender, LLMModelInfo model)
     {
-        InitializeContext();
+        // Recalculate safe context size whenever a new model is loaded
+        InitializeContext(CalculateSafeContextSize());
     }
 
     private void OnModelUnloaded(object? sender, EventArgs e)
@@ -57,10 +68,13 @@ public class ChatService : IChatService, IDisposable
         DisposeContext();
     }
 
-    private void InitializeContext(uint contextSize = 8192)
+    private void InitializeContext(uint contextSize = 0)
     {
         var weights = _modelManager.GetLoadedWeights();
         if (weights == null) return;
+
+        // Use provided size, or calculate if not specified
+        if (contextSize == 0) contextSize = CalculateSafeContextSize();
 
         _cachedWeights = weights;
         _currentContextSize = contextSize;
@@ -132,13 +146,76 @@ public class ChatService : IChatService, IDisposable
         _inferenceLock.Dispose();
     }
 
-    public void ClearContext(uint contextSize = 8192)
+    /// <summary>
+    /// Clears and reinitializes the LLM context.
+    /// Pass 0 to auto-calculate based on user preference + model + RAM.
+    /// Pass a specific value to override (e.g. Deep Research uses 32768).
+    /// </summary>
+    public void ClearContext(uint contextSize = 0)
     {
         if (_context != null)
         {
             DisposeContext();
-            InitializeContext(contextSize);
+            InitializeContext(contextSize == 0 ? CalculateSafeContextSize() : contextSize);
         }
+    }
+
+    /// <summary>
+    /// Calculates the maximum safe context window size for this session.
+    /// Logic: MIN(model_native_max, ram_cap) — then optionally clamped to the user's
+    /// chosen preset from Settings. If the user chose "Auto", the full safe maximum is used.
+    /// </summary>
+    public uint CalculateSafeContextSize()
+    {
+        // 1. Get model's native training context limit
+        uint modelMax = _modelManager.GetModelNativeContextSize();
+
+        // 2. Calculate RAM-based ceiling: use a fraction of available physical RAM
+        long availableRamBytes = 0;
+        try
+        {
+            var memStatus = new MEMORYSTATUSEX();
+            if (GlobalMemoryStatusEx(memStatus))
+            {
+                availableRamBytes = (long)memStatus.ullAvailPhys;
+            }
+        }
+        catch { }
+
+        // If Win32 detection fails, fall back to GC TotalAvailableMemoryBytes
+        if (availableRamBytes <= 0)
+        {
+            try
+            {
+                availableRamBytes = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+            }
+            catch { }
+        }
+
+        uint ramCapTokens = modelMax; // safe fallback
+        if (availableRamBytes > 0)
+        {
+            // Heuristic: ~512 bytes per token for KV cache on typical 4-8B models.
+            // We cap the context size to use at most 30% of CURRENTLY FREE system memory
+            // to ensure loading/inference remains stable.
+            long safeRamBytes = (long)(availableRamBytes * 0.30);
+            ramCapTokens = (uint)Math.Min(safeRamBytes / 512, uint.MaxValue);
+        }
+
+        // 3. Take minimum of model max and RAM cap
+        uint autoMax = Math.Min(modelMax, ramCapTokens);
+
+        // 4. Apply user preference
+        var preference = _preferences.ContextWindowPreference;
+        uint result = preference == ContextWindowOption.Auto
+            ? autoMax
+            : Math.Min((uint)preference, autoMax); // never exceed what's safe
+
+        // 5. Hard floor — always at least 2048
+        result = Math.Max(result, 2048);
+
+        Debug.WriteLine($"[KaiROS] Context calculation: modelMax={modelMax}, ramCap={ramCapTokens}, preference={preference}, final={result}");
+        return result;
     }
 
     // Interface Implementations
@@ -628,4 +705,27 @@ public class ChatService : IChatService, IDisposable
         };
         StatsUpdated?.Invoke(this, _lastStats);
     }
+
+    // Win32 structures for memory detection
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    private class MEMORYSTATUSEX
+    {
+        public uint dwLength;
+        public uint dwMemoryLoad;
+        public ulong ullTotalPhys;
+        public ulong ullAvailPhys;
+        public ulong ullTotalPageFile;
+        public ulong ullAvailPageFile;
+        public ulong ullTotalVirtual;
+        public ulong ullAvailVirtual;
+        public ulong ullAvailExtendedVirtual;
+        public MEMORYSTATUSEX()
+        {
+            dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX));
+        }
+    }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GlobalMemoryStatusEx([In, Out] MEMORYSTATUSEX lpBuffer);
 }

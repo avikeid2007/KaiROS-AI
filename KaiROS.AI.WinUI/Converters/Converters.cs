@@ -1,4 +1,4 @@
-﻿using KaiROS.AI.WinUI.Models;
+using KaiROS.AI.WinUI.Models;
 
 using System.Globalization;
 using Microsoft.UI.Xaml;
@@ -181,6 +181,19 @@ public class StringFormatConverter : IValueConverter
     {
         if (parameter is string fmt)
             return string.Format(fmt, value);
+        return value?.ToString() ?? string.Empty;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+        => throw new NotImplementedException();
+}
+
+public class ContextWindowOptionConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is ContextWindowOption option)
+            return option.ToDisplayString();
         return value?.ToString() ?? string.Empty;
     }
 

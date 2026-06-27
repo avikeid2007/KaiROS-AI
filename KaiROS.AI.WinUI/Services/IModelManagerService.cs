@@ -1,4 +1,4 @@
-﻿using KaiROS.AI.WinUI.Models;
+using KaiROS.AI.WinUI.Models;
 using LLama;
 
 namespace KaiROS.AI.WinUI.Services;
@@ -21,6 +21,7 @@ public interface IModelManagerService
     void SetModelsDirectory(string path);
     LLamaWeights? GetLoadedWeights();
     MtmdWeights? GetLoadedLlavaWeights();
+    uint GetModelNativeContextSize();
 
     event EventHandler<LLMModelInfo>? ModelDownloadStarted;
     event EventHandler<LLMModelInfo>? ModelDownloadCompleted;

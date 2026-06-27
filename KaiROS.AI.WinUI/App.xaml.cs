@@ -113,6 +113,7 @@ public partial class App : Application
         services.AddSingleton<IExportService, ExportService>();
         services.AddSingleton<IDocumentService, DocumentService>();
         services.AddSingleton<IThemeService, ThemeService>();
+        services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
         services.AddSingleton<ModelManagerService>();
         services.AddSingleton<IModelManagerService>(sp => sp.GetRequiredService<ModelManagerService>());
         services.AddSingleton<ChatService>();

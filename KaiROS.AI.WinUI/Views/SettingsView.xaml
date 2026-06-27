@@ -8,6 +8,7 @@
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
         <converters:BackendToStringConverter x:Key="BackendToString" />
+        <converters:ContextWindowOptionConverter x:Key="ContextWindowOptionConverter" />
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -85,7 +86,80 @@
                 </StackPanel>
             </Border>
 
+            <!--  Context Window Settings  -->
+            <Border Margin="0,0,0,16" Style="{ThemeResource CardBorder}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,16"
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextPrimaryBrush}">
+                        <Run FontFamily="Segoe Fluent Icons" Text="&#xE8A2;" />
+                        <Run Text=" Context Window" />
+                    </TextBlock>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock
+                                FontWeight="SemiBold"
+                                Foreground="{ThemeResource TextPrimaryBrush}"
+                                Text="Context Window Size" />
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextSecondaryBrush}"
+                                Text="How many tokens the model can hold in memory. Larger = longer conversations but more RAM." />
+                        </StackPanel>
+
+                        <ComboBox
+                            Grid.Column="1"
+                            Width="200"
+                            VerticalAlignment="Center"
+                            ItemsSource="{Binding ContextWindowOptions}"
+                            SelectedItem="{Binding SelectedContextWindow, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:ContextWindowOption">
+                                    <TextBlock>
+                                        <TextBlock.Text>
+                                            <Binding Converter="{StaticResource ContextWindowOptionConverter}" />
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </Grid>
+
+                    <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
+                        <FontIcon
+                            VerticalAlignment="Center"
+                            FontFamily="Segoe Fluent Icons"
+                            FontSize="12"
+                            Foreground="{ThemeResource AccentBrush}"
+                            Glyph="&#xE946;" />
+                        <TextBlock
+                            Margin="6,0,0,0"
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Foreground="{ThemeResource AccentBrush}"
+                            Text="{Binding ActiveContextInfo}" />
+                    </StackPanel>
+
+                    <TextBlock
+                        Margin="0,8,0,0"
+                        FontSize="11"
+                        FontStyle="Italic"
+                        Foreground="{ThemeResource TextMutedBrush}"
+                        Text="Auto selects the maximum safe size based on your model and available RAM. Changes take effect immediately." />
+                </StackPanel>
+            </Border>
+
             <!--  API Settings  -->
+
             <Border Margin="0,0,0,16" Style="{ThemeResource CardBorder}">
                 <StackPanel>
                     <TextBlock
