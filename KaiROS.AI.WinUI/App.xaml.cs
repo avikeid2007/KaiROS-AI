@@ -120,6 +120,7 @@ public partial class App : Application
         services.AddSingleton<IApiService, ApiService>();
         services.AddSingleton<IAgentService, AgentService>();
         services.AddSingleton<IWebSearchService, WebSearchService>();
+        services.AddSingleton<IDeepResearchService, DeepResearchService>();
 
         // RaaS Services
         services.AddSingleton<IRagSourceProvider, FileSourceProvider>();
