@@ -10,6 +10,8 @@ using Windows.Storage.Pickers;
 using WinRT.Interop;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text.Json;
+using KaiROS.AI.WinUI.Services.Tools;
 
 namespace KaiROS.AI.WinUI.ViewModels;
 
@@ -21,8 +23,12 @@ public partial class ChatViewModel : ViewModelBase
     private readonly IExportService _exportService;
     private readonly IDocumentService _documentService;
     private readonly IRaasService _raasService;
+    private readonly IAgentService _agentService;
     private readonly DispatcherQueue _dispatcherQueue;
     private CancellationTokenSource? _currentInferenceCts;
+
+    [ObservableProperty]
+    public partial bool IsAgentModeEnabled { get; set; }
 
     [ObservableProperty]
     public partial ObservableCollection<ChatMessageViewModel> Messages { get; set; } = [];
@@ -114,7 +120,7 @@ public partial class ChatViewModel : ViewModelBase
 
     public IModelManagerService ModelManager => _modelManager;
 
-    public ChatViewModel(IChatService chatService, IModelManagerService modelManager, ISessionService sessionService, IExportService exportService, IDocumentService documentService, IRaasService raasService)
+    public ChatViewModel(IChatService chatService, IModelManagerService modelManager, ISessionService sessionService, IExportService exportService, IDocumentService documentService, IRaasService raasService, IAgentService agentService)
     {
         _chatService = chatService;
         _modelManager = modelManager;
@@ -122,10 +128,14 @@ public partial class ChatViewModel : ViewModelBase
         _exportService = exportService;
         _documentService = documentService;
         _raasService = raasService;
+        _agentService = agentService;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+
+        _agentService.ConfirmationCallback = ConfirmToolApprovalAsync;
 
         IsWebSearchEnabled = false;
         IsEnterToSendEnabled = true;
+        IsAgentModeEnabled = true;
 
         _chatService.StatsUpdated += OnStatsUpdated;
         _modelManager.ModelLoaded += OnModelLoaded;
@@ -201,6 +211,28 @@ public partial class ChatViewModel : ViewModelBase
         {
             SelectedKnowledgeBase = "None";
         }
+    }
+
+    private async Task<bool> ConfirmToolApprovalAsync(string toolName, string details)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        _dispatcherQueue.TryEnqueue(async () =>
+        {
+            var mainWindow = App.Current.Services.GetRequiredService<MainWindow>();
+            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            {
+                Title = "Tool Approval Required",
+                Content = $"Agent wants to use '{toolName}'.\n\nDetails:\n{details}\n\nDo you want to allow this action?",
+                PrimaryButtonText = "Allow",
+                CloseButtonText = "Deny",
+                DefaultButton = Microsoft.UI.Xaml.Controls.ContentDialogButton.Close,
+                XamlRoot = mainWindow.Content.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            tcs.SetResult(result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary);
+        });
+        return await tcs.Task;
     }
 
     private void OnModelLoaded(object? sender, LLMModelInfo model)
@@ -413,39 +445,145 @@ public partial class ChatViewModel : ViewModelBase
             IsGenerating = true;
             _currentInferenceCts = new CancellationTokenSource();
 
-            try
+            if (IsAgentModeEnabled)
             {
-                await foreach (var token in _chatService.GenerateResponseStreamAsync(
-                    messages: allMessages,
-                    useWebSearch: IsWebSearchEnabled,
-                    sessionContext: _currentDocumentContext,
-                    ragContext: ragContext,
-                    imagePath: imagePathToSend,
-                    cancellationToken: _currentInferenceCts.Token))
+                assistantVm.IsAgentMessage = true;
+                AgentStepViewModel? currentThinkingVm = null;
+                AgentStepViewModel? currentToolCallVm = null;
+
+                try
                 {
-                    assistantVm.AppendContent(token);
+                    var enabledTools = _agentService.GetEnabledTools();
+                    await foreach (var step in _agentService.RunAgentAsync(
+                        userRequest: userMessage.Content,
+                        enabledTools: enabledTools,
+                        ct: _currentInferenceCts.Token))
+                    {
+                        if (step.Type == AgentStepType.Thinking)
+                        {
+                            if (currentThinkingVm == null)
+                            {
+                                currentThinkingVm = new AgentStepViewModel
+                                {
+                                    Type = AgentStepType.Thinking,
+                                    Content = step.Content
+                                };
+                                var captured = currentThinkingVm;
+                                _dispatcherQueue.TryEnqueue(() => assistantVm.AgentSteps.Add(captured));
+                            }
+                            else
+                            {
+                                var content = step.Content;
+                                var capturedThinking = currentThinkingVm;
+                                _dispatcherQueue.TryEnqueue(() => capturedThinking.Content = content);
+                            }
+                        }
+                        else if (step.Type == AgentStepType.ToolCall)
+                        {
+                            currentThinkingVm = null;
+                            var argsJson = JsonSerializer.Serialize(step.ToolArgs, new JsonSerializerOptions { WriteIndented = true });
+                            currentToolCallVm = new AgentStepViewModel
+                            {
+                                Type = AgentStepType.ToolCall,
+                                ToolName = step.ToolName,
+                                ToolArgsJson = argsJson,
+                                Content = $"Executing {step.ToolName}..."
+                            };
+                            var captured = currentToolCallVm;
+                            _dispatcherQueue.TryEnqueue(() => assistantVm.AgentSteps.Add(captured));
+                        }
+                        else if (step.Type == AgentStepType.ToolResult)
+                        {
+                            if (currentToolCallVm != null)
+                            {
+                                var result = step.Result;
+                                var capturedTool = currentToolCallVm;
+                                _dispatcherQueue.TryEnqueue(() =>
+                                {
+                                    if (result != null)
+                                    {
+                                        capturedTool.IsSuccess = result.Success;
+                                        capturedTool.ToolResultText = result.Success ? result.Output : result.Error;
+                                        capturedTool.Content = result.Success 
+                                            ? $"Completed {step.ToolName} successfully." 
+                                            : $"Failed to execute {step.ToolName}.";
+                                    }
+                                });
+                            }
+                        }
+                        else if (step.Type == AgentStepType.FinalResponse)
+                        {
+                            var content = step.Content;
+                            _dispatcherQueue.TryEnqueue(() =>
+                            {
+                                assistantVm.Content = content;
+                                assistantVm.Message.Content = content;
+                            });
+                        }
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    _dispatcherQueue.TryEnqueue(() => assistantVm.AppendContent("\n[Generation stopped]"));
+                }
+                catch (Exception ex)
+                {
+                    _dispatcherQueue.TryEnqueue(() => assistantVm.Content = $"Error during generation: {ex.Message}");
+                }
+                finally
+                {
+                    _dispatcherQueue.TryEnqueue(() =>
+                    {
+                        assistantVm.CleanupContent();
+                        assistantVm.Message.IsStreaming = false;
+                        assistantVm.IsStreaming = false;
+                    });
+                    IsGenerating = false;
+                    _currentInferenceCts = null;
+
+                    if (CurrentSession != null && !string.IsNullOrEmpty(assistantVm.Content))
+                    {
+                        await _sessionService.AddMessageAsync(CurrentSession.Id, assistantVm.Message);
+                        CurrentSession.MessageCount++;
+                    }
                 }
             }
-            catch (OperationCanceledException)
+            else
             {
-                assistantVm.AppendContent("\n[Generation stopped]");
-            }
-            catch (Exception ex)
-            {
-                assistantVm.Content = $"Error during generation: {ex.Message}";
-            }
-            finally
-            {
-                assistantVm.CleanupContent();
-                assistantVm.Message.IsStreaming = false;
-                assistantVm.IsStreaming = false;
-                IsGenerating = false;
-                _currentInferenceCts = null;
-
-                if (CurrentSession != null && !string.IsNullOrEmpty(assistantVm.Content))
+                try
                 {
-                    await _sessionService.AddMessageAsync(CurrentSession.Id, assistantVm.Message);
-                    CurrentSession.MessageCount++;
+                    await foreach (var token in _chatService.GenerateResponseStreamAsync(
+                        messages: allMessages,
+                        useWebSearch: IsWebSearchEnabled,
+                        sessionContext: _currentDocumentContext,
+                        ragContext: ragContext,
+                        imagePath: imagePathToSend,
+                        cancellationToken: _currentInferenceCts.Token))
+                    {
+                        assistantVm.AppendContent(token);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    assistantVm.AppendContent("\n[Generation stopped]");
+                }
+                catch (Exception ex)
+                {
+                    assistantVm.Content = $"Error during generation: {ex.Message}";
+                }
+                finally
+                {
+                    assistantVm.CleanupContent();
+                    assistantVm.Message.IsStreaming = false;
+                    assistantVm.IsStreaming = false;
+                    IsGenerating = false;
+                    _currentInferenceCts = null;
+
+                    if (CurrentSession != null && !string.IsNullOrEmpty(assistantVm.Content))
+                    {
+                        await _sessionService.AddMessageAsync(CurrentSession.Id, assistantVm.Message);
+                        CurrentSession.MessageCount++;
+                    }
                 }
             }
         }
@@ -602,6 +740,12 @@ public partial class ChatMessageViewModel(ChatMessage message, DispatcherQueue? 
     [ObservableProperty]
     public partial bool IsStreaming { get; set; } = message.IsStreaming;
 
+    [ObservableProperty]
+    public partial ObservableCollection<AgentStepViewModel> AgentSteps { get; set; } = [];
+
+    [ObservableProperty]
+    public partial bool IsAgentMessage { get; set; }
+
     public bool IsUser => Message.Role == ChatRole.User;
     public bool IsAssistant => Message.Role == ChatRole.Assistant;
     public bool IsSystem => Message.Role == ChatRole.System;
@@ -755,4 +899,33 @@ public partial class ChatMessageViewModel(ChatMessage message, DispatcherQueue? 
             catch { }
         }
     }
+}
+
+public partial class AgentStepViewModel : ObservableObject
+{
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsThinking))]
+    [NotifyPropertyChangedFor(nameof(IsToolCall))]
+    public partial AgentStepType Type { get; set; }
+
+    [ObservableProperty]
+    public partial string Content { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string ToolName { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string ToolArgsJson { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string ToolResultText { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial bool IsSuccess { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsExpanded { get; set; } = true;
+
+    public bool IsThinking => Type == AgentStepType.Thinking;
+    public bool IsToolCall => Type == AgentStepType.ToolCall;
 }

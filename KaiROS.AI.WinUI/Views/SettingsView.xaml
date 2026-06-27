@@ -470,6 +470,92 @@
                 </StackPanel>
             </Border>
 
+            <!--  Agent Mode & Tools Settings  -->
+            <Border Margin="0,0,0,16" Style="{ThemeResource CardBorder}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,8"
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextPrimaryBrush}">
+                        <Run FontFamily="Segoe Fluent Icons" Text="&#xE9D5;" />
+                        <Run Text=" Agent Tools Configuration" />
+                    </TextBlock>
+
+                    <TextBlock
+                        Margin="0,0,0,16"
+                        Foreground="{ThemeResource TextSecondaryBrush}"
+                        Text="Configure which tools are available for the AI assistant when in Agent Mode."
+                        TextWrapping="Wrap" />
+
+                    <!-- Grid of Tool Toggles -->
+                    <Grid RowSpacing="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- FileReaderTool -->
+                        <StackPanel Grid.Row="0">
+                            <TextBlock FontWeight="SemiBold" Text="File Reader" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Allows reading text files within allowed folders" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Row="0" Grid.Column="1" MinWidth="0" IsOn="{Binding IsFileReaderEnabled, Mode=TwoWay}" OffContent="" OnContent="" />
+
+                        <!-- FileWriterTool -->
+                        <StackPanel Grid.Row="1" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="File Writer" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Allows creating or modifying files (requires approval)" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Row="1" Grid.Column="1" Margin="0,8,0,0" MinWidth="0" IsOn="{Binding IsFileWriterEnabled, Mode=TwoWay}" OffContent="" OnContent="" />
+
+                        <!-- WebFetchTool -->
+                        <StackPanel Grid.Row="2" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="Web Fetch" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Allows fetching text content from external URLs" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Row="2" Grid.Column="1" Margin="0,8,0,0" MinWidth="0" IsOn="{Binding IsWebFetchEnabled, Mode=TwoWay}" OffContent="" OnContent="" />
+
+                        <!-- CalculatorTool -->
+                        <StackPanel Grid.Row="3" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="Calculator" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Allows executing simple math expressions safely" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Row="3" Grid.Column="1" Margin="0,8,0,0" MinWidth="0" IsOn="{Binding IsCalculatorEnabled, Mode=TwoWay}" OffContent="" OnContent="" />
+
+                        <!-- SystemInfoTool -->
+                        <StackPanel Grid.Row="4" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="System Info" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Allows retrieving OS version, memory, CPU, and running processes" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Row="4" Grid.Column="1" Margin="0,8,0,0" MinWidth="0" IsOn="{Binding IsSystemInfoEnabled, Mode=TwoWay}" OffContent="" OnContent="" />
+
+                        <!-- DateTimeTool -->
+                        <StackPanel Grid.Row="5" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="Date &amp; Time" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Allows getting the current date, time, and time zones" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Row="5" Grid.Column="1" Margin="0,8,0,0" MinWidth="0" IsOn="{Binding IsDateTimeEnabled, Mode=TwoWay}" OffContent="" OnContent="" />
+
+                        <!-- ClipboardTool -->
+                        <StackPanel Grid.Row="6" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="Clipboard" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Allows reading from or writing to the system clipboard (requires approval for write)" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Row="6" Grid.Column="1" Margin="0,8,0,0" MinWidth="0" IsOn="{Binding IsClipboardEnabled, Mode=TwoWay}" OffContent="" OnContent="" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
             <!--  About Section  -->
             <Border Margin="0,16,0,0" Style="{ThemeResource CardBorder}">
                 <StackPanel>

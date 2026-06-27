@@ -305,6 +305,51 @@
                                                         Stretch="Uniform" />
                                                 </Button>
                                             </Grid>
+                                            <!--  Agent Steps Display  -->
+                                            <ItemsControl
+                                                Margin="0,4,0,8"
+                                                ItemsSource="{Binding AgentSteps}"
+                                                Visibility="{Binding IsAgentMessage, Converter={StaticResource BoolToVis}}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="0,4,0,4">
+                                                            <!-- Thinking Step -->
+                                                            <StackPanel Visibility="{Binding IsThinking, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock
+                                                                    FontStyle="Italic"
+                                                                    Foreground="{ThemeResource TextSecondaryBrush}"
+                                                                    TextWrapping="Wrap">
+                                                                    <Run Text="💭 Thinking: " />
+                                                                    <Run Text="{Binding Content}" />
+                                                                </TextBlock>
+                                                            </StackPanel>
+
+                                                            <!-- Tool Call Step -->
+                                                            <Expander
+                                                                IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+                                                                Header="{Binding Content}"
+                                                                HorizontalAlignment="Stretch"
+                                                                Visibility="{Binding IsToolCall, Converter={StaticResource BoolToVis}}">
+                                                                <StackPanel Padding="8" Spacing="8">
+                                                                    <TextBlock FontSize="12" FontWeight="SemiBold" Text="Arguments:" />
+                                                                    <Border Background="{ThemeResource SurfaceBrush}" Padding="8" CornerRadius="4">
+                                                                        <TextBlock FontFamily="{ThemeResource MonoFont}" FontSize="11" Text="{Binding ToolArgsJson}" TextWrapping="Wrap" />
+                                                                    </Border>
+                                                                    
+                                                                    <TextBlock FontSize="12" FontWeight="SemiBold" Text="Result:" Visibility="{Binding ToolResultText, Converter={StaticResource BoolToVis}}" />
+                                                                    <Border Padding="8" CornerRadius="4" Visibility="{Binding ToolResultText, Converter={StaticResource BoolToVis}}">
+                                                                        <Border.Background>
+                                                                            <SolidColorBrush Color="{ThemeResource SurfaceColor}" />
+                                                                        </Border.Background>
+                                                                        <TextBlock FontFamily="{ThemeResource MonoFont}" FontSize="11" Text="{Binding ToolResultText}" TextWrapping="Wrap" />
+                                                                    </Border>
+                                                                </StackPanel>
+                                                            </Expander>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
                                             <ContentPresenter Content="{Binding Content, Converter={StaticResource MarkdownConverter}}" Foreground="{ThemeResource TextPrimaryBrush}" />
                                             <TextBlock
                                                 Margin="0,8,0,0"
@@ -376,6 +421,21 @@
                                     OffContent=""
                                     OnContent=""
                                     ToolTipService.ToolTip="Enable Web Search to fetch real-time info" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,16,0" Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="0,0,8,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextSecondaryBrush}"
+                                    Text="Agent Mode" />
+                                <ToggleSwitch
+                                    MinWidth="0"
+                                    IsOn="{Binding IsAgentModeEnabled, Mode=TwoWay}"
+                                    OffContent=""
+                                    OnContent=""
+                                    ToolTipService.ToolTip="Enable Agent Mode (Tool-Using AI)" />
                             </StackPanel>
 
                             <!--  Enter to Send Toggle  -->

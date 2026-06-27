@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -118,6 +118,7 @@ public partial class App : Application
         services.AddSingleton<ChatService>();
         services.AddSingleton<IChatService>(sp => sp.GetRequiredService<ChatService>());
         services.AddSingleton<IApiService, ApiService>();
+        services.AddSingleton<IAgentService, AgentService>();
         services.AddSingleton<IWebSearchService, WebSearchService>();
 
         // RaaS Services
