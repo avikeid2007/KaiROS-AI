@@ -44,6 +44,12 @@ public partial class ModelCatalogViewModel(IModelManagerService modelManager, ID
     public partial ObservableCollection<ModelItemViewModel> TopPerformers { get; set; } = [];
 
     [ObservableProperty]
+    public partial bool IsDownloadedModelsExpanded { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool IsTopPerformersExpanded { get; set; } = true;
+
+    [ObservableProperty]
     public partial string SelectedCategory { get; set; } = "all";
 
     [ObservableProperty]
@@ -196,6 +202,8 @@ public partial class ModelCatalogViewModel(IModelManagerService modelManager, ID
     [RelayCommand]
     private void CollapseAll()
     {
+        IsDownloadedModelsExpanded = false;
+        IsTopPerformersExpanded = false;
         foreach (var group in GroupedModels)
         {
             group.IsExpanded = false;
@@ -205,6 +213,8 @@ public partial class ModelCatalogViewModel(IModelManagerService modelManager, ID
     [RelayCommand]
     private void ExpandAll()
     {
+        IsDownloadedModelsExpanded = true;
+        IsTopPerformersExpanded = true;
         foreach (var group in GroupedModels)
         {
             group.IsExpanded = true;

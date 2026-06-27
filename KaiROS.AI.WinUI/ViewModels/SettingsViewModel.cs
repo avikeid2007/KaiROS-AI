@@ -17,6 +17,28 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly ChatViewModel _chatViewModel;
     private readonly IThemeService _themeService;
     private readonly IApiService _apiService;
+    private readonly IAgentService _agentService;
+
+    [ObservableProperty]
+    public partial bool IsFileReaderEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsFileWriterEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsWebFetchEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsCalculatorEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsSystemInfoEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsDateTimeEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsClipboardEnabled { get; set; }
 
     private const string DefaultSystemPrompt = "You are a helpful, friendly AI assistant. Be concise and clear.";
 
@@ -66,13 +88,23 @@ public partial class SettingsViewModel : ViewModelBase
         ? $"Running on http://localhost:{_apiService.Port}/"
         : CanEnableApi ? "Stopped (ready to start)" : "Disabled (load a model first)";
 
-    public SettingsViewModel(IHardwareDetectionService hardwareService, IModelManagerService modelManager, ChatViewModel chatViewModel, IThemeService themeService, IApiService apiService)
+    public SettingsViewModel(IHardwareDetectionService hardwareService, IModelManagerService modelManager, ChatViewModel chatViewModel, IThemeService themeService, IApiService apiService, IAgentService agentService)
     {
         _hardwareService = hardwareService;
         _modelManager = modelManager;
         _chatViewModel = chatViewModel;
         _themeService = themeService;
         _apiService = apiService;
+        _agentService = agentService;
+
+        // Initialize tool toggles from AgentService
+        IsFileReaderEnabled = _agentService.IsFileReaderEnabled;
+        IsFileWriterEnabled = _agentService.IsFileWriterEnabled;
+        IsWebFetchEnabled = _agentService.IsWebFetchEnabled;
+        IsCalculatorEnabled = _agentService.IsCalculatorEnabled;
+        IsSystemInfoEnabled = _agentService.IsSystemInfoEnabled;
+        IsDateTimeEnabled = _agentService.IsDateTimeEnabled;
+        IsClipboardEnabled = _agentService.IsClipboardEnabled;
 
         // Initialize system prompt from ChatViewModel
         SystemPrompt = chatViewModel.SystemPrompt;
@@ -233,4 +265,12 @@ public partial class SettingsViewModel : ViewModelBase
     {
         SystemPrompt = DefaultSystemPrompt;
     }
+
+    partial void OnIsFileReaderEnabledChanged(bool value) => _agentService.IsFileReaderEnabled = value;
+    partial void OnIsFileWriterEnabledChanged(bool value) => _agentService.IsFileWriterEnabled = value;
+    partial void OnIsWebFetchEnabledChanged(bool value) => _agentService.IsWebFetchEnabled = value;
+    partial void OnIsCalculatorEnabledChanged(bool value) => _agentService.IsCalculatorEnabled = value;
+    partial void OnIsSystemInfoEnabledChanged(bool value) => _agentService.IsSystemInfoEnabled = value;
+    partial void OnIsDateTimeEnabledChanged(bool value) => _agentService.IsDateTimeEnabled = value;
+    partial void OnIsClipboardEnabledChanged(bool value) => _agentService.IsClipboardEnabled = value;
 }
