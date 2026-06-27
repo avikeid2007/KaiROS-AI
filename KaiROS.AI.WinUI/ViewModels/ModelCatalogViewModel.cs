@@ -41,6 +41,9 @@ public partial class ModelCatalogViewModel(IModelManagerService modelManager, ID
     public partial ObservableCollection<OrganizationGroup> GroupedModels { get; set; } = [];
 
     [ObservableProperty]
+    public partial ObservableCollection<ModelItemViewModel> TopPerformers { get; set; } = [];
+
+    [ObservableProperty]
     public partial string SelectedCategory { get; set; } = "all";
 
     [ObservableProperty]
@@ -163,6 +166,10 @@ public partial class ModelCatalogViewModel(IModelManagerService modelManager, ID
         // Update downloaded models
         DownloadedModels = new ObservableCollection<ModelItemViewModel>(
             filtered.Where(m => m.IsDownloaded).OrderByDescending(m => m.IsActive));
+
+        // Update top performers
+        TopPerformers = new ObservableCollection<ModelItemViewModel>(
+            filtered.Where(m => m.Model.IsTopPerformer).OrderBy(m => m.Model.SizeBytes));
 
         // Custom organization ordering: Meta -> Microsoft -> Google -> then alphabetically
         var orgPriority = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
