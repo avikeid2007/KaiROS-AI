@@ -409,34 +409,35 @@
 
                 <!--  Downloaded Models Section (Always at Top)  -->
                 <Border Style="{StaticResource DownloadedSectionBorder}" Visibility="{Binding DownloadedModels.Count, Converter={StaticResource BoolToVis}}">
-                    <StackPanel>
-                        <StackPanel Margin="0,0,0,16" Orientation="Horizontal">
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                FontSize="20"
-                                Foreground="{ThemeResource AccentBrush}"
-                                Text="&#x2713;" />
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                FontSize="20"
-                                FontWeight="Bold"
-                                Foreground="{ThemeResource TextPrimaryBrush}"
-                                Text=" Downloaded Models" />
-                            <Border
-                                Margin="12,0,0,0"
-                                Padding="8,2"
-                                VerticalAlignment="Center"
-                                Background="{ThemeResource AccentBrush}"
-                                CornerRadius="10">
+                    <Expander IsExpanded="{Binding IsDownloadedModelsExpanded, Mode=TwoWay}" Style="{StaticResource OrganizationExpander}" Margin="0">
+                        <Expander.Header>
+                            <StackPanel Orientation="Horizontal">
                                 <TextBlock
-                                    FontSize="12"
+                                    VerticalAlignment="Center"
+                                    FontSize="20"
+                                    Foreground="{ThemeResource AccentBrush}"
+                                    Text="&#x2713;" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="20"
                                     FontWeight="Bold"
-                                    Foreground="White"
-                                    Text="{Binding DownloadedModels.Count}" />
-                            </Border>
-                        </StackPanel>
-
-                        <ItemsControl ItemsSource="{Binding DownloadedModels}">
+                                    Foreground="{ThemeResource TextPrimaryBrush}"
+                                    Text=" Downloaded Models" />
+                                <Border
+                                    Margin="12,0,0,0"
+                                    Padding="8,2"
+                                    VerticalAlignment="Center"
+                                    Background="{ThemeResource AccentBrush}"
+                                    CornerRadius="10">
+                                    <TextBlock
+                                        FontSize="12"
+                                        FontWeight="Bold"
+                                        Foreground="White"
+                                        Text="{Binding DownloadedModels.Count}" />
+                                </Border>
+                            </StackPanel>
+                        </Expander.Header>
+                        <ItemsControl Margin="0,16,0,0" ItemsSource="{Binding DownloadedModels}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Margin="0,0,0,12" Style="{ThemeResource CardBorder}">
@@ -528,7 +529,7 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                    </StackPanel>
+                    </Expander>
                 </Border>
 
                 <!--  Organization Sections  -->
@@ -627,20 +628,39 @@
                 </ItemsControl>
 
                 <!--  Top Performers Section  -->
-                <Grid Margin="0,24,0,16" Visibility="{Binding TopPerformers.Count, Converter={StaticResource BoolToVis}}">
-                    <TextBlock
-                        VerticalAlignment="Center"
-                        FontSize="20"
-                        FontWeight="Bold"
-                        Foreground="{ThemeResource TextPrimaryBrush}"
-                        Text="Top Performers" />
-                </Grid>
-
-                <ItemsControl
-                    Margin="0,0,0,24"
-                    ItemsSource="{Binding TopPerformers}"
-                    ItemTemplate="{StaticResource ModelItemTemplate}"
-                    Visibility="{Binding TopPerformers.Count, Converter={StaticResource BoolToVis}}" />
+                <Expander
+                    IsExpanded="{Binding IsTopPerformersExpanded, Mode=TwoWay}"
+                    Style="{StaticResource OrganizationExpander}"
+                    Visibility="{Binding TopPerformers.Count, Converter={StaticResource BoolToVis}}">
+                    <Expander.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="20"
+                                FontWeight="Bold"
+                                Foreground="{ThemeResource TextPrimaryBrush}"
+                                Text="Top Performers" />
+                            <Border
+                                Margin="12,0,0,0"
+                                Padding="10,3"
+                                VerticalAlignment="Center"
+                                Background="{ThemeResource PrimaryBrush}"
+                                CornerRadius="10">
+                                <TextBlock
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    Foreground="White">
+                                    <Run Text="{Binding TopPerformers.Count, Mode=OneWay}" />
+                                    <Run Text=" models" />
+                                </TextBlock>
+                            </Border>
+                        </StackPanel>
+                    </Expander.Header>
+                    <ItemsControl
+                        Margin="0,8,0,0"
+                        ItemsSource="{Binding TopPerformers}"
+                        ItemTemplate="{StaticResource ModelItemTemplate}" />
+                </Expander>
 
             </StackPanel>
         </ScrollViewer>
