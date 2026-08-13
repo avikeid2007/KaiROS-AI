@@ -1,3 +1,5 @@
+
+
 # KaiROS AI
 
 <p align="center">
@@ -19,7 +21,7 @@
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License"/>
 </p>
 
-> **⚠️ Note:** The active, maintained desktop version is **KaiROS.AI.WinUI** (WinUI 3 / Windows App SDK). The legacy WPF project (`KaiROS.AI`) is no longer actively developed. All new features and bug fixes target the WinUI version.
+> **⚠️ Note:** The active, maintained desktop version is **KaiROS.AI.WinUI** (WinUI 3 / Windows App SDK). The legacy WinUI 3 project (`KaiROS.AI`) is no longer actively developed. All new features and bug fixes target the WinUI version.
 
 ---
 
@@ -678,7 +680,7 @@ KaiROS-AI/
 │   ├── Views/                 # XAML views
 │   └── appsettings.json       # Model catalog (40+ models)
 ├── KaiROS.Mobile/             # Android app (.NET MAUI)
-├── KaiROS.AI/                 # ⚠️ Legacy WPF version (no longer maintained)
+├── KaiROS.AI/                 # ⚠️ Legacy WinUI 3 version (no longer maintained)
 ├── docs/                      # Documentation website
 └── installer/                 # InnoSetup installer (legacy)
 ```
