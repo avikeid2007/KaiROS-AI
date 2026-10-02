@@ -4,6 +4,7 @@ using LLama;
 using LLama.Common;
 using LLama.Native;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Net.Http;
 using System.Text.Json;
@@ -490,26 +491,61 @@ public class ModelManagerService : IModelManagerService, IDisposable
                         // This is the heavy operation - loading weights
                         weights = LLamaWeights.LoadFromFile(parameters);
 
+                        // Verify model architecture is supported by the native library
+                        if (weights.Metadata != null && weights.Metadata.TryGetValue("general.architecture", out var valArchObj) && valArchObj != null)
+                        {
+                            var arch = valArchObj.ToString();
+                            if (!string.IsNullOrEmpty(arch))
+                            {
+                                string[] supportedArchs = { "llama", "gemma", "gemma2", "qwen2", "phi3", "mistral", "mixtral", "falcon", "cohere", "bert", "gpt2", "minicpm" };
+                                if (!supportedArchs.Contains(arch, StringComparer.OrdinalIgnoreCase))
+                                {
+                                    throw new NotSupportedException($"Model architecture '{arch}' is not supported by the packaged native llama.cpp library. Please use a supported model architecture (e.g. Llama, Gemma, Gemma 2, Qwen, Phi).");
+                                }
+                            }
+                        }
+
                         // Load LLava mmproj if this is a vision model
                         if (model.IsVisionModel && !string.IsNullOrEmpty(model.MmProjLocalPath) && File.Exists(model.MmProjLocalPath))
                         {
-                            System.Diagnostics.Debug.WriteLine($"[KaiROS] Loading MTMD mm-proj: {model.MmProjLocalPath}");
-                            try
+                            bool isCompatible = true;
+                            string archName = "unknown";
+                            if (weights.Metadata != null && weights.Metadata.TryGetValue("general.architecture", out var archObj) && archObj != null)
                             {
-                                llavaWeights = MtmdWeights.LoadFromFile(
-                                    model.MmProjLocalPath,
-                                    weights,
-                                    MtmdContextParams.Default());
-                                System.Diagnostics.Debug.WriteLine($"[KaiROS] Vision model ready. Supports vision: {llavaWeights.SupportsVision}");
+                                archName = archObj.ToString() ?? "unknown";
+                                var arch = archName.ToLowerInvariant();
+                                if (arch.Contains("gemma"))
+                                {
+                                    isCompatible = false;
+                                }
                             }
-                            catch (Exception mmEx)
+
+                            if (!isCompatible)
                             {
-                                // Projector file is corrupt, incompatible, or wrong architecture.
-                                // Degrade gracefully to text-only — do NOT fail the whole model load.
-                                llavaWeights = null;
-                                model.MmProjLocalPath = null; // clear so UI reflects text-only state
-                                NativeLog($"[KaiROS] WARNING: mmproj load failed (vision disabled for this session): {mmEx.Message}");
-                                System.Diagnostics.Debug.WriteLine($"[KaiROS] mmproj load failed, running in text-only mode. Error: {mmEx.Message}");
+                                NativeLog($"[KaiROS] WARNING: Architecture '{archName}' does not support standard LLaVA mmproj projectors. Skipping vision loading to prevent native crash.");
+                                System.Diagnostics.Debug.WriteLine($"[KaiROS] Architecture '{archName}' does not support standard LLaVA mmproj. Gracefully running in text-only mode.");
+                                model.MmProjLocalPath = null;
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[KaiROS] Loading MTMD mm-proj: {model.MmProjLocalPath}");
+                                try
+                                {
+                                    llavaWeights = MtmdWeights.LoadFromFile(
+                                        model.MmProjLocalPath,
+                                        weights,
+                                        MtmdContextParams.Default());
+                                    System.Diagnostics.Debug.WriteLine($"[KaiROS] Vision model ready. Supports vision: {llavaWeights.SupportsVision}");
+                                }
+                                catch (Exception mmEx)
+                                {
+                                    // Projector file is corrupt, incompatible, or wrong architecture.
+                                    // Degrade gracefully to text-only — do NOT fail the whole model load.
+                                    llavaWeights = null;
+                                    model.MmProjLocalPath = null; // clear so UI reflects text-only state
+                                    NativeLog($"[KaiROS] WARNING: mmproj load failed (vision disabled for this session): {mmEx.Message}");
+                                    System.Diagnostics.Debug.WriteLine($"[KaiROS] mmproj load failed, running in text-only mode. Error: {mmEx.Message}");
+                                }
                             }
                         }
 
@@ -837,7 +873,8 @@ public class ModelManagerService : IModelManagerService, IDisposable
             "ggml-cpu.dll",
             "ggml-cuda.dll",
             "ggml-vulkan.dll",
-            "llama.dll"
+            "llama.dll",
+            "mtmd.dll"
         ];
 
         foreach (var dll in dllsInOrder)

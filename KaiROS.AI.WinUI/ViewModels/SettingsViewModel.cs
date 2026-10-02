@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 using System.Collections.ObjectModel;
+using NAudio.Wave;
 
 namespace KaiROS.AI.WinUI.ViewModels;
 
@@ -20,6 +21,55 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly IAgentService _agentService;
     private readonly IUserPreferencesService _preferences;
     private readonly IChatService _chatService;
+    private readonly ISpeechToTextService _sttService;
+    private readonly ITextToSpeechService _ttsService;
+    private readonly Microsoft.UI.Dispatching.DispatcherQueue _dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+
+    [ObservableProperty]
+    public partial bool IsVoiceInputEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial string WhisperModelSize { get; set; } = "base";
+
+    [ObservableProperty]
+    public partial string SelectedInputDevice { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial bool IsAutoSendEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial double SilenceDurationSeconds { get; set; } = 2.0;
+
+    [ObservableProperty]
+    public partial bool IsTtsEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial string SelectedVoiceId { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial double TtsSpeechRate { get; set; } = 1.0;
+
+    [ObservableProperty]
+    public partial double TtsVolume { get; set; } = 1.0;
+
+    [ObservableProperty]
+    public partial bool IsAutoReadEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsWhisperDownloading { get; set; }
+
+    [ObservableProperty]
+    public partial double WhisperDownloadProgress { get; set; }
+
+    public ObservableCollection<string> AvailableInputDevices { get; } = new();
+    public ObservableCollection<VoiceOption> AvailableVoices { get; } = new();
+    public ObservableCollection<string> AvailableModelSizes { get; } = new() { "tiny", "base", "small" };
+
+    public class VoiceOption
+    {
+        public string Id { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+    }
 
     [ObservableProperty]
     public partial bool IsFileReaderEnabled { get; set; }
@@ -120,7 +170,9 @@ public partial class SettingsViewModel : ViewModelBase
         IApiService apiService,
         IAgentService agentService,
         IUserPreferencesService preferences,
-        IChatService chatService)
+        IChatService chatService,
+        ISpeechToTextService sttService,
+        ITextToSpeechService ttsService)
     {
         _hardwareService = hardwareService;
         _modelManager = modelManager;
@@ -130,6 +182,34 @@ public partial class SettingsViewModel : ViewModelBase
         _agentService = agentService;
         _preferences = preferences;
         _chatService = chatService;
+        _sttService = sttService;
+        _ttsService = ttsService;
+
+        // Initialize voice preferences
+        IsVoiceInputEnabled = _preferences.IsVoiceInputEnabled;
+        WhisperModelSize = _preferences.WhisperModelSize;
+        SelectedInputDevice = _preferences.SelectedInputDevice;
+        IsAutoSendEnabled = _preferences.IsAutoSendEnabled;
+        SilenceDurationSeconds = _preferences.SilenceDurationSeconds;
+        IsTtsEnabled = _preferences.IsTtsEnabled;
+        SelectedVoiceId = _preferences.SelectedVoiceId;
+        TtsSpeechRate = _preferences.TtsSpeechRate;
+        TtsVolume = _preferences.TtsVolume;
+        IsAutoReadEnabled = _preferences.IsAutoReadEnabled;
+
+        // Load resources
+        LoadAvailableVoices();
+        LoadAvailableDevices();
+
+        // Wire download progress
+        _sttService.DownloadProgressChanged += (s, p) =>
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                WhisperDownloadProgress = p;
+                IsWhisperDownloading = _sttService.IsDownloadingModel;
+            });
+        };
 
         // Initialize tool toggles from AgentService
         IsFileReaderEnabled = _agentService.IsFileReaderEnabled;
@@ -321,4 +401,86 @@ public partial class SettingsViewModel : ViewModelBase
     partial void OnIsSystemInfoEnabledChanged(bool value) => _agentService.IsSystemInfoEnabled = value;
     partial void OnIsDateTimeEnabledChanged(bool value) => _agentService.IsDateTimeEnabled = value;
     partial void OnIsClipboardEnabledChanged(bool value) => _agentService.IsClipboardEnabled = value;
+
+    // Voice Settings Handlers
+    partial void OnIsVoiceInputEnabledChanged(bool value) => _preferences.IsVoiceInputEnabled = value;
+    partial void OnWhisperModelSizeChanged(string value) => _preferences.WhisperModelSize = value;
+    partial void OnSelectedInputDeviceChanged(string value) => _preferences.SelectedInputDevice = value;
+    partial void OnIsAutoSendEnabledChanged(bool value) => _preferences.IsAutoSendEnabled = value;
+    partial void OnSilenceDurationSecondsChanged(double value) => _preferences.SilenceDurationSeconds = value;
+    partial void OnIsTtsEnabledChanged(bool value) => _preferences.IsTtsEnabled = value;
+
+    partial void OnSelectedVoiceIdChanged(string value)
+    {
+        _preferences.SelectedVoiceId = value;
+        _ = _ttsService.SetVoiceAsync(value);
+    }
+
+    partial void OnTtsSpeechRateChanged(double value)
+    {
+        _preferences.TtsSpeechRate = value;
+        _ = _ttsService.SetRateAsync(value);
+    }
+
+    partial void OnTtsVolumeChanged(double value)
+    {
+        _preferences.TtsVolume = value;
+        _ = _ttsService.SetVolumeAsync(value);
+    }
+
+    partial void OnIsAutoReadEnabledChanged(bool value) => _preferences.IsAutoReadEnabled = value;
+
+    private void LoadAvailableVoices()
+    {
+        AvailableVoices.Clear();
+        foreach (var voice in _ttsService.GetAvailableVoices())
+        {
+            AvailableVoices.Add(new VoiceOption
+            {
+                Id = voice.Id,
+                DisplayName = $"{voice.DisplayName} ({voice.Language})"
+            });
+        }
+    }
+
+    private void LoadAvailableDevices()
+    {
+        AvailableInputDevices.Clear();
+        for (int i = 0; i < WaveIn.DeviceCount; i++)
+        {
+            var capabilities = WaveIn.GetCapabilities(i);
+            AvailableInputDevices.Add(capabilities.ProductName);
+        }
+
+        if (string.IsNullOrEmpty(SelectedInputDevice) && AvailableInputDevices.Count > 0)
+        {
+            SelectedInputDevice = AvailableInputDevices[0];
+            _preferences.SelectedInputDevice = SelectedInputDevice;
+        }
+    }
+
+    [RelayCommand]
+    private async Task DownloadWhisperModel()
+    {
+        if (IsWhisperDownloading) return;
+
+        IsWhisperDownloading = true;
+        WhisperDownloadProgress = 0;
+
+        var success = await _sttService.EnsureModelDownloadedAsync(WhisperModelSize);
+
+        IsWhisperDownloading = false;
+
+        var mainWindow = App.Current.Services.GetRequiredService<MainWindow>();
+        var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+        {
+            Title = success ? "Success" : "Download Failed",
+            Content = success 
+                ? $"Whisper model ({WhisperModelSize}) downloaded successfully." 
+                : $"Failed to download Whisper model ({WhisperModelSize}). Please check your internet connection.",
+            CloseButtonText = "OK",
+            XamlRoot = mainWindow.Content.XamlRoot
+        };
+        await dialog.ShowAsync();
+    }
 }

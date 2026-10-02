@@ -58,6 +58,9 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7705" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260209005" />
     <PackageReference Include="System.Management" Version="10.0.3" />
+    <PackageReference Include="Whisper.net" Version="1.9.1" />
+    <PackageReference Include="Whisper.net.AllRuntimes" Version="1.9.1" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
 
   <!--
@@ -75,6 +78,16 @@
       <PackagingOutputs Include="%(_OutputsWithTargetPath.Identity)" Condition="$([System.String]::new('%(_OutputsWithTargetPath.TargetPath)').StartsWith('runtimes'))">
         <TargetPath>%(_OutputsWithTargetPath.TargetPath)</TargetPath>
         <ExcludeFromMakePri>true</ExcludeFromMakePri>
+      </PackagingOutputs>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="FixDoubleBackslashesInPackagingOutputs" BeforeTargets="_GenerateProjectPriConfigurationFiles" AfterTargets="RemoveDuplicateNativeLibsForMakePri">
+    <ItemGroup>
+      <_PackagingOutputsWithTargetPath Include="@(PackagingOutputs)" Condition="'%(PackagingOutputs.TargetPath)' != ''" />
+      <PackagingOutputs Remove="@(_PackagingOutputsWithTargetPath)" />
+      <PackagingOutputs Include="@(_PackagingOutputsWithTargetPath)">
+        <TargetPath>$([System.String]::new('%(_PackagingOutputsWithTargetPath.TargetPath)').Replace('\\', '\').Replace('//', '/'))</TargetPath>
       </PackagingOutputs>
     </ItemGroup>
   </Target>
@@ -101,30 +114,19 @@
     <_KaiRosKeepRid Condition="'$(Platform)' == 'ARM64'">win-arm64</_KaiRosKeepRid>
   </PropertyGroup>
 
-  <Target Name="StripForeignPlatformRuntimes"
-          BeforeTargets="_GenerateProjectPriConfigurationFiles;GenerateAppxPackageRecipe;CopyFilesToPublishDirectory"
-          AfterTargets="ComputeFilesToPublish;ComputeResolvedFilesToPublishList"
-          Condition="'$(_KaiRosKeepRid)' != ''">
+  <Target Name="StripForeignPlatformRuntimes" BeforeTargets="_GenerateProjectPriConfigurationFiles;GenerateAppxPackageRecipe;CopyFilesToPublishDirectory" AfterTargets="ComputeFilesToPublish;ComputeResolvedFilesToPublishList" Condition="'$(_KaiRosKeepRid)' != ''">
     <ItemGroup>
       <!-- 1. Strip from build output (bin\) -->
-      <_KaiRosForeignBinDirs Include="$([System.IO.Directory]::GetDirectories('$(OutDir)runtimes'))"
-                             Exclude="$(OutDir)runtimes\$(_KaiRosKeepRid);$(OutDir)runtimes/$(_KaiRosKeepRid)"
-                             Condition="Exists('$(OutDir)runtimes')" />
+      <_KaiRosForeignBinDirs Include="$([System.IO.Directory]::GetDirectories('$(OutDir)runtimes'))" Exclude="$(OutDir)runtimes\$(_KaiRosKeepRid);$(OutDir)runtimes/$(_KaiRosKeepRid)" Condition="Exists('$(OutDir)runtimes')" />
       <!-- 2. Strip from publish output -->
-      <_KaiRosForeignPubDirs Include="$([System.IO.Directory]::GetDirectories('$(PublishDir)runtimes'))"
-                             Exclude="$(PublishDir)runtimes\$(_KaiRosKeepRid);$(PublishDir)runtimes/$(_KaiRosKeepRid)"
-                             Condition="'$(PublishDir)' != '' and Exists('$(PublishDir)runtimes')" />
+      <_KaiRosForeignPubDirs Include="$([System.IO.Directory]::GetDirectories('$(PublishDir)runtimes'))" Exclude="$(PublishDir)runtimes\$(_KaiRosKeepRid);$(PublishDir)runtimes/$(_KaiRosKeepRid)" Condition="'$(PublishDir)' != '' and Exists('$(PublishDir)runtimes')" />
       <!-- 3. Strip from intermediate AppX layout if it already exists -->
-      <_KaiRosForeignAppxDirs Include="$([System.IO.Directory]::GetDirectories('$(OutDir)AppX\runtimes'))"
-                              Exclude="$(OutDir)AppX\runtimes\$(_KaiRosKeepRid);$(OutDir)AppX\runtimes/$(_KaiRosKeepRid)"
-                              Condition="Exists('$(OutDir)AppX\runtimes')" />
+      <_KaiRosForeignAppxDirs Include="$([System.IO.Directory]::GetDirectories('$(OutDir)AppX\runtimes'))" Exclude="$(OutDir)AppX\runtimes\$(_KaiRosKeepRid);$(OutDir)AppX\runtimes/$(_KaiRosKeepRid)" Condition="Exists('$(OutDir)AppX\runtimes')" />
       <!-- 4. Filter publish item lists so subsequent copy steps don't re-add foreign files -->
-      <_KaiRosForeignPublishItems Include="@(ResolvedFileToPublish)"
-                                  Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(ResolvedFileToPublish.RelativePath)', '^runtimes[\\/](?!$(_KaiRosKeepRid)[\\/])'))" />
+      <_KaiRosForeignPublishItems Include="@(ResolvedFileToPublish)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(ResolvedFileToPublish.RelativePath)', '^runtimes[\\/](?!$(_KaiRosKeepRid)[\\/])'))" />
       <ResolvedFileToPublish Remove="@(_KaiRosForeignPublishItems)" />
     </ItemGroup>
-    <Message Importance="high"
-             Text="StripForeignPlatformRuntimes [$(MSBuildProjectName)]: keep=$(_KaiRosKeepRid); bin=@(_KaiRosForeignBinDirs->Count()), publish=@(_KaiRosForeignPubDirs->Count()), appx=@(_KaiRosForeignAppxDirs->Count()), items=@(_KaiRosForeignPublishItems->Count())" />
+    <Message Importance="high" Text="StripForeignPlatformRuntimes [$(MSBuildProjectName)]: keep=$(_KaiRosKeepRid); bin=@(_KaiRosForeignBinDirs-&gt;Count()), publish=@(_KaiRosForeignPubDirs-&gt;Count()), appx=@(_KaiRosForeignAppxDirs-&gt;Count()), items=@(_KaiRosForeignPublishItems-&gt;Count())" />
     <RemoveDir Directories="@(_KaiRosForeignBinDirs)" />
     <RemoveDir Directories="@(_KaiRosForeignPubDirs)" />
     <RemoveDir Directories="@(_KaiRosForeignAppxDirs)" />
@@ -170,7 +172,7 @@
          Package size impact is minimal compared to bundled LLM model weights. -->
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
-    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+    <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <GenerateTestArtifacts>True</GenerateTestArtifacts>

@@ -9,6 +9,7 @@
         <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
         <converters:BackendToStringConverter x:Key="BackendToString" />
         <converters:ContextWindowOptionConverter x:Key="ContextWindowOptionConverter" />
+        <converters:InverseBoolConverter x:Key="InverseBool" />
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -626,6 +627,148 @@
                             <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Allows reading from or writing to the system clipboard (requires approval for write)" />
                         </StackPanel>
                         <ToggleSwitch Grid.Row="6" Grid.Column="1" Margin="0,8,0,0" MinWidth="0" IsOn="{Binding IsClipboardEnabled, Mode=TwoWay}" OffContent="" OnContent="" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!--  Voice Input (STT) Settings  -->
+            <Border Margin="0,0,0,16" Style="{ThemeResource CardBorder}">
+                <StackPanel Spacing="16">
+                    <TextBlock
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextPrimaryBrush}">
+                        <Run FontFamily="Segoe Fluent Icons" Text="&#xE720;" />
+                        <Run Text=" Voice Input (Speech-to-Text)" />
+                    </TextBlock>
+
+                    <Grid RowSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Enable Toggle -->
+                        <StackPanel Grid.Row="0">
+                            <TextBlock FontWeight="SemiBold" Text="Enable Voice Input" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Allow talking to the AI instead of typing" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Row="0" Grid.Column="1" MinWidth="0" IsOn="{Binding IsVoiceInputEnabled, Mode=TwoWay}" OffContent="" OnContent="" />
+
+                        <!-- Whisper Model Size -->
+                        <StackPanel Grid.Row="1" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="Whisper Model Size" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Select model size. Tiny is fastest, Small is most accurate." />
+                        </StackPanel>
+                        <ComboBox Grid.Row="1" Grid.Column="1" Width="200" ItemsSource="{Binding AvailableModelSizes}" SelectedItem="{Binding WhisperModelSize, Mode=TwoWay}" Margin="0,8,0,0" />
+
+                        <!-- Input Device -->
+                        <StackPanel Grid.Row="2" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="Microphone Input Device" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Select microphone for recording" />
+                        </StackPanel>
+                        <ComboBox Grid.Row="2" Grid.Column="1" Width="200" ItemsSource="{Binding AvailableInputDevices}" SelectedItem="{Binding SelectedInputDevice, Mode=TwoWay}" Margin="0,8,0,0" />
+
+                        <!-- Auto Send Toggle -->
+                        <StackPanel Grid.Row="3" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="Auto-send after voice" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Automatically send the transcribed message after you stop speaking" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Row="3" Grid.Column="1" MinWidth="0" IsOn="{Binding IsAutoSendEnabled, Mode=TwoWay}" OffContent="" OnContent="" Margin="0,8,0,0" />
+
+                        <!-- Silence Duration Slider -->
+                        <StackPanel Grid.Row="4" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="Silence Timeout (seconds)" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Time to wait after you stop speaking before auto-sending" />
+                        </StackPanel>
+                        <Slider Grid.Row="4" Grid.Column="1" Width="200" Minimum="1.0" Maximum="5.0" StepFrequency="0.5" Value="{Binding SilenceDurationSeconds, Mode=TwoWay}" Margin="0,8,0,0" IsEnabled="{Binding IsAutoSendEnabled}" />
+                    </Grid>
+
+                    <!-- Model Download Section -->
+                    <StackPanel Spacing="8" Margin="0,8,0,0">
+                        <Button Command="{Binding DownloadWhisperModelCommand}" Style="{ThemeResource SecondaryButton}" IsEnabled="{Binding IsWhisperDownloading, Converter={StaticResource InverseBool}}">
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon FontFamily="Segoe Fluent Icons" FontSize="13" Glyph="&#xE896;" Margin="0,0,6,0" />
+                                <TextBlock Text="Download/Update Whisper Model" />
+                            </StackPanel>
+                        </Button>
+                        <StackPanel Visibility="{Binding IsWhisperDownloading, Converter={StaticResource BoolToVis}}" Spacing="4">
+                            <ProgressBar Value="{Binding WhisperDownloadProgress}" Minimum="0" Maximum="100" Height="10" CornerRadius="5" />
+                            <TextBlock FontSize="11" Foreground="{ThemeResource TextMutedBrush}">
+                                <Run Text="Downloading model... " />
+                                <Run Text="{Binding WhisperDownloadProgress}" />
+                                <Run Text="%" />
+                            </TextBlock>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!--  Voice Output (TTS) Settings  -->
+            <Border Margin="0,0,0,16" Style="{ThemeResource CardBorder}">
+                <StackPanel Spacing="16">
+                    <TextBlock
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextPrimaryBrush}">
+                        <Run FontFamily="Segoe Fluent Icons" Text="&#xE767;" />
+                        <Run Text=" Voice Output (Text-to-Speech)" />
+                    </TextBlock>
+
+                    <Grid RowSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Enable Toggle -->
+                        <StackPanel Grid.Row="0">
+                            <TextBlock FontWeight="SemiBold" Text="Enable Voice Output" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Allow the AI to read responses aloud" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Row="0" Grid.Column="1" MinWidth="0" IsOn="{Binding IsTtsEnabled, Mode=TwoWay}" OffContent="" OnContent="" />
+
+                        <!-- Selected Voice -->
+                        <StackPanel Grid.Row="1" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="Voice Select" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Select the speech synthesis voice" />
+                        </StackPanel>
+                        <ComboBox Grid.Row="1" Grid.Column="1" Width="200" ItemsSource="{Binding AvailableVoices}" DisplayMemberPath="DisplayName" SelectedValuePath="Id" SelectedValue="{Binding SelectedVoiceId, Mode=TwoWay}" Margin="0,8,0,0" IsEnabled="{Binding IsTtsEnabled}" />
+
+                        <!-- Speech Rate -->
+                        <StackPanel Grid.Row="2" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="Speech Rate" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Adjust speaking speed" />
+                        </StackPanel>
+                        <Slider Grid.Row="2" Grid.Column="1" Width="200" Minimum="0.5" Maximum="2.0" StepFrequency="0.1" Value="{Binding TtsSpeechRate, Mode=TwoWay}" Margin="0,8,0,0" IsEnabled="{Binding IsTtsEnabled}" />
+
+                        <!-- Volume -->
+                        <StackPanel Grid.Row="3" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="Volume" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Adjust voice output volume" />
+                        </StackPanel>
+                        <Slider Grid.Row="3" Grid.Column="1" Width="200" Minimum="0.0" Maximum="1.0" StepFrequency="0.05" Value="{Binding TtsVolume, Mode=TwoWay}" Margin="0,8,0,0" IsEnabled="{Binding IsTtsEnabled}" />
+
+                        <!-- Auto-read Toggle -->
+                        <StackPanel Grid.Row="4" Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="Auto-read responses" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="Automatically speak AI answers as they complete" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Row="4" Grid.Column="1" MinWidth="0" IsOn="{Binding IsAutoReadEnabled, Mode=TwoWay}" OffContent="" OnContent="" Margin="0,8,0,0" IsEnabled="{Binding IsTtsEnabled}" />
                     </Grid>
                 </StackPanel>
             </Border>

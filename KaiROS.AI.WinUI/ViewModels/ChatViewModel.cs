@@ -26,6 +26,9 @@ public partial class ChatViewModel : ViewModelBase
     private readonly IAgentService _agentService;
     private readonly IDeepResearchService _deepResearchService;
     private readonly DispatcherQueue _dispatcherQueue;
+    private readonly ISpeechToTextService _sttService;
+    private readonly ITextToSpeechService _ttsService;
+    private readonly IUserPreferencesService _preferences;
     private CancellationTokenSource? _currentInferenceCts;
 
     [ObservableProperty]
@@ -124,7 +127,18 @@ public partial class ChatViewModel : ViewModelBase
 
     public IModelManagerService ModelManager => _modelManager;
 
-    public ChatViewModel(IChatService chatService, IModelManagerService modelManager, ISessionService sessionService, IExportService exportService, IDocumentService documentService, IRaasService raasService, IAgentService agentService, IDeepResearchService deepResearchService)
+    public ChatViewModel(
+        IChatService chatService,
+        IModelManagerService modelManager,
+        ISessionService sessionService,
+        IExportService exportService,
+        IDocumentService documentService,
+        IRaasService raasService,
+        IAgentService agentService,
+        IDeepResearchService deepResearchService,
+        ISpeechToTextService sttService,
+        ITextToSpeechService ttsService,
+        IUserPreferencesService preferences)
     {
         _chatService = chatService;
         _modelManager = modelManager;
@@ -134,6 +148,9 @@ public partial class ChatViewModel : ViewModelBase
         _raasService = raasService;
         _agentService = agentService;
         _deepResearchService = deepResearchService;
+        _sttService = sttService;
+        _ttsService = ttsService;
+        _preferences = preferences;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         _agentService.ConfirmationCallback = ConfirmToolApprovalAsync;
@@ -149,6 +166,60 @@ public partial class ChatViewModel : ViewModelBase
         // Always dispatch to UI thread — CollectionChanged may fire from any thread
         _raasService.Configurations.CollectionChanged += (s, e) =>
             _dispatcherQueue.TryEnqueue(UpdateKnowledgeBaseList);
+
+        // Wire STT events
+        _sttService.PartialTranscription += (s, text) =>
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                UserInput = text;
+            });
+        };
+
+        _sttService.TranscriptionCompleted += (s, text) =>
+        {
+            _dispatcherQueue.TryEnqueue(async () =>
+            {
+                IsTranscribing = false;
+                UserInput = text;
+
+                if (_preferences.IsAutoSendEnabled && !string.IsNullOrWhiteSpace(UserInput))
+                {
+                    await SendMessage();
+                }
+            });
+        };
+
+        _sttService.AudioLevelChanged += (s, level) =>
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                AudioLevel = level;
+
+                if (level > 0.02f)
+                {
+                    _lastSpokeTime = DateTime.Now;
+                }
+                else if (_preferences.IsAutoSendEnabled && IsListening && _lastSpokeTime != DateTime.MinValue)
+                {
+                    var silenceDuration = DateTime.Now - _lastSpokeTime;
+                    if (silenceDuration.TotalSeconds >= _preferences.SilenceDurationSeconds)
+                    {
+                        _lastSpokeTime = DateTime.MinValue;
+                        _ = StopVoiceInputAsync();
+                    }
+                }
+            });
+        };
+
+        _sttService.DownloadProgressChanged += (s, p) =>
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                VoiceDownloadProgress = p;
+                IsVoiceDownloading = _sttService.IsDownloadingModel;
+            });
+        };
     }
 
     partial void OnIsDeepResearchEnabledChanged(bool value)
@@ -557,6 +628,11 @@ public partial class ChatViewModel : ViewModelBase
                     {
                         await _sessionService.AddMessageAsync(CurrentSession.Id, assistantVm.Message);
                         CurrentSession.MessageCount++;
+
+                        if (_preferences.IsTtsEnabled && _preferences.IsAutoReadEnabled)
+                        {
+                            _ = SpeakMessageAsync(assistantVm);
+                        }
                     }
                 }
             }
@@ -660,6 +736,11 @@ public partial class ChatViewModel : ViewModelBase
                     {
                         await _sessionService.AddMessageAsync(CurrentSession.Id, assistantVm.Message);
                         CurrentSession.MessageCount++;
+
+                        if (_preferences.IsTtsEnabled && _preferences.IsAutoReadEnabled)
+                        {
+                            _ = SpeakMessageAsync(assistantVm);
+                        }
                     }
                 }
             }
@@ -698,6 +779,11 @@ public partial class ChatViewModel : ViewModelBase
                     {
                         await _sessionService.AddMessageAsync(CurrentSession.Id, assistantVm.Message);
                         CurrentSession.MessageCount++;
+
+                        if (_preferences.IsTtsEnabled && _preferences.IsAutoReadEnabled)
+                        {
+                            _ = SpeakMessageAsync(assistantVm);
+                        }
                     }
                 }
             }
@@ -843,6 +929,156 @@ public partial class ChatViewModel : ViewModelBase
     
     [RelayCommand]
     private void CopyContent() { /* ... handled in item view model or pass parameter ... */ }
+
+    // Voice and TTS Properties
+    [ObservableProperty]
+    public partial bool IsListening { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsTranscribing { get; set; }
+
+    [ObservableProperty]
+    public partial float AudioLevel { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsVoiceDownloading { get; set; }
+
+    [ObservableProperty]
+    public partial double VoiceDownloadProgress { get; set; }
+
+    public bool IsVoiceInputEnabled => _preferences.IsVoiceInputEnabled;
+    public bool IsTtsEnabled => _preferences.IsTtsEnabled;
+
+    private DateTime _lastSpokeTime = DateTime.MinValue;
+    private ChatMessageViewModel? _currentlySpeakingMessage;
+
+    public void NotifyVoiceSettingsChanged()
+    {
+        OnPropertyChanged(nameof(IsVoiceInputEnabled));
+        OnPropertyChanged(nameof(IsTtsEnabled));
+    }
+
+    [RelayCommand]
+    private async Task ToggleVoiceInput()
+    {
+        if (IsListening)
+        {
+            await StopVoiceInputAsync();
+        }
+        else
+        {
+            await StartVoiceInputAsync();
+        }
+    }
+
+    private async Task StartVoiceInputAsync()
+    {
+        if (!_preferences.IsVoiceInputEnabled) return;
+
+        var modelSize = _preferences.WhisperModelSize;
+        var modelPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "KaiROS.AI", "whisper-models", $"ggml-{modelSize}.bin");
+
+        if (!File.Exists(modelPath))
+        {
+            var mainWindow = App.Current.Services.GetRequiredService<MainWindow>();
+            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            {
+                Title = "Download Model?",
+                Content = $"Whisper model ({modelSize}) is required for voice input. Would you like to download it now (~142MB for base)?",
+                PrimaryButtonText = "Download",
+                CloseButtonText = "Cancel",
+                XamlRoot = mainWindow.Content.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
+            {
+                IsVoiceDownloading = true;
+                VoiceDownloadProgress = 0;
+                var success = await _sttService.EnsureModelDownloadedAsync(modelSize);
+                IsVoiceDownloading = false;
+                if (!success)
+                {
+                    var errDialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+                    {
+                        Title = "Error",
+                        Content = "Failed to download Whisper model. Falling back to Windows default Speech Recognition.",
+                        CloseButtonText = "OK",
+                        XamlRoot = mainWindow.Content.XamlRoot
+                    };
+                    await errDialog.ShowAsync();
+                }
+            }
+        }
+
+        try
+        {
+            _lastSpokeTime = DateTime.Now;
+            IsListening = true;
+            AudioLevel = 0;
+            await _sttService.StartListeningAsync();
+        }
+        catch (Exception ex)
+        {
+            IsListening = false;
+            System.Diagnostics.Debug.WriteLine($"[ChatViewModel] StartVoiceInput failed: {ex.Message}");
+        }
+    }
+
+    private async Task StopVoiceInputAsync()
+    {
+        if (!IsListening) return;
+
+        IsListening = false;
+        IsTranscribing = true;
+        AudioLevel = 0;
+        await _sttService.StopListeningAsync();
+    }
+
+    public async Task SpeakMessageAsync(ChatMessageViewModel messageVm)
+    {
+        if (!_preferences.IsTtsEnabled) return;
+
+        if (_currentlySpeakingMessage == messageVm)
+        {
+            await StopTtsAsync();
+            return;
+        }
+
+        await StopTtsAsync();
+
+        _currentlySpeakingMessage = messageVm;
+        messageVm.IsSpeaking = true;
+
+        try
+        {
+            await _ttsService.SetVoiceAsync(_preferences.SelectedVoiceId);
+            await _ttsService.SetRateAsync(_preferences.TtsSpeechRate);
+            await _ttsService.SetVolumeAsync(_preferences.TtsVolume);
+
+            await _ttsService.SpeakAsync(messageVm.Content);
+        }
+        finally
+        {
+            messageVm.IsSpeaking = false;
+            if (_currentlySpeakingMessage == messageVm)
+            {
+                _currentlySpeakingMessage = null;
+            }
+        }
+    }
+
+    public async Task StopTtsAsync()
+    {
+        if (_currentlySpeakingMessage != null)
+        {
+            _currentlySpeakingMessage.IsSpeaking = false;
+            _currentlySpeakingMessage = null;
+        }
+        await _ttsService.StopAsync();
+    }
 }
 
 public partial class ChatMessageViewModel(ChatMessage message, DispatcherQueue? dispatcherQueue = null) : ObservableObject
@@ -1041,6 +1277,19 @@ public partial class ChatMessageViewModel(ChatMessage message, DispatcherQueue? 
             }
             catch { }
         }
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PlayPauseGlyph))]
+    public partial bool IsSpeaking { get; set; }
+
+    public string PlayPauseGlyph => IsSpeaking ? "\xE10A" : "\xE767";
+
+    [RelayCommand]
+    private async Task ReadAloud()
+    {
+        var chatViewModel = App.Current.Services.GetRequiredService<ChatViewModel>();
+        await chatViewModel.SpeakMessageAsync(this);
     }
 }
 

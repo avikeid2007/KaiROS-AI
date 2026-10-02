@@ -397,12 +397,47 @@
                                             </StackPanel>
 
                                             <ContentPresenter Content="{Binding Content, Converter={StaticResource MarkdownConverter}}" Foreground="{ThemeResource TextPrimaryBrush}" />
-                                            <TextBlock
-                                                Margin="0,8,0,0"
-                                                HorizontalAlignment="Right"
-                                                FontSize="11"
-                                                Foreground="{ThemeResource TextMutedBrush}"
-                                                Text="{Binding Timestamp}" />
+                                            
+                                            <Grid Margin="0,8,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <!-- Read Aloud Button -->
+                                                <Button
+                                                    Grid.Column="0"
+                                                    Command="{Binding ReadAloudCommand}"
+                                                    Background="Transparent"
+                                                    BorderBrush="Transparent"
+                                                    Padding="4"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center"
+                                                    ToolTipService.ToolTip="Read Aloud"
+                                                    Visibility="{Binding IsAssistant, Converter={StaticResource BoolToVis}}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <FontIcon
+                                                            FontFamily="Segoe Fluent Icons"
+                                                            FontSize="12"
+                                                            Glyph="{Binding PlayPauseGlyph}"
+                                                            Foreground="{ThemeResource PrimaryBrush}" />
+                                                        <TextBlock
+                                                            Text="Speaking..."
+                                                            FontSize="11"
+                                                            Foreground="{ThemeResource PrimaryBrush}"
+                                                            Visibility="{Binding IsSpeaking, Converter={StaticResource BoolToVis}}" />
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <!-- Timestamp -->
+                                                <TextBlock
+                                                    Grid.Column="1"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="11"
+                                                    Foreground="{ThemeResource TextMutedBrush}"
+                                                    Text="{Binding Timestamp}" />
+                                            </Grid>
 
                                             <!--  Streaming Indicator  -->
                                             <TextBlock
@@ -428,6 +463,7 @@
                 CornerRadius="12">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
@@ -589,9 +625,32 @@
                         </Border>
                     </Grid>
 
+                    <!-- Voice Status and Level Indicator -->
+                    <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="0,0,0,8" VerticalAlignment="Top" Visibility="{Binding IsListening, Converter={StaticResource BoolToVis}}">
+                        <Border Padding="12,8" Background="{ThemeResource SurfaceBrush}" BorderThickness="1" BorderBrush="{ThemeResource BorderBrush}" CornerRadius="6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE720;" Foreground="Red" FontSize="14" />
+                                    <TextBlock Text="Listening..." FontWeight="SemiBold" Foreground="{ThemeResource PrimaryLightBrush}" FontSize="12" />
+                                </StackPanel>
+
+                                <!-- Level Meter -->
+                                <ProgressBar Grid.Column="1" Margin="16,0" Value="{Binding AudioLevel}" Minimum="0.0" Maximum="1.0" Height="4" CornerRadius="2" Foreground="Red" Background="{ThemeResource BorderBrush}" />
+
+                                <Button Grid.Column="2" Command="{Binding ToggleVoiceInputCommand}" Padding="6,2" Style="{StaticResource SecondaryButton}" Height="24" Content="Stop" FontSize="11" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+
                     <TextBox
                         x:Name="MessageInput"
-                        Grid.Row="1"
+                        Grid.Row="2"
                         MaxHeight="150"
                         AcceptsReturn="True"
                         AllowDrop="True"
@@ -624,7 +683,7 @@
                     </TextBox>
 
                     <StackPanel
-                        Grid.Row="1"
+                        Grid.Row="2"
                         Grid.Column="1"
                         Margin="12,0,0,0"
                         VerticalAlignment="Bottom"
@@ -654,6 +713,29 @@
                                 FontFamily="Segoe Fluent Icons"
                                 FontSize="16"
                                 Glyph="&#xEA90;" />
+                        </Button>
+
+                        <!--  Voice Input Microphone Button  -->
+                        <Button
+                            Command="{Binding ToggleVoiceInputCommand}"
+                            Margin="0,0,8,0"
+                            Padding="10,6"
+                            Style="{StaticResource SecondaryButton}"
+                            ToolTipService.ToolTip="Voice Input (Click to speak)"
+                            Visibility="{Binding IsVoiceInputEnabled, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <FontIcon
+                                    FontFamily="Segoe Fluent Icons"
+                                    FontSize="16"
+                                    Glyph="&#xE720;"
+                                    Foreground="Red"
+                                    Visibility="{Binding IsListening, Converter={StaticResource BoolToVis}}" />
+                                <FontIcon
+                                    FontFamily="Segoe Fluent Icons"
+                                    FontSize="16"
+                                    Glyph="&#xE720;"
+                                    Visibility="{Binding IsListening, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                            </Grid>
                         </Button>
 
                         <!--  Send Button  -->

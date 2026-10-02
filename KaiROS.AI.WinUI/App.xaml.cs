@@ -122,6 +122,8 @@ public partial class App : Application
         services.AddSingleton<IAgentService, AgentService>();
         services.AddSingleton<IWebSearchService, WebSearchService>();
         services.AddSingleton<IDeepResearchService, DeepResearchService>();
+        services.AddSingleton<ISpeechToTextService, SpeechToTextService>();
+        services.AddSingleton<ITextToSpeechService, TextToSpeechService>();
 
         // RaaS Services
         services.AddSingleton<IRagSourceProvider, FileSourceProvider>();
