@@ -75,3 +75,7 @@ Thumbs.db
 *.keystore
 *.jks
 *.pfx
+
+## Local secret overrides (not for source control)
+appsettings.Local.json
+appsettings.*.local.json

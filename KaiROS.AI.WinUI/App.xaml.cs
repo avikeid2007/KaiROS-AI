@@ -1,4 +1,5 @@
 using System.IO;
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -7,6 +8,7 @@ using Microsoft.UI.Xaml.Controls;
 using KaiROS.AI.WinUI.Services;
 using KaiROS.AI.WinUI.ViewModels;
 using KaiROS.AI.WinUI.Models;
+using Sentry;
 
 namespace KaiROS.AI.WinUI;
 
@@ -38,31 +40,106 @@ public partial class App : Application
         var sp = _serviceProvider;
         _serviceProvider = null;
         try { sp.Dispose(); } catch { }
+        try { SentrySdk.Close(); } catch { }
     }
+
+    // Baked in at build time via AssemblyMetadataAttribute from the KAIROS_SENTRY_DSN env var
+    // (see csproj) so the real DSN never has to be committed to this public repo.
+    private static string? GetSentryDsn() =>
+        Assembly.GetExecutingAssembly()
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(a => a.Key == "SentryDsn" && !string.IsNullOrWhiteSpace(a.Value))
+            ?.Value;
 
     // ── Crash log helpers ─────────────────────────────────────────────────
     internal static readonly string CrashLogPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "KaiROS.AI", "crash.log");
 
+    // Shared with FileLogger below (same target file) so concurrent writes from the UI
+    // thread, AppDomain handler, and logging provider can't collide with a sharing IOException.
+    internal static readonly object CrashLogLock = new();
+    private const long MaxCrashLogBytes = 5 * 1024 * 1024; // 5 MB
+
+    private static void RotateCrashLogIfTooLarge()
+    {
+        var info = new FileInfo(CrashLogPath);
+        if (info.Exists && info.Length > MaxCrashLogBytes)
+            File.WriteAllText(CrashLogPath, $"[{DateTimeOffset.Now:o}] --- log rotated (exceeded {MaxCrashLogBytes:N0} bytes) ---{Environment.NewLine}");
+    }
+
+    // Local forensic log only - does not report to Sentry. Call SentrySdk.CaptureException
+    // explicitly at call sites that aren't already covered by Sentry's own default integrations
+    // (AppDomain.UnhandledException and TaskScheduler.UnobservedTaskException are auto-captured
+    // by the SDK once initialized, so doing it again here would double-report every crash).
     internal static void WriteCrashLog(string source, Exception? ex)
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(CrashLogPath)!);
-            var entry = $"[{DateTimeOffset.Now:o}] UNHANDLED in {source}{Environment.NewLine}{ex}{Environment.NewLine}---{Environment.NewLine}";
-            File.AppendAllText(CrashLogPath, entry);
+            lock (CrashLogLock)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(CrashLogPath)!);
+                RotateCrashLogIfTooLarge();
+                var entry = $"[{DateTimeOffset.Now:o}] UNHANDLED in {source}{Environment.NewLine}{ex}{Environment.NewLine}---{Environment.NewLine}";
+                File.AppendAllText(CrashLogPath, entry);
+            }
         }
         catch { }
     }
 
+    // Lets the app survive an occasional UI-thread exception without masking a genuine crash loop.
+    private static readonly TimeSpan UnhandledExceptionWindow = TimeSpan.FromMinutes(1);
+    private const int MaxUnhandledExceptionsPerWindow = 10;
+    private static int _unhandledExceptionCount;
+    private static DateTime _unhandledExceptionWindowStart = DateTime.UtcNow;
+
+    private static bool ShouldSuppressUnhandledException()
+    {
+        var now = DateTime.UtcNow;
+        if (now - _unhandledExceptionWindowStart > UnhandledExceptionWindow)
+        {
+            _unhandledExceptionWindowStart = now;
+            _unhandledExceptionCount = 0;
+        }
+        return ++_unhandledExceptionCount <= MaxUnhandledExceptionsPerWindow;
+    }
+
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        // Global crash handlers — fire in Release where no debugger is attached
+        var sentryDsn = GetSentryDsn();
+        if (sentryDsn != null)
+        {
+            try
+            {
+                SentrySdk.Init(o =>
+                {
+                    o.Dsn = sentryDsn;
+                    o.Release = Assembly.GetExecutingAssembly().GetName().Version?.ToString();
+                    o.Environment = System.Diagnostics.Debugger.IsAttached ? "development" : "production";
+                    o.TracesSampleRate = 0.0;
+                    o.AutoSessionTracking = true;
+                    // Persist events to disk so a fatal crash or offline device doesn't silently drop them.
+                    o.CacheDirectoryPath = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "KaiROS.AI", "sentry-cache");
+                });
+            }
+            catch (Exception initEx)
+            {
+                // A bad DSN or Sentry internal failure must never prevent app startup.
+                WriteCrashLog("SentrySdk.Init", initEx);
+            }
+        }
+
+        // Global crash handlers — fire in Release where no debugger is attached.
+        // WinUI's Application.UnhandledException is not covered by Sentry's default
+        // integrations, so it's the one case reported explicitly.
         UnhandledException += (_, e) =>
         {
-            e.Handled = true; // prevent silent process termination
             WriteCrashLog("Application.UnhandledException", e.Exception);
+            try { SentrySdk.CaptureException(e.Exception); } catch { }
+            // Keep the app alive unless it's crash-looping, instead of swallowing exceptions forever.
+            e.Handled = ShouldSuppressUnhandledException();
         };
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             WriteCrashLog("AppDomain.UnhandledException", e.ExceptionObject as Exception);
@@ -170,11 +247,14 @@ internal sealed class FileLogger(string path, string category) : ILogger
         if (!IsEnabled(level)) return;
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            var line = $"[{DateTimeOffset.Now:o}] [{level}] {category}: {formatter(state, ex)}";
-            if (ex != null) line += $"{Environment.NewLine}{ex}";
-            line += Environment.NewLine;
-            File.AppendAllText(path, line);
+            lock (App.CrashLogLock)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                var line = $"[{DateTimeOffset.Now:o}] [{level}] {category}: {formatter(state, ex)}";
+                if (ex != null) line += $"{Environment.NewLine}{ex}";
+                line += Environment.NewLine;
+                File.AppendAllText(path, line);
+            }
         }
         catch { }
     }

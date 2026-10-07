@@ -25,6 +25,10 @@ public class ModelManagerService : IModelManagerService, IDisposable
     private LLMModelInfo? _activeModel;
     private int _currentGpuLayers;
 
+    // Guards the load/unload lifecycle so concurrent calls (e.g. a double-clicked "Load")
+    // can't race and leak the loser's native weights.
+    private readonly SemaphoreSlim _modelLifecycleLock = new(1, 1);
+
     public IReadOnlyList<LLMModelInfo> Models => _models.AsReadOnly();
     public LLMModelInfo? ActiveModel => _activeModel;
     public string ModelsDirectory => _modelsDirectory;
@@ -113,7 +117,7 @@ public class ModelManagerService : IModelManagerService, IDisposable
                 IsCustomModel = true,
                 CustomModelId = custom.Id,
                 Organization = "Local",
-                OrgLogoUrl = "pack://application:,,,/Assets/logo.png",
+                OrgLogoUrl = "ms-appx:///Assets/logo.png",
                 Family = "Custom",
                 Variant = "All"
             };
@@ -127,8 +131,11 @@ public class ModelManagerService : IModelManagerService, IDisposable
             _models.Add(model);
         }
 
-        // Auto-load last used model
-        await LoadLastUsedModelAsync();
+        // Auto-load the last used model in the background. Awaiting this would block the whole
+        // app startup (and MainWindow's full-screen loading overlay) behind a model load that can
+        // take minutes for large models, especially across GPU-layer retry attempts — the UI
+        // already reacts to ModelLoaded/ModelUnloaded events once it completes.
+        _ = LoadLastUsedModelAsync();
     }
 
     private async Task<List<LLMModelInfo>> LoadModelCatalogAsync()
@@ -144,7 +151,7 @@ public class ModelManagerService : IModelManagerService, IDisposable
             if (!string.IsNullOrWhiteSpace(json))
             {
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var remoteList = JsonSerializer.Deserialize<List<LLMModelInfo>>(json, options);
+                var remoteList = SanitizeCatalog(JsonSerializer.Deserialize<List<LLMModelInfo>>(json, options));
                 
                 if (remoteList != null && remoteList.Count > 0)
                 {
@@ -168,7 +175,7 @@ public class ModelManagerService : IModelManagerService, IDisposable
             {
                 var cachedJson = await File.ReadAllTextAsync(_cachedCatalogPath);
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var cachedList = JsonSerializer.Deserialize<List<LLMModelInfo>>(cachedJson, options);
+                var cachedList = SanitizeCatalog(JsonSerializer.Deserialize<List<LLMModelInfo>>(cachedJson, options));
                 if (cachedList != null && cachedList.Count > 0)
                 {
                     System.Diagnostics.Debug.WriteLine($"[KaiROS] Loaded catalog from local AppData cache with {cachedList.Count} models.");
@@ -186,6 +193,18 @@ public class ModelManagerService : IModelManagerService, IDisposable
         return _configuration.GetSection("LLMModels").Get<List<LLMModelInfo>>() ?? [];
     }
 
+    // Drops entries missing the fields InitializeAsync/DownloadModelAsync require, so one bad
+    // remote catalog edit can't crash startup for every user until the catalog is fixed.
+    private static List<LLMModelInfo>? SanitizeCatalog(List<LLMModelInfo>? models)
+    {
+        if (models == null) return null;
+        var valid = models.Where(m => !string.IsNullOrWhiteSpace(m.Name) && !string.IsNullOrWhiteSpace(m.DownloadUrl)).ToList();
+        var dropped = models.Count - valid.Count;
+        if (dropped > 0)
+            System.Diagnostics.Debug.WriteLine($"[KaiROS] Dropped {dropped} catalog entr{(dropped == 1 ? "y" : "ies")} missing Name/DownloadUrl.");
+        return valid;
+    }
+
     private async Task LoadLastUsedModelAsync()
     {
         try
@@ -198,12 +217,7 @@ public class ModelManagerService : IModelManagerService, IDisposable
                 if (modelToLoad != null && modelToLoad.IsDownloaded)
                 {
                     System.Diagnostics.Debug.WriteLine($"[KaiROS] Auto-loading last used model: {modelToLoad.Name}");
-                    // Load in background so we don't block startup UI too much, but we need to await it partly or fire and forget?
-                    // Better to fire and forget or let the UI handle the loading state via events if InitializeAsync is awaited during splash.
-                    // Since SetActiveModelAsync handles its own threading, we can await it here if we want startup to wait,
-                    // OR we can just fire it. The user specifically asked for "On run of the App", so waiting is safer to ensure it's ready.
-                    // However, we don't want to freeze the UI.
-                    // Let's attempt to load it.
+                    // Caller (InitializeAsync) fires this without awaiting; UI updates via ModelLoaded/ModelUnloaded events.
                     await SetActiveModelAsync(modelToLoad);
                 }
             }
@@ -347,6 +361,19 @@ public class ModelManagerService : IModelManagerService, IDisposable
         if (!model.IsDownloaded || model.LocalPath == null)
             return false;
 
+        await _modelLifecycleLock.WaitAsync();
+        try
+        {
+            return await SetActiveModelCoreAsync(model, progress);
+        }
+        finally
+        {
+            _modelLifecycleLock.Release();
+        }
+    }
+
+    private async Task<bool> SetActiveModelCoreAsync(LLMModelInfo model, IProgress<double>? progress)
+    {
         // Save as last used model
         try
         {
@@ -364,8 +391,9 @@ public class ModelManagerService : IModelManagerService, IDisposable
         progress?.Report(5);
         ModelLoadProgress?.Invoke(this, 5);
 
-        // Unload current model if any
-        await UnloadModelAsync();
+        // Unload current model if any (already holding _modelLifecycleLock - use the core method
+        // directly, not the public UnloadModelAsync, to avoid re-entering the semaphore)
+        await UnloadModelCoreAsync();
 
         progress?.Report(10);
         ModelLoadProgress?.Invoke(this, 10);
@@ -465,6 +493,7 @@ public class ModelManagerService : IModelManagerService, IDisposable
                 // Declared outside try so catch blocks can dispose on failure.
                 LLamaWeights? weights = null;
                 MtmdWeights? llavaWeights = null;
+                Task? loadTask = null;
 
                 try
                 {
@@ -473,7 +502,7 @@ public class ModelManagerService : IModelManagerService, IDisposable
                     // Strict timeout to prevent hanging on Intel drivers (scaled by model size)
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(loadTimeoutSeconds));
 
-                    await Task.Run(() =>
+                    loadTask = Task.Run(() =>
                     {
                         progress?.Report(20);
                         ModelLoadProgress?.Invoke(this, 20);
@@ -515,7 +544,9 @@ public class ModelManagerService : IModelManagerService, IDisposable
 
                         progress?.Report(90);
                         ModelLoadProgress?.Invoke(this, 90);
-                    }, cts.Token).WaitAsync(TimeSpan.FromSeconds(loadTimeoutSeconds));
+                    }, cts.Token);
+
+                    await loadTask.WaitAsync(TimeSpan.FromSeconds(loadTimeoutSeconds));
 
                     // Only assign to fields after the task completes successfully
                     _loadedWeights = weights;
@@ -536,6 +567,20 @@ public class ModelManagerService : IModelManagerService, IDisposable
 
                     ModelLoaded?.Invoke(this, model);
                     return true;
+                }
+                catch (TimeoutException)
+                {
+                    // LLamaWeights.LoadFromFile has no cancellation support, so the native call may
+                    // still be running on the orphaned thread-pool thread after we stop waiting on it.
+                    // Dispose whatever it eventually produces so native memory/VRAM isn't leaked.
+                    lastException = new TimeoutException($"Model load timed out after {loadTimeoutSeconds}s at layers={layers}");
+                    NativeLog($"Load attempt TIMED OUT at layers={layers} after {loadTimeoutSeconds}s (native call may still be running in the background)");
+                    loadTask?.ContinueWith(_ =>
+                    {
+                        try { weights?.Dispose(); } catch { }
+                        try { llavaWeights?.Dispose(); } catch { }
+                    }, TaskScheduler.Default);
+                    if (layers == 0) break;
                 }
                 catch (TypeInitializationException ex)
                 {
@@ -597,6 +642,19 @@ public class ModelManagerService : IModelManagerService, IDisposable
     }
 
     public async Task UnloadModelAsync()
+    {
+        await _modelLifecycleLock.WaitAsync();
+        try
+        {
+            await UnloadModelCoreAsync();
+        }
+        finally
+        {
+            _modelLifecycleLock.Release();
+        }
+    }
+
+    private async Task UnloadModelCoreAsync()
     {
         if (_loadedWeights != null)
         {

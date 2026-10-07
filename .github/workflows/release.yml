@@ -19,6 +19,7 @@ env:
   DOTNET_VERSION: '9.0.x'
   PROJECT_PATH: 'KaiROS.AI.WinUI/KaiROS.AI.WinUI.csproj'
   MANIFEST_PATH: 'KaiROS.AI.WinUI/Package.appxmanifest'
+  KAIROS_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
 jobs:
   build-windows:
