@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last Updated: December 28, 2024**
+**Last Updated: October 7, 2026**
 
 ## Overview
 
@@ -15,7 +15,7 @@ KaiROS AI ("the App") is a local AI assistant that runs entirely on your device.
 - ❌ Usage analytics
 - ❌ Device identifiers
 - ❌ Location data
-- ❌ Any telemetry
+- ❌ Any telemetry, other than the automatic crash reporting described below
 
 ### Data Stored Locally on Your Device
 
@@ -26,9 +26,18 @@ KaiROS AI ("the App") is a local AI assistant that runs entirely on your device.
 ## How the App Works
 
 1. **100% Local Processing** - All AI inference runs on your device
-2. **No Cloud Connection** - No data is sent to external servers
+2. **No Cloud Connection** - No chat data is sent to external servers (see Crash Reporting below for the one exception)
 3. **No Account Required** - No sign-up or login needed
 4. **Offline Capable** - Works without internet (after model download)
+
+## Crash Reporting
+
+The Windows app uses [Sentry](https://sentry.io) to automatically report unhandled crashes and errors so we can fix bugs faster.
+
+- **What's sent**: exception type/message, stack trace, app version, OS version, and device type
+- **What's never sent**: chat conversations, prompts, model output, file contents, or any other personal data
+- Crash reports are not linked to your identity and contain no account or device identifiers
+- A local copy of the same crash details is always kept at `%LOCALAPPDATA%\KaiROS.AI\crash.log` on your device
 
 ## Model Downloads
 
@@ -64,7 +73,7 @@ You have full control over your data:
 
 ## Third-Party Services
 
-The App does not integrate with any third-party analytics, advertising, or tracking services.
+The App does not integrate with any third-party analytics, advertising, or tracking services. The only third-party service used is Sentry, solely for crash reporting as described above.
 
 ## Children's Privacy
 

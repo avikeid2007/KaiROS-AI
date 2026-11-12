@@ -14,7 +14,7 @@
     <style>
         * {
             margin: 0;
-            padding: 0;I. Have too much of a great update if I'm putting up. With another. 1. Load out more than they want to create, but a little bit more than. What will be designed? Skills.
+            padding: 0;
             box-sizing: border-box;
         }
 
@@ -475,16 +475,6 @@
                     <td><code>/chat/stream</code></td>
                     <td>Chat with RAG context (Server-Sent Events)</td>
                 </tr>
-                <tr>
-                    <td><code>GET</code></td>
-                    <td><code>/v1/models</code></td>
-                    <td>OpenAI-compatible model list</td>
-                </tr>
-                <tr>
-                    <td><code>POST</code></td>
-                    <td><code>/v1/chat/completions</code></td>
-                    <td>OpenAI-compatible chat completions (supports <code>stream</code>)</td>
-                </tr>
             </table>
         </div>
 
@@ -552,35 +542,6 @@ data: {<span class="json-key">"content"</span>: <span class="json-string">" on"<
 data: {<span class="json-key">"content"</span>: <span class="json-string">" the"</span>}
 
 ...
-
-data: [DONE]</code></pre>
-                </div>
-            </div>
-
-            <!-- POST /v1/chat/completions -->
-            <div class="endpoint">
-                <div class="endpoint-header">
-                    <span class="method post">POST</span>
-                    <span class="path">/v1/chat/completions</span>
-                    <span class="endpoint-desc">OpenAI-compatible chat completions</span>
-                </div>
-                <div class="endpoint-body">
-                    <h4>Example Request</h4>
-                    <pre><code>{
-  <span class="json-key">"model"</span>: <span class="json-string">"kairos-raas"</span>,
-  <span class="json-key">"stream"</span>: <span class="json-number">true</span>,
-  <span class="json-key">"messages"</span>: [
-    { <span class="json-key">"role"</span>: <span class="json-string">"user"</span>, <span class="json-key">"content"</span>: <span class="json-string">"Summarize this KB"</span> }
-  ]
-}</code></pre>
-
-                    <h4>Streaming Response (SSE)</h4>
-                    <span class="response-label success">200 OK</span>
-                    <pre><code>data: {<span class="json-key">"object"</span>:<span class="json-string">"chat.completion.chunk"</span>,<span class="json-key">"choices"</span>:[{<span class="json-key">"delta"</span>:{<span class="json-key">"role"</span>:<span class="json-string">"assistant"</span>}}]}
-
-data: {<span class="json-key">"object"</span>:<span class="json-string">"chat.completion.chunk"</span>,<span class="json-key">"choices"</span>:[{<span class="json-key">"delta"</span>:{<span class="json-key">"content"</span>:<span class="json-string">"Hello"</span>}}]}
-
-data: {<span class="json-key">"object"</span>:<span class="json-string">"chat.completion.chunk"</span>,<span class="json-key">"choices"</span>:[{<span class="json-key">"finish_reason"</span>:<span class="json-string">"stop"</span>,<span class="json-key">"delta"</span>:{}}]}
 
 data: [DONE]</code></pre>
                 </div>

@@ -34,6 +34,24 @@
     <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
   </PropertyGroup>
 
+  <!--
+    Sentry DSN is a secret and must never be committed to this public repo.
+    It's baked into the assembly via AssemblyMetadataAttribute (read at runtime through
+    reflection, see App.xaml.cs) instead of a custom pre-compile target, because WinUI 3's
+    two-pass XAML compiler snapshots the Compile item list before custom targets like
+    BeforeTargets="CoreCompile" run, so generated .g.cs sources aren't visible to it.
+    Local/dev builds with no KAIROS_SENTRY_DSN env var simply ship with Sentry disabled.
+  -->
+  <PropertyGroup>
+    <KairosSentryDsn Condition="'$(KairosSentryDsn)' == ''">$(KAIROS_SENTRY_DSN)</KairosSentryDsn>
+  </PropertyGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>SentryDsn</_Parameter1>
+      <_Parameter2>$(KairosSentryDsn)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.251219" />
@@ -42,6 +60,7 @@
     <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageReference Include="itext7" Version="9.5.0" />
     <PackageReference Include="LLamaSharp" Version="0.27.0" />
+    <PackageReference Include="Sentry" Version="6.12.0" />
     <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.27.0" />
     <!--
       Cuda12 backend: reference the .Windows sub-package directly instead of the
@@ -176,6 +195,5 @@
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
     <AppxBundle>Never</AppxBundle>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-    <PackageCertificateThumbprint>05DDF2B375DDBE97A4502E527C8A5E1CD7D484EE</PackageCertificateThumbprint>
   </PropertyGroup>
 </Project>
