@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KaiROS.Mobile.Models;
 using KaiROS.Mobile.Services;
+using Microsoft.Extensions.Logging;
 using System.Collections.ObjectModel;
 
 namespace KaiROS.Mobile.ViewModels;
@@ -9,6 +10,7 @@ namespace KaiROS.Mobile.ViewModels;
 public partial class PromptLibraryViewModel : ObservableObject
 {
     private readonly PromptLibraryService _promptService;
+    private readonly ILogger<PromptLibraryViewModel> _logger;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -36,9 +38,23 @@ public partial class PromptLibraryViewModel : ObservableObject
         "🧠", "📝", "🔧", "🎭", "🌟", "🚀", "💬", "🎓", "🏆", "⚡" 
     };
 
-    public PromptLibraryViewModel(PromptLibraryService promptService)
+    public PromptLibraryViewModel(PromptLibraryService promptService, ILogger<PromptLibraryViewModel> logger)
     {
         _promptService = promptService;
+        _logger = logger;
+    }
+
+    [RelayCommand]
+    private async Task GoBackAsync()
+    {
+        try
+        {
+            await Shell.Current.GoToAsync("..");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Navigation back failed");
+        }
     }
 
     [RelayCommand]
@@ -48,16 +64,20 @@ public partial class PromptLibraryViewModel : ObservableObject
         {
             IsLoading = true;
             var presets = await _promptService.GetAllPresetsAsync();
-            
+
             Presets.Clear();
             foreach (var preset in presets)
             {
                 Presets.Add(preset);
             }
-            
+
             // Mark active preset
             var activeId = _promptService.ActivePreset?.Id;
             SelectedPreset = Presets.FirstOrDefault(p => p.Id == activeId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load prompt presets");
         }
         finally
         {

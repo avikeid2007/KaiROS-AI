@@ -28,6 +28,13 @@ public static class MauiProgram
 #endif
         });
 
+        // Shared HttpClient for large model downloads; stalls are handled by ModelDownloadService
+        builder.Services.AddHttpClient(ModelDownloadService.HttpClientName, client =>
+        {
+            client.Timeout = Timeout.InfiniteTimeSpan;
+            client.DefaultRequestHeaders.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("KaiROS-Mobile", "1.0"));
+        });
+
         // Register Services (Singleton for shared state)
         builder.Services.AddSingleton<MobileLLMService>();
         builder.Services.AddSingleton<ModelDownloadService>();

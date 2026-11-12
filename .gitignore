@@ -75,3 +75,8 @@ Thumbs.db
 *.keystore
 *.jks
 *.pfx
+*.snk
+
+## Build output captures and backups
+build_out*.txt
+*.bak

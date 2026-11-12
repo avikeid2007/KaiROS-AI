@@ -249,6 +249,7 @@ public partial class ChatViewModel : ObservableObject
         if (IsSpeaking)
         {
             _speakCts?.Cancel();
+            _voiceService.StopSpeaking();
             IsSpeaking = false;
             return;
         }

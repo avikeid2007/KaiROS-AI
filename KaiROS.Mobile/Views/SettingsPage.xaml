@@ -40,7 +40,7 @@
                         Stroke="Transparent"
                         Padding="16">
                     <Border.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnPromptLibraryTapped"/>
+                        <TapGestureRecognizer Command="{Binding OpenPromptLibraryCommand}"/>
                     </Border.GestureRecognizers>
                     <Grid ColumnDefinitions="Auto,*,Auto">
                         <Label Text="📝"

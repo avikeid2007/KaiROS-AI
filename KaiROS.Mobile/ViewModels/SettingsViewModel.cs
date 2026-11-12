@@ -1,12 +1,14 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KaiROS.Mobile.Services;
+using Microsoft.Extensions.Logging;
 
 namespace KaiROS.Mobile.ViewModels;
 
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly ChatDatabaseService _databaseService;
+    private readonly ILogger<SettingsViewModel> _logger;
 
     [ObservableProperty]
     private string _systemPrompt = "You are a helpful AI assistant. Be concise and accurate in your responses.";
@@ -28,9 +30,10 @@ public partial class SettingsViewModel : ObservableObject
 
     public List<int> RetentionOptions { get; } = new() { 7, 15, 30, 90 };
 
-    public SettingsViewModel(ChatDatabaseService databaseService)
+    public SettingsViewModel(ChatDatabaseService databaseService, ILogger<SettingsViewModel> logger)
     {
         _databaseService = databaseService;
+        _logger = logger;
         LoadHardwareInfo();
         LoadSavedSettings();
     }
@@ -74,8 +77,9 @@ public partial class SettingsViewModel : ObservableObject
             var uri = new Uri("mailto:feedback@kairos.ai?subject=KaiROS%20Mobile%20Feedback");
             await Browser.OpenAsync(uri, BrowserLaunchMode.SystemPreferred);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Could not open email client");
             await Shell.Current.DisplayAlert("Error", "Could not open email client", "OK");
         }
     }
@@ -88,9 +92,23 @@ public partial class SettingsViewModel : ObservableObject
             var uri = new Uri("https://github.com/avikeid2007/Kairos.local");
             await Browser.OpenAsync(uri, BrowserLaunchMode.SystemPreferred);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Could not open browser");
             await Shell.Current.DisplayAlert("Error", "Could not open browser", "OK");
+        }
+    }
+
+    [RelayCommand]
+    private async Task OpenPromptLibrary()
+    {
+        try
+        {
+            await Shell.Current.GoToAsync("PromptLibrary");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Could not open prompt library");
         }
     }
 

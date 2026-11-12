@@ -1,5 +1,5 @@
 using CommunityToolkit.Maui.Media;
-using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using System.Globalization;
 
 namespace KaiROS.Mobile.Services;
@@ -10,9 +10,19 @@ namespace KaiROS.Mobile.Services;
 /// </summary>
 public class VoiceService
 {
+    // Listening ends if no speech update arrives within this window
+    private static readonly TimeSpan SilenceTimeout = TimeSpan.FromSeconds(10);
+
+    private readonly ILogger<VoiceService> _logger;
     private CancellationTokenSource? _listeningCts;
+    private CancellationTokenSource? _speakingCts;
     private bool _isListening;
     private bool _isSpeaking;
+
+    public VoiceService(ILogger<VoiceService> logger)
+    {
+        _logger = logger;
+    }
 
     public bool IsListening => _isListening;
     public bool IsSpeaking => _isSpeaking;
@@ -53,13 +63,67 @@ public class VoiceService
             // Use SpeechToText from CommunityToolkit.Maui.Media
             var speechToText = SpeechToText.Default;
 
-            var recognitionResult = await speechToText.ListenAsync(
-                CultureInfo.CurrentCulture,
-                new Progress<string>(partialText =>
+            var tcs = new TaskCompletionSource<SpeechToTextResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+            string? lastPartial = null;
+
+            using var silenceCts = new CancellationTokenSource(SilenceTimeout);
+            using var listenCts = CancellationTokenSource.CreateLinkedTokenSource(_listeningCts.Token, silenceCts.Token);
+
+            void OnUpdated(object? sender, SpeechToTextRecognitionResultUpdatedEventArgs e)
+            {
+                lastPartial = e.RecognitionResult;
+                silenceCts.CancelAfter(SilenceTimeout);
+                SpeechRecognized?.Invoke(this, e.RecognitionResult);
+            }
+
+            void OnCompleted(object? sender, SpeechToTextRecognitionResultCompletedEventArgs e) =>
+                tcs.TrySetResult(e.RecognitionResult);
+
+            speechToText.RecognitionResultUpdated += OnUpdated;
+            speechToText.RecognitionResultCompleted += OnCompleted;
+
+            SpeechToTextResult recognitionResult;
+            try
+            {
+                await speechToText.StartListenAsync(
+                    new SpeechToTextOptions
+                    {
+                        Culture = CultureInfo.CurrentCulture,
+                        ShouldReportPartialResults = true
+                    },
+                    listenCts.Token);
+
+                using (listenCts.Token.Register(() => tcs.TrySetCanceled()))
                 {
-                    SpeechRecognized?.Invoke(this, partialText);
-                }),
-                _listeningCts.Token);
+                    recognitionResult = await tcs.Task;
+                }
+            }
+            catch (OperationCanceledException) when (silenceCts.IsCancellationRequested && !_listeningCts.IsCancellationRequested)
+            {
+                // Timed out waiting for speech: keep whatever was heard so far
+                if (string.IsNullOrWhiteSpace(lastPartial))
+                {
+                    StatusChanged?.Invoke(this, "No speech detected");
+                    return null;
+                }
+
+                StatusChanged?.Invoke(this, "Got it!");
+                return lastPartial;
+            }
+            finally
+            {
+                speechToText.RecognitionResultUpdated -= OnUpdated;
+                speechToText.RecognitionResultCompleted -= OnCompleted;
+
+                try
+                {
+                    await speechToText.StopListenAsync(CancellationToken.None);
+                }
+                catch (Exception stopEx)
+                {
+                    _logger.LogWarning(stopEx, "Failed to stop speech recognition");
+                }
+            }
 
             if (recognitionResult.IsSuccessful)
             {
@@ -69,7 +133,7 @@ public class VoiceService
             else
             {
                 StatusChanged?.Invoke(this, $"Recognition failed: {recognitionResult.Exception?.Message}");
-                Debug.WriteLine($"[VoiceService] STT Error: {recognitionResult.Exception}");
+                _logger.LogError(recognitionResult.Exception, "Speech recognition failed");
                 return null;
             }
         }
@@ -80,7 +144,7 @@ public class VoiceService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[VoiceService] Listen error: {ex}");
+            _logger.LogError(ex, "Listen error");
             StatusChanged?.Invoke(this, $"Error: {ex.Message}");
             return null;
         }
@@ -112,6 +176,7 @@ public class VoiceService
         try
         {
             _isSpeaking = true;
+            _speakingCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             StatusChanged?.Invoke(this, "Speaking...");
 
             var options = new SpeechOptions
@@ -120,7 +185,7 @@ public class VoiceService
                 Volume = 1.0f
             };
 
-            await TextToSpeech.Default.SpeakAsync(text, options, cancellationToken);
+            await TextToSpeech.Default.SpeakAsync(text, options, _speakingCts.Token);
 
             StatusChanged?.Invoke(this, "Done speaking");
         }
@@ -130,12 +195,14 @@ public class VoiceService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[VoiceService] Speak error: {ex}");
+            _logger.LogError(ex, "Speak error");
             StatusChanged?.Invoke(this, $"Speech error: {ex.Message}");
         }
         finally
         {
             _isSpeaking = false;
+            _speakingCts?.Dispose();
+            _speakingCts = null;
         }
     }
 
@@ -144,8 +211,7 @@ public class VoiceService
     /// </summary>
     public void StopSpeaking()
     {
-        // Note: TextToSpeech doesn't have a direct stop method
-        // We rely on cancellation token
+        _speakingCts?.Cancel();
     }
 
     /// <summary>
@@ -158,8 +224,9 @@ public class VoiceService
             var speechToText = SpeechToText.Default;
             return await speechToText.RequestPermissions(CancellationToken.None);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Speech recognition availability check failed");
             return false;
         }
     }

@@ -13,9 +13,9 @@ public partial class ModelSelectionPage : ContentPage
         _viewModel = viewModel;
     }
 
-    protected override async void OnAppearing()
+    protected override void OnAppearing()
     {
         base.OnAppearing();
-        await _viewModel.LoadModelsCommand.ExecuteAsync(null);
+        _ = _viewModel.LoadModelsCommand.ExecuteAsync(null);
     }
 }

@@ -1,5 +1,6 @@
 using KaiROS.Mobile.Models;
-using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -7,21 +8,28 @@ namespace KaiROS.Mobile.Services;
 
 /// <summary>
 /// Service for downloading and managing GGUF models.
+/// Downloads resume from a partial file and retry on transient network failures.
 /// </summary>
 public class ModelDownloadService
 {
-    private readonly HttpClient _httpClient;
+    public const string HttpClientName = "ModelDownloads";
+
+    private const int MaxAttempts = 5;
+    private const string PartialExtension = ".part";
+    private static readonly TimeSpan StallTimeout = TimeSpan.FromSeconds(30);
+
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<ModelDownloadService> _logger;
     private readonly string _modelsDirectory;
     private CancellationTokenSource? _currentDownloadCts;
 
     public event EventHandler<double>? ProgressChanged;
     public event EventHandler<string>? StatusChanged;
 
-    public ModelDownloadService()
+    public ModelDownloadService(IHttpClientFactory httpClientFactory, ILogger<ModelDownloadService> logger)
     {
-        _httpClient = new HttpClient();
-        _httpClient.DefaultRequestHeaders.UserAgent.Add(
-            new ProductInfoHeaderValue("KaiROS-Mobile", "1.0"));
+        _httpClientFactory = httpClientFactory;
+        _logger = logger;
 
         // Store models in app's local data directory
         _modelsDirectory = Path.Combine(
@@ -62,7 +70,7 @@ public class ModelDownloadService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ModelDownloadService] Error loading catalog: {ex}");
+            _logger.LogError(ex, "Error loading model catalog");
             return GetDefaultModels();
         }
     }
@@ -90,57 +98,36 @@ public class ModelDownloadService
             return destinationPath;
         }
 
+        var partialPath = destinationPath + PartialExtension;
+
         try
         {
             _currentDownloadCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var token = _currentDownloadCts.Token;
 
             StatusChanged?.Invoke(this, $"Downloading {model.Name}...");
             model.IsDownloading = true;
             model.DownloadProgress = 0;
 
-            using var response = await _httpClient.GetAsync(
-                model.DownloadUrl,
-                HttpCompletionOption.ResponseHeadersRead,
-                _currentDownloadCts.Token);
-
-            response.EnsureSuccessStatusCode();
-
-            var totalBytes = response.Content.Headers.ContentLength ?? model.SizeBytes;
-            var tempPath = destinationPath + ".tmp";
-
-            await using var contentStream = await response.Content.ReadAsStreamAsync(_currentDownloadCts.Token);
-            await using var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 65536, true);
-
-            var buffer = new byte[81920]; // 80KB buffer
-            long totalBytesRead = 0;
-            int bytesRead;
-            var lastProgressUpdate = DateTime.Now;
-
-            while ((bytesRead = await contentStream.ReadAsync(buffer, _currentDownloadCts.Token)) > 0)
+            for (var attempt = 1; ; attempt++)
             {
-                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), _currentDownloadCts.Token);
-                totalBytesRead += bytesRead;
-
-                // Update progress every 250ms
-                if ((DateTime.Now - lastProgressUpdate).TotalMilliseconds > 250)
+                try
                 {
-                    var progress = (double)totalBytesRead / totalBytes;
-
-                    MainThread.BeginInvokeOnMainThread(() =>
-                    {
-                        model.DownloadProgress = progress;
-                    });
-
-                    ProgressChanged?.Invoke(this, progress);
-                    lastProgressUpdate = DateTime.Now;
+                    await DownloadAttemptAsync(model, partialPath, token);
+                    break;
+                }
+                catch (Exception ex) when (attempt < MaxAttempts && IsTransient(ex, token))
+                {
+                    _logger.LogWarning(ex, "Download attempt {Attempt}/{Max} for {Model} failed", attempt, MaxAttempts, model.Name);
+                    StatusChanged?.Invoke(this, $"Connection lost. Retrying ({attempt}/{MaxAttempts - 1})...");
+                    await Task.Delay(TimeSpan.FromSeconds(Math.Min(30, Math.Pow(2, attempt))), token);
                 }
             }
 
             // Final update
             MainThread.BeginInvokeOnMainThread(() => model.DownloadProgress = 1.0);
 
-            // Rename temp file to final path
-            File.Move(tempPath, destinationPath);
+            File.Move(partialPath, destinationPath, overwrite: true);
 
             model.LocalPath = destinationPath;
             model.IsDownloading = false;
@@ -153,25 +140,128 @@ public class ModelDownloadService
         }
         catch (OperationCanceledException)
         {
-            StatusChanged?.Invoke(this, "Download cancelled");
+            // The partial file is kept so the download can resume later
+            StatusChanged?.Invoke(this, "Download paused");
             model.IsDownloading = false;
             model.DownloadProgress = 0;
-
-            // Clean up partial download
-            var tempPath = destinationPath + ".tmp";
-            if (File.Exists(tempPath))
-                File.Delete(tempPath);
-
             return null;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ModelDownloadService] Download error: {ex}");
+            _logger.LogError(ex, "Download of {Model} failed", model.Name);
             StatusChanged?.Invoke(this, $"Download failed: {ex.Message}");
             model.IsDownloading = false;
             model.DownloadProgress = 0;
             return null;
         }
+    }
+
+    /// <summary>
+    /// Performs one download attempt, resuming from the partial file when the server supports ranges.
+    /// </summary>
+    private async Task DownloadAttemptAsync(LLMModelInfo model, string partialPath, CancellationToken token)
+    {
+        using var stallCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+
+        try
+        {
+            var existingBytes = File.Exists(partialPath) ? new FileInfo(partialPath).Length : 0;
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, model.DownloadUrl);
+            if (existingBytes > 0)
+                request.Headers.Range = new RangeHeaderValue(existingBytes, null);
+
+            var client = _httpClientFactory.CreateClient(HttpClientName);
+
+            stallCts.CancelAfter(StallTimeout);
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, stallCts.Token);
+
+            if (response.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable)
+            {
+                // The partial file is already complete, or no longer matches the remote file
+                if (response.Content.Headers.ContentRange?.Length == existingBytes)
+                    return;
+
+                File.Delete(partialPath);
+                throw new IOException("Partial download no longer valid; restarting.");
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            var resumed = response.StatusCode == HttpStatusCode.PartialContent;
+            if (!resumed)
+                existingBytes = 0; // Server ignored the range request, start over
+
+            var contentLength = response.Content.Headers.ContentLength;
+            long? expectedTotal = resumed
+                ? response.Content.Headers.ContentRange?.Length ?? (contentLength.HasValue ? existingBytes + contentLength.Value : null)
+                : contentLength;
+
+            var progressTotal = expectedTotal ?? model.SizeBytes;
+
+            await using var contentStream = await response.Content.ReadAsStreamAsync(stallCts.Token);
+            await using var fileStream = new FileStream(
+                partialPath,
+                resumed ? FileMode.Append : FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                65536,
+                true);
+
+            var buffer = new byte[81920]; // 80KB buffer
+            var totalBytesRead = existingBytes;
+            var lastProgressUpdate = DateTime.Now;
+
+            while (true)
+            {
+                stallCts.CancelAfter(StallTimeout);
+                var bytesRead = await contentStream.ReadAsync(buffer, stallCts.Token);
+                if (bytesRead == 0)
+                    break;
+
+                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), stallCts.Token);
+                totalBytesRead += bytesRead;
+
+                // Update progress every 250ms
+                if (progressTotal > 0 && (DateTime.Now - lastProgressUpdate).TotalMilliseconds > 250)
+                {
+                    var progress = Math.Min(1.0, (double)totalBytesRead / progressTotal);
+
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        model.DownloadProgress = progress;
+                    });
+
+                    ProgressChanged?.Invoke(this, progress);
+                    lastProgressUpdate = DateTime.Now;
+                }
+            }
+
+            await fileStream.FlushAsync(token);
+
+            if (expectedTotal.HasValue && totalBytesRead != expectedTotal.Value)
+                throw new IOException($"Download incomplete: {totalBytesRead} of {expectedTotal.Value} bytes.");
+        }
+        catch (OperationCanceledException ex) when (!token.IsCancellationRequested)
+        {
+            throw new TimeoutException("Download stalled.", ex);
+        }
+    }
+
+    private static bool IsTransient(Exception ex, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+            return false;
+
+        return ex switch
+        {
+            HttpRequestException http when http.StatusCode is { } status =>
+                (int)status >= 500 || status == HttpStatusCode.RequestTimeout || status == HttpStatusCode.TooManyRequests,
+            HttpRequestException => true,
+            IOException => true,
+            TimeoutException => true,
+            _ => false
+        };
     }
 
     /// <summary>
@@ -199,7 +289,7 @@ public class ModelDownloadService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ModelDownloadService] Delete error: {ex}");
+            _logger.LogError(ex, "Error deleting model {Model}", model.Name);
             return false;
         }
     }
