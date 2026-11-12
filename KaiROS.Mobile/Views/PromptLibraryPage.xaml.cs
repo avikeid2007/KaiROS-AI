@@ -19,11 +19,6 @@ public partial class PromptLibraryPage : ContentPage
         _ = _viewModel.LoadPresetsCommand.ExecuteAsync(null);
     }
 
-    private async void OnBackTapped(object sender, TappedEventArgs e)
-    {
-        await Shell.Current.GoToAsync("..");
-    }
-
     private void OnIconTapped(object sender, TappedEventArgs e)
     {
         if (e.Parameter is string icon)

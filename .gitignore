@@ -75,6 +75,11 @@ Thumbs.db
 *.keystore
 *.jks
 *.pfx
+*.snk
+
+## Build output captures and backups
+build_out*.txt
+*.bak
 
 ## Local secret overrides (not for source control)
 appsettings.Local.json

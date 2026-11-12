@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<!-- Android-focused for LLM on mobile -->
-		<TargetFrameworks>net9.0-android</TargetFrameworks>
+		<TargetFrameworks>net10.0-android</TargetFrameworks>
 
 		<OutputType>Exe</OutputType>
 		<RootNamespace>KaiROS.Mobile</RootNamespace>
@@ -19,7 +19,7 @@
 		<ApplicationId>com.avnishkumar.kairosai</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
+		<ApplicationDisplayVersion>1.0.1</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
 		<!-- Android minimum API level -->
@@ -49,22 +49,23 @@
 
 	<ItemGroup>
 		<!-- MAUI -->
-		<PackageReference Include="LLamaSharp.Backend.Cpu.Android" Version="0.25.0" />
+		<PackageReference Include="LLamaSharp.Backend.Cpu.Android" Version="0.30.0" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.15" />
+				<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.15" />
 		
 		<!-- MVVM Toolkit -->
-		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-		<PackageReference Include="CommunityToolkit.Maui" Version="10.0.0" />
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+		<PackageReference Include="CommunityToolkit.Maui" Version="14.1.1" />
 		
 		<!-- LLamaSharp for local LLM inference -->
-		<PackageReference Include="LLamaSharp" Version="0.25.0" />
+		<PackageReference Include="LLamaSharp" Version="0.30.0" />
 		
 		<!-- SQLite for chat history -->
 		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
 		
 		<!-- Markdown Parsing -->
-		<PackageReference Include="Markdig" Version="0.37.0" />
+		<PackageReference Include="Markdig" Version="1.6.0" />
 	</ItemGroup>
 
 </Project>

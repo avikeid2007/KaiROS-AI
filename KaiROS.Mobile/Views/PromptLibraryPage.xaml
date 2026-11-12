@@ -19,7 +19,7 @@
                     BackgroundColor="#1E1E3A"
                     Stroke="#2A2A50">
                 <Border.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnBackTapped"/>
+                    <TapGestureRecognizer Command="{Binding GoBackCommand}"/>
                 </Border.GestureRecognizers>
                 <Label Text="←"
                        FontSize="18"
