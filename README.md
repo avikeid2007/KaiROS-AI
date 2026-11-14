@@ -34,15 +34,17 @@
     <img src="https://img.shields.io/badge/Download_Windows-MSIX-blue?style=for-the-badge&logo=windows" alt="Download Windows MSIX"/>
   </a>
   <br>
+  <a href="https://play.google.com/store/apps/details?id=com.avnishkumar.kairosai" target="_blank">
+    <img src="https://img.shields.io/badge/Google_Play-Get_It_On-34A853?style=for-the-badge&logo=google-play" alt="Google Play Store"/>
+  </a>
   <a href="https://github.com/avikeid2007/KaiROS-AI/releases/latest">
     <img src="https://img.shields.io/badge/Download_Android-APK-3DDC84?style=for-the-badge&logo=android" alt="Download Android APK"/>
   </a>
-  <img src="https://img.shields.io/badge/Play_Store-Coming_Soon-orange?style=for-the-badge&logo=google-play" alt="Play Store"/>
 </p>
 
-- **Microsoft Store** - [Get it now](https://apps.microsoft.com/detail/9n0l64zr0znd?hl=en-US&gl=IN) (recommended, auto-updates)
-- **[Download Latest Release](https://github.com/avikeid2007/KaiROS-AI/releases/latest)** - Windows MSIX & Android APK
-- **Play Store** - 🔜 Coming Soon!
+- **Microsoft Store** - [Get it now](https://apps.microsoft.com/detail/9n0l64zr0znd?hl=en-US&gl=IN) (recommended for Windows, auto-updates)
+- **Google Play Store** - [Get it on Google Play](https://play.google.com/store/apps/details?id=com.avnishkumar.kairosai) (recommended for Android, auto-updates)
+- **[Download Latest Release](https://github.com/avikeid2007/KaiROS-AI/releases/latest)** - Windows MSIX, Windows Setup EXE & Android APK
 - No .NET installation required (self-contained)
 - Supports Windows 10/11 (x64) & Android 7.0+
 
