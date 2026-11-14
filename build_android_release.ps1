@@ -11,7 +11,7 @@ if ([string]::IsNullOrEmpty($KeystorePath) -or [string]::IsNullOrEmpty($Keystore
 
 Write-Host "Building KaiROS Mobile for Android Release..." -ForegroundColor Cyan
 
-dotnet publish KaiROS.Mobile/KaiROS.Mobile.csproj -f net9.0-android -c Release `
+dotnet publish KaiROS.Mobile/KaiROS.Mobile.csproj -f net10.0-android -c Release `
     -p:AndroidKeyStore=true `
     -p:AndroidSigningKeyStore=$KeystorePath `
     -p:AndroidSigningKeyAlias=$KeyAlias `
@@ -22,7 +22,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "Build Successful!" -ForegroundColor Green
     
     # Define paths
-    $publishDir = "KaiROS.Mobile/bin/Release/net9.0-android/publish"
+    $publishDir = "KaiROS.Mobile/bin/Release/net10.0-android/publish"
     $sourceFile = Join-Path $publishDir "com.avnishkumar.kairosai-Signed.aab"
     
     # Create better name: KaiROS_AI_v1.0.0.aab
