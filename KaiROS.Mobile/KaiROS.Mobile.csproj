@@ -19,11 +19,15 @@
 		<ApplicationId>com.avnishkumar.kairosai</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>1.0.1</ApplicationDisplayVersion>
-		<ApplicationVersion>1</ApplicationVersion>
+		<ApplicationDisplayVersion>2.1.15</ApplicationDisplayVersion>
+		<ApplicationVersion>15</ApplicationVersion>
 
-		<!-- Android minimum API level -->
+		<!-- Android minimum and target API levels -->
 		<SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+		<TargetPlatformVersion>36.0</TargetPlatformVersion>
+		
+		<!-- Android App Bundle 16 KB Page Alignment Configuration -->
+		<AndroidBundleConfigurationFile>BundleConfig.json</AndroidBundleConfigurationFile>
 		
 		<!-- Allow duplicate native libs from LLamaSharp backends -->
 		<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
@@ -62,10 +66,118 @@
 		<PackageReference Include="LLamaSharp" Version="0.30.0" />
 		
 		<!-- SQLite for chat history -->
-		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+		<PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
 		
 		<!-- Markdown Parsing -->
 		<PackageReference Include="Markdig" Version="1.6.0" />
 	</ItemGroup>
+
+	<!--
+		Enforce 16 KB memory page size alignment (p_align >= 0x4000) for all native libraries (.so),
+		as required by Google Play for apps targeting Android 15+ (API 35/36).
+	-->
+	<UsingTask TaskName="AlignElfLibrariesTo16Kb" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+		<ParameterGroup>
+			<Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+		</ParameterGroup>
+		<Task>
+			<Using Namespace="System" />
+			<Using Namespace="System.IO" />
+			<Code Type="Fragment" Language="cs">
+				<![CDATA[
+					foreach (var item in Files)
+					{
+						var path = item.GetMetadata("FullPath");
+						if (string.IsNullOrEmpty(path) || !File.Exists(path) || !path.EndsWith(".so", StringComparison.OrdinalIgnoreCase))
+							continue;
+
+						try
+						{
+							var bytes = File.ReadAllBytes(path);
+							if (bytes.Length < 64 || bytes[0] != 0x7F || bytes[1] != (byte)'E' || bytes[2] != (byte)'L' || bytes[3] != (byte)'F')
+								continue;
+
+							byte elfClass = bytes[4]; // 1 = 32-bit, 2 = 64-bit
+							bool littleEndian = bytes[5] == 1;
+							if (!littleEndian) continue;
+
+							bool modified = false;
+
+							if (elfClass == 2)
+							{
+								ulong phoff = BitConverter.ToUInt64(bytes, 32);
+								ushort phesz = BitConverter.ToUInt16(bytes, 54);
+								ushort phnum = BitConverter.ToUInt16(bytes, 56);
+
+								for (int i = 0; i < phnum; i++)
+								{
+									int ph = (int)(phoff + (ulong)(i * phesz));
+									if (ph + 56 > bytes.Length) break;
+
+									uint ptype = BitConverter.ToUInt32(bytes, ph);
+									if (ptype == 1) // PT_LOAD
+									{
+										int alignOffset = ph + 48;
+										ulong align = BitConverter.ToUInt64(bytes, alignOffset);
+										if (align < 0x4000)
+										{
+											var newAlignBytes = BitConverter.GetBytes((ulong)0x4000);
+											Array.Copy(newAlignBytes, 0, bytes, alignOffset, 8);
+											modified = true;
+										}
+									}
+								}
+							}
+							else if (elfClass == 1)
+							{
+								uint phoff = BitConverter.ToUInt32(bytes, 28);
+								ushort phesz = BitConverter.ToUInt16(bytes, 42);
+								ushort phnum = BitConverter.ToUInt16(bytes, 44);
+
+								for (int i = 0; i < phnum; i++)
+								{
+									int ph = (int)(phoff + (uint)(i * phesz));
+									if (ph + 32 > bytes.Length) break;
+
+									uint ptype = BitConverter.ToUInt32(bytes, ph);
+									if (ptype == 1) // PT_LOAD
+									{
+										int alignOffset = ph + 28;
+										uint align = BitConverter.ToUInt32(bytes, alignOffset);
+										if (align < 0x4000)
+										{
+											var newAlignBytes = BitConverter.GetBytes((uint)0x4000);
+											Array.Copy(newAlignBytes, 0, bytes, alignOffset, 4);
+											modified = true;
+										}
+									}
+								}
+							}
+
+							if (modified)
+							{
+								File.WriteAllBytes(path, bytes);
+								Log.LogMessage(Microsoft.Build.Framework.MessageImportance.High, "Aligned to 16 KB (0x4000): " + Path.GetFileName(path));
+							}
+						}
+						catch (Exception ex)
+						{
+							Log.LogWarning("Failed to align ELF library '{0}': {1}", path, ex.Message);
+						}
+					}
+				]]>
+			</Code>
+		</Task>
+	</UsingTask>
+
+	<Target Name="Enforce16KbPageAlignment" BeforeTargets="_BuildApkFastDev;_BuildApkEmbed;_CreateBaseApk;BuildAppBundle;_CompileToDalvik">
+		<ItemGroup>
+			<_NativeLibsToAlign Include="@(AndroidNativeLibrary)" />
+			<_NativeLibsToAlign Include="@(Content)" Condition="'%(Extension)' == '.so'" />
+			<_NativeLibsToAlign Include="$(IntermediateOutputPath)**\*.so" />
+			<_NativeLibsToAlign Include="$(OutDir)**\*.so" />
+		</ItemGroup>
+		<AlignElfLibrariesTo16Kb Files="@(_NativeLibsToAlign)" />
+	</Target>
 
 </Project>
