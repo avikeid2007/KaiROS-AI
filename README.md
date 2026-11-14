@@ -623,7 +623,7 @@ All endpoints support multi-turn conversations. Pass the full message history:
 
    ```bash
    cd ../KaiROS.Mobile
-   dotnet build -c Release -f net9.0-android
+   dotnet build -c Release -f net10.0-android
    ```
 
 ## 📦 Model Catalog Overview

@@ -4,8 +4,8 @@
 #define MyAppName "KaiROS AI"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "KaiROS"
-#define MyAppURL "https://github.com/YOUR_USERNAME/KaiROS.AI"
-#define MyAppExeName "KaiROS.AI.exe"
+#define MyAppURL "https://github.com/avikeid2007/KaiROS-AI"
+#define MyAppExeName "KaiROS.AI.WinUI.exe"
 #define MyAppDescription "Local AI Assistant - Run LLMs privately on your own hardware"
 
 [Setup]
@@ -29,7 +29,7 @@ Compression=lzma2/ultra64
 SolidCompression=yes
 ; UI settings
 WizardStyle=modern
-SetupIconFile=..\KaiROS.AI\Assets\app.ico
+SetupIconFile=..\KaiROS.AI.WinUI\Assets\app.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 ; Privileges
 PrivilegesRequired=admin
