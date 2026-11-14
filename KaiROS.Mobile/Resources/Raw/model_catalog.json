@@ -1,26 +1,58 @@
 [
-    {
-        "name": "TinyLlama 1.1B Chat Q4",
-        "fileName": "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
-        "description": "Fast, compact model ideal for mobile devices. Great for general chat.",
-        "sizeBytes": 669000000,
-        "downloadUrl": "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
-        "minRamGB": 2
-    },
-    {
-        "name": "Qwen2 0.5B Instruct Q4",
-        "fileName": "qwen2-0_5b-instruct-q4_k_m.gguf",
-        "description": "Ultra-compact model for basic tasks and quick responses.",
-        "sizeBytes": 400000000,
-        "downloadUrl": "https://huggingface.co/Qwen/Qwen2-0.5B-Instruct-GGUF/resolve/main/qwen2-0_5b-instruct-q4_k_m.gguf",
-        "minRamGB": 2
-    },
-    {
-        "name": "Phi-2 Q4",
-        "fileName": "phi-2.Q4_K_M.gguf",
-        "description": "Microsoft's 2.7B model with strong reasoning capabilities.",
-        "sizeBytes": 1600000000,
-        "downloadUrl": "https://huggingface.co/TheBloke/phi-2-GGUF/resolve/main/phi-2.Q4_K_M.gguf",
-        "minRamGB": 4
-    }
+  {
+    "name": "Qwen 3.5 0.8B Instruct",
+    "fileName": "Qwen3.5-0.8B-Q4_K_M.gguf",
+    "description": "Ultra-compact 0.8B model with bleeding-edge reasoning and rapid mobile generation.",
+    "sizeBytes": 590880672,
+    "downloadUrl": "https://huggingface.co/notschmee/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B-Q4_K_M.gguf",
+    "minRamGB": 2
+  },
+  {
+    "name": "Gemma 3 1B IT",
+    "fileName": "gemma-3-1b-it-Q4_K_M.gguf",
+    "description": "Google's state-of-the-art 1B edge model. Exceptional natural conversation and instruction following.",
+    "sizeBytes": 806058240,
+    "downloadUrl": "https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf",
+    "minRamGB": 3
+  },
+  {
+    "name": "Qwen 3.5 2B Instruct",
+    "fileName": "Qwen3.5-2B-Q4_K_M.gguf",
+    "description": "High-intelligence 2B model delivering superior answers, reasoning, and structured responses.",
+    "sizeBytes": 1280835840,
+    "downloadUrl": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf",
+    "minRamGB": 4
+  },
+  {
+    "name": "Llama 3.2 1B Instruct",
+    "fileName": "Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+    "description": "Meta's official 1.2B edge model. Excellent balance of speed, reasoning, and summarization.",
+    "sizeBytes": 807694464,
+    "downloadUrl": "https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+    "minRamGB": 3
+  },
+  {
+    "name": "SmolLM2 360M Instruct",
+    "fileName": "SmolLM2-360M-Instruct-Q4_K_M.gguf",
+    "description": "Ultra-lightweight 360M model by Hugging Face. Fast and battery-friendly for basic mobile chat.",
+    "sizeBytes": 270590880,
+    "downloadUrl": "https://huggingface.co/bartowski/SmolLM2-360M-Instruct-GGUF/resolve/main/SmolLM2-360M-Instruct-Q4_K_M.gguf",
+    "minRamGB": 2
+  },
+  {
+    "name": "SmolLM2 1.7B Instruct",
+    "fileName": "SmolLM2-1.7B-Instruct-Q4_K_M.gguf",
+    "description": "Trained on 11T tokens by Hugging Face. High reasoning capability and general knowledge.",
+    "sizeBytes": 1055609824,
+    "downloadUrl": "https://huggingface.co/bartowski/SmolLM2-1.7B-Instruct-GGUF/resolve/main/SmolLM2-1.7B-Instruct-Q4_K_M.gguf",
+    "minRamGB": 3
+  },
+  {
+    "name": "TinyLlama 1.1B Chat",
+    "fileName": "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
+    "description": "Classic lightweight chat model for mobile devices.",
+    "sizeBytes": 669000000,
+    "downloadUrl": "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
+    "minRamGB": 2
+  }
 ]
