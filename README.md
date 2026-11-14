@@ -11,15 +11,16 @@
 
 <p align="center">
   <a href="https://github.com/avikeid2007/KaiROS-AI/releases/latest"><img src="https://img.shields.io/github/v/release/avikeid2007/KaiROS-AI?style=flat-square&logo=github&label=Download" alt="Download"/></a>
-  <img src="https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square&logo=dotnet" alt=".NET 9"/>
+  <img src="https://img.shields.io/badge/.NET-9.0_%7C_10.0-512BD4?style=flat-square&logo=dotnet" alt=".NET 9 and 10"/>
   <img src="https://img.shields.io/badge/WinUI_3-Windows_App_SDK-0078D4?style=flat-square&logo=windows" alt="WinUI 3"/>
-  <img src="https://img.shields.io/badge/Android-MAUI-3DDC84?style=flat-square&logo=android" alt="Android"/>
+  <img src="https://img.shields.io/badge/Android-16_(API_36)-3DDC84?style=flat-square&logo=android" alt="Android 16"/>
+  <img src="https://img.shields.io/badge/16_KB-Page_Aligned-brightgreen?style=flat-square" alt="16 KB Page Aligned"/>
   <img src="https://img.shields.io/badge/CUDA-12-76B900?style=flat-square&logo=nvidia" alt="CUDA 12"/>
-  <img src="https://img.shields.io/badge/LLamaSharp-0.27.0-purple?style=flat-square" alt="LLamaSharp 0.27"/>
+  <img src="https://img.shields.io/badge/LLamaSharp-0.30.0-purple?style=flat-square" alt="LLamaSharp 0.30"/>
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License"/>
 </p>
 
-> **⚠️ Note:** The active, maintained desktop version is **KaiROS.AI.WinUI** (WinUI 3 / Windows App SDK). The legacy WPF project (`KaiROS.AI`) is no longer actively developed. All new features and bug fixes target the WinUI version.
+> **💡 Note:** The active desktop version is **KaiROS.AI.WinUI** (WinUI 3 / Windows App SDK). The legacy WPF project has been replaced with the modern WinUI 3 architecture. All new features and bug fixes target the WinUI version.
 
 ---
 
@@ -105,14 +106,21 @@ The Desktop version is the full-featured powerhouse built with **WinUI 3 / Windo
 
 ## 📱 Mobile Version (Android - .NET MAUI)
 
-The Mobile version brings the power of local AI to your pocket. Optimized for touch and on-the-go usage.
+The Mobile version brings the power of local AI to your pocket. Built with **.NET 10 MAUI**, it is fully optimized for ARM64 mobile hardware and Android 16.
 
 ### Key Features
 
 - **Offline Capable**: Run LLMs anywhere, even without an internet connection (after model download).
-- **Battery Efficient**: Optimized for mobile processors.
-- **Clean UI**: A simplified interface focused on chat and quick interactions.
-- **Chat History**: Save and resume your conversations anytime.
+- **Modern Tiny LLM Catalog**: Includes cutting-edge compact models:
+  - **Qwen 3.5 0.8B Instruct** (~563 MB) — Blazing-fast generation on phone CPUs.
+  - **Google Gemma 3 1B IT** (~768 MB) — Natural, coherent conversational prose.
+  - **Qwen 3.5 2B Instruct** (~1.19 GB) — High-intelligence reasoning, logic, and structured JSON output.
+  - **Llama 3.2 1B & SmolLM2 (360M / 1.7B)** — Diverse options for any device specification.
+- **Resumable HTTP Range Downloads**: Automatic resume from partial files without starting over from 0%.
+- **Google Play 16 KB Page Alignment**: Fully compliant with modern 16 KB memory page architectures (`p_align >= 0x4000`).
+- **Target Android 16**: Up to date with API Level 36.0.
+- **Battery & Memory Efficient**: Small footprint with dynamic context scaling.
+- **Chat History**: Save and resume your conversations locally with secure SQLite storage.
 
 ### Mobile Screenshots
 
@@ -587,14 +595,15 @@ All endpoints support multi-turn conversations. Pass the full message history:
 
 ---
 
-## �🚀 Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
 - **Windows 10 version 1903+** / Windows 11 (x64)
-- **Android 7.0+** (API 24+)
-- **.NET 9 SDK** — [Download](https://dotnet.microsoft.com/download/dotnet/9.0) (for building from source)
-- **CUDA Toolkit 12** (optional, for NVIDIA GPU acceleration) — [Download](https://developer.nvidia.com/cuda-downloads)
+- **Android 7.0+** (API 24+) through **Android 16** (API 36)
+- **.NET 9 SDK** — [Download](https://dotnet.microsoft.com/download/dotnet/9.0) (for building the WinUI 3 Desktop app)
+- **.NET 10 SDK** — [Download](https://dotnet.microsoft.com/download/dotnet/10.0) (with `maui-android` workload for building the Mobile app)
+- **CUDA Toolkit 12** (optional, for NVIDIA GPU acceleration on Desktop) — [Download](https://developer.nvidia.com/cuda-downloads)
 
 ### Building from Source
 
@@ -613,7 +622,7 @@ All endpoints support multi-turn conversations. Pass the full message history:
    dotnet build -c Release
    ```
 
-3. **Run**
+3. **Run Desktop**
 
    ```bash
    dotnet run -c Release
@@ -623,6 +632,7 @@ All endpoints support multi-turn conversations. Pass the full message history:
 
    ```bash
    cd ../KaiROS.Mobile
+   dotnet workload restore
    dotnet build -c Release -f net10.0-android
    ```
 
@@ -633,17 +643,20 @@ All endpoints support multi-turn conversations. Pass the full message history:
 | Organization | Highlights |
 |--------------|------------|
 | **Qwen** | Qwen 2.5/3.5 series (0.5B–14B) — Excellent multilingual + vision |
-| **Google** | Gemma 3/4 series (E2B–31B) — High quality, natively multimodal |
-| **Meta** | LLaMA 3.1/3.2 + TinyLlama |
+| **Google** | Gemma 3/4 series (E2B–31B, Gemma 3 1B) — High quality, natively multimodal |
+| **Meta** | LLaMA 3.1/3.2 (1B, 3B, 8B) + TinyLlama |
 | **Microsoft** | Phi-2, Phi-3, BitNet b1.58 |
 | **MistralAI** | Mistral 7B, Mistral Small 24B |
+| **Hugging Face** | SmolLM2 series (360M, 1.7B) |
 | **Open Source** | GPT-oss 20B ⚠️ Experimental |
 
 ### Recommended Models ⭐
 
-- **Qwen 3.5 9B** — Best balanced choice with vision (10 GB RAM)
+- **Qwen 3.5 9B** — Best balanced choice with vision for Desktop (10 GB RAM)
 - **Gemma 4 E4B** — Great edge model with vision (8 GB RAM)
-- **Qwen 2.5 3B** — Excellent for low-RAM systems (4 GB RAM)
+- **Qwen 3.5 2B** — Excellent mobile/low-RAM reasoning model (4 GB RAM)
+- **Gemma 3 1B IT** — Google's top compact conversational model for Mobile (3 GB RAM)
+- **Qwen 3.5 0.8B** — Blazing-fast generation on edge/mobile CPUs (2 GB RAM)
 - **Mistral 7B** — Complex reasoning tasks (8 GB RAM)
 
 ---
@@ -652,22 +665,24 @@ All endpoints support multi-turn conversations. Pass the full message history:
 
 | Component | Technology |
 |-----------|-----------|
-| **Desktop Framework** | WinUI 3 / Windows App SDK 1.7 |
-| **Mobile Framework** | .NET MAUI |
-| **Runtime** | .NET 9 (`net9.0-windows10.0.19041.0`) |
-| **LLM Engine** | [LLamaSharp 0.27.0](https://github.com/SciSharp/LLamaSharp) |
+| **Desktop Framework** | WinUI 3 / Windows App SDK 1.8 |
+| **Mobile Framework** | .NET MAUI (.NET 10) |
+| **Runtimes** | .NET 9 (`net9.0-windows10.0.19041.0`) & .NET 10 (`net10.0-android`) |
+| **LLM Engine** | [LLamaSharp 0.30.0](https://github.com/SciSharp/LLamaSharp) / llama.cpp |
 | **GPU Backend** | CUDA 12 (via `LLamaSharp.Backend.Cuda12.Windows`) |
-| **CPU Backend** | `LLamaSharp.Backend.Cpu` |
-| **MVVM** | [CommunityToolkit.Mvvm 8.4](https://github.com/CommunityToolkit/dotnet) |
+| **CPU Backend** | `LLamaSharp.Backend.Cpu` & `LLamaSharp.Backend.Cpu.Android` |
+| **Android Page Alignment** | 16 KB Page Alignment Compliant (`PAGE_ALIGNMENT_16K`, `p_align >= 0x4000`) |
+| **Target Android OS** | Android 16 (API Level 36.0, Min SDK 24) |
+| **MVVM** | [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) |
 | **Model Format** | GGUF (llama.cpp compatible, Q4_K_M quantization) |
-| **Database** | SQLite (sessions, custom models, RaaS configs) |
-| **Packaging** | MSIX (Microsoft Store certified) |
+| **Database** | SQLite (`sqlite-net-pcl` 1.11.285 / `Microsoft.Data.Sqlite` 10.0.3) |
+| **Packaging** | MSIX (Microsoft Store certified) & Inno Setup (Windows), Signed AAB/APK (Android) |
 
 ## 📁 Project Structure
 
 ```
 KaiROS-AI/
-├── KaiROS.AI.WinUI/          # ⭐ Active Desktop app (WinUI 3)
+├── KaiROS.AI.WinUI/          # ⭐ Active Desktop app (WinUI 3 / Windows App SDK)
 │   ├── Assets/                # App icons and images
 │   ├── Controls/              # Custom controls (CodeBlock)
 │   ├── Converters/            # XAML value converters
@@ -677,15 +692,22 @@ KaiROS-AI/
 │   ├── ViewModels/            # MVVM ViewModels
 │   ├── Views/                 # XAML views
 │   └── appsettings.json       # Model catalog (40+ models)
-├── KaiROS.Mobile/             # Android app (.NET MAUI)
-├── KaiROS.AI/                 # ⚠️ Legacy WPF version (no longer maintained)
+├── KaiROS.Mobile/             # 📱 Mobile app (.NET 10 MAUI, Android 16, 16 KB aligned)
+│   ├── Models/                # Mobile data models & LLMModelInfo
+│   ├── Platforms/Android/     # Android platform configs & manifest
+│   ├── Resources/Raw/         # Mobile model catalog (model_catalog.json)
+│   ├── Services/              # Mobile LLM, download, voice & SQLite services
+│   └── ViewModels/            # Mobile MVVM ViewModels
 ├── docs/                      # Documentation website
-└── installer/                 # InnoSetup installer (legacy)
+├── installer/                 # Inno Setup Windows installer script (WinUI 3)
+├── CONTRIBUTING.md             # Contribution guidelines & development setup
+└── README.md                  # Project overview & documentation
 ```
 
 ## 🤝 Contributing & License
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please check out our [CONTRIBUTING.md](CONTRIBUTING.md) guide for details on how to set up your development environment, build from source, and submit pull requests.
+
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
